@@ -1,0 +1,13 @@
+<configure
+   xmlns="http://namespaces.zope.org/zope"
+   xmlns:browser="http://namespaces.zope.org/browser"
+   xmlns:grok="http://namespaces.zope.org/grok"
+   xmlns:five="http://namespaces.zope.org/five">
+
+  <five:registerPackage package="." />
+
+  <include package="silva.core.conf" />
+
+  <grok:grok package="." />
+
+</configure>
