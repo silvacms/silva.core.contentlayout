@@ -1,7 +1,7 @@
 
 from zope.interface import Interface
 
-from silva.core.interfaces import ISilvaService
+from silva.core.interfaces import ISilvaLocalService
 
 class IVersionedContentLayout(Interface):
     """Marker interface for VersionedContent objects wich
@@ -22,7 +22,7 @@ class IContentLayout(Interface):
         """@slot - name of a slot for the current layout
            returns the list of parts in the specified slot"""
 
-class IContentLayoutService(ISilvaService):
+class IContentLayoutService(ISilvaLocalService):
     """This service displays all of the registered content templates.
     
     It provides and interface to associate IContentLayout meta_types

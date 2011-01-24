@@ -1,6 +1,6 @@
 from five import grok
 
-from interfaces import ITemplate
+from interfaces import ITemplate, IBaseView
 
 class Template(object):
     """Base class for Content Layout templates.
@@ -33,10 +33,8 @@ class Template(object):
     def getSlotNames(self):
         return self.slotnames[:]
     
-class BaseView(BrowserView):
-    security = ClassSecurityInfo()
-    security.setDefaultAccess("allow")
-    implements(IContentLayoutBaseView)
+class BaseView(object): #BrowserView):
+    grok.implements(IBaseView)
     
     def __init__(self, context, request):
         #context is an IContentLayoutTemplate
@@ -91,7 +89,8 @@ class BaseView(BrowserView):
         #yui needs a non-empty body div
         return ret or ' '
     
-    def renderPart(self, part, slot, interface = IContentLayoutPartView, wrapClass=None):
+#    def renderPart(self, part, slot, interface = IContentLayoutPartView, wrapClass=None):
+    def renderPart(self, part, slot, interface, wrapClass=None):
         """this method will render the part using
            it's IContentLayoutPartViewWidget or IContentLayoutPartView"""
             

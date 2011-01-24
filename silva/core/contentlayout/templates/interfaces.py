@@ -11,7 +11,7 @@ class ITemplate(Interface):
    def getIcon(self):
       """return icon representing template"""
 
-class IContentLayoutBaseView(Interface):
+class IBaseView(Interface):
    """base interface for both public and edit views of 
       layout templates"""
    

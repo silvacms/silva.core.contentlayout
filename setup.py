@@ -17,15 +17,12 @@ setup(name='silva.core.contentlayout',
       author_email='aaltepet@bethel.edu',
       url='',
       license='GPL',
-      packages=find_packages(exclude=['ez_setup']),
+      packages=find_packages('src'),
       namespace_packages=['silva', 'silva.core'],
       include_package_data=True,
       zip_safe=False,
       install_requires=[
           'setuptools',
-          # -*- Extra requirements: -*-
+          'silva.core.interfaces'
       ],
-      entry_points="""
-      # -*- Entry points: -*-
-      """,
       )

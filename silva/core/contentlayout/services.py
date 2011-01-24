@@ -29,16 +29,16 @@ class ContentLayoutService(SilvaService):
         super(ContentLayoutService, self).__init__(id)
         self._content_mapping = PersistentMapping()
 
-class ContentLayoutMappings(silvaforms.ZMIForm):
-    name = 'manage_main'
-    grok.name(name)
-    grok.context(IContentLayoutService)
+#class ContentLayoutMappings(silvaforms.ZMIForm):
+    #name = 'manage_main'
+    #grok.name(name)
+    #grok.context(IContentLayoutService)
     
-    label = u"Layout Template Mappings for Silva Content Types"
-    description = (u"Each Content Type can have a default template and a list "
-                   u"of allowed templates. The default template will be "
-                   u"selected on the add screen.  The list of allowed "
-                   u"templates will be displayed on the add screen and in "
-                   u"the content layout editor's info panel "
-                   u"(allowing authors to switch between templates)")
+    #label = u"Layout Template Mappings for Silva Content Types"
+    #description = (u"Each Content Type can have a default template and a list "
+                   #u"of allowed templates. The default template will be "
+                   #u"selected on the add screen.  The list of allowed "
+                   #u"templates will be displayed on the add screen and in "
+                   #u"the content layout editor's info panel "
+                   #u"(allowing authors to switch between templates)")
     

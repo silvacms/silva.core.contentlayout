@@ -1,4 +1,7 @@
+from five import grok
+
 from template import Template
+from interfaces import IOneColumn, ITwoColumn
 
 class OneColumnTemplate(Template):
     grok.implements(IOneColumn)

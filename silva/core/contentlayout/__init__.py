@@ -6,7 +6,7 @@ from silva.core.conf.installer import DefaultInstaller
 from zope.interface import Interface
 
 
-silvaconf.extensionName("SilvaContentLayout")
+silvaconf.extensionName("silva.core.contentlayout")
 silvaconf.extensionTitle("Silva Content Layout Base")
 
 from services import ContentLayoutService as CLS
@@ -32,6 +32,4 @@ class IExtension(Interface):
     """Marker interface for our extension.
     """
 
-install = Installer("SilvaContentLayout", IExtension)
-
-
+install = Installer("silva.core.contentlayout", IExtension)
