@@ -4,12 +4,12 @@
 from logging import getLogger
 logger = getLogger('silva.core.contentlayout.services')
 
-from zope.component import getUtility, getUtilitiesFor
 from five import grok
+from zope.component import getUtility, getUtilitiesFor
 from persistent.mapping import PersistentMapping
 
 from silva.core.services.base import SilvaService
-
+from silva.translations import translate as _
 from zeam.form import silva as silvaforms
 
 from interfaces import IContentLayoutService
@@ -45,6 +45,8 @@ class ContentLayoutService(SilvaService):
         """returns the ITemplate with the given name"""
         return getUtility(ITemplate, name)
 
+
+    
 class ContentLayoutMappings(silvaforms.ZMIForm):
     name = 'manage_main'
     grok.name(name)
