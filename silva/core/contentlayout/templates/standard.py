@@ -3,17 +3,21 @@ from five import grok
 from template import Template
 from interfaces import IOneColumn, ITwoColumn
 
-class OneColumnTemplate(Template):
+@grok.global_utility
+class OneColumn(Template):
     grok.implements(IOneColumn)
+    grok.name('silva.core.contentlayout.templates.OneColumn')
 
     name = "One Column"
     description = "a simple one column layout"
     icon = None
     slotnames = ['maincontent']
 
-class TwoColumnTemplate(Template):
+@grok.global_utility
+class TwoColumn(Template):
     grok.implements(ITwoColumn)
-
+    grok.name('silva.core.contentlayout.templates.TwoColumn')
+    
     name = "Two Column"
     description = "a simple two column layout"
     icon = None

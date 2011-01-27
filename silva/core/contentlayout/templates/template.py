@@ -4,10 +4,12 @@ from interfaces import ITemplate, IBaseView
 
 class Template(object):
     """Base class for Content Layout templates.
-       these need to inherit Acquisition.Implicit so they can be
-       part of the acquisition hierarchy"""
+       Templates are global utilities which contain the information
+       for each layout template.  Subclasses of this should be defined
+       as global utilities."""
 
     grok.implements(ITemplate)
+    grok.provides(ITemplate)
     grok.baseclass()
 
     template = None
@@ -21,20 +23,9 @@ class Template(object):
     priority = 50
     slotnames = []
 
-    def getName(self):
-        return self.name
-
-    def getPriority(self):
-        return self.priority
-
-    def getDescription(self):
-        return self.description
-    
-    def getSlotNames(self):
-        return self.slotnames[:]
-    
 class BaseView(object): #BrowserView):
     grok.implements(IBaseView)
+    grok.baseclass()
     
     def __init__(self, context, request):
         #context is an IContentLayoutTemplate

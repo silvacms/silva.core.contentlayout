@@ -23,6 +23,8 @@ setup(name='silva.core.contentlayout',
       zip_safe=False,
       install_requires=[
           'setuptools',
-          'silva.core.interfaces'
+          'silva.core.interfaces',
+          'silva.core.services',
+          'silva.core.conf',
       ],
       )
