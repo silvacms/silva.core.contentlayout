@@ -1,6 +1,7 @@
-from zope.interface import implements
-from zope.app.container.interfaces import IObjectAddedEvent
 from five import grok
+from zope.interface import implements
+from zope.component import getUtility
+from zope.app.container.interfaces import IObjectAddedEvent
 
 from persistent.mapping import PersistentMapping
 from persistent.list import PersistentList
@@ -11,9 +12,14 @@ from OFS.ObjectManager import ObjectManager
 from Products.Silva import SilvaPermissions
 from silva.core.interfaces import IVersion
 
-from interfaces import IContentLayout
+from interfaces import IContentLayout, IContentLayoutService
 
 class ContentLayout(ObjectManager):
+    """A ContentLayout stores the layout template name (z3 utility name)
+       and a set of ContentLayoutParts.  Each part is stored objectmanager-style
+       via setObj.  The relationship between parts and the slots they are in
+       are maintained via persistentmappings of slotname:[partid,].  When the
+       part is actually needed, it is looked up via getOb."""
     """XXX in grok, should this *still* inherit ObjectManager?"""
     grok.implements(IContentLayout)
     grok.baseclass()
@@ -187,13 +193,13 @@ def layout_added(content, event):
         #this should only be None when the content is first created.
         # another possible check would be to see if event.oldName and/or 
         # event.oldParent are None (there was no previous parent, so new object)
-        sct = content.service_content_templates
+        cls = getUtility(IContentLayoutService,context=content)
         orig_content = content
         if IVersion.providedBy(content):
             #the template settings are stored by the VersionedContent meta_type,
             # not the Version meta_type
             content = content.aq_parent
-        default = sct.getDefaultTemplateForMetaType(content.meta_type)
+        default = cls.getDefaultTemplateForMetaType(content.meta_type)
         if not default: #no default is set, so get the first one
-            default = sct.getAllowedTemplatesForMetaType(content.meta_type)[0]
+            default = cls.getAllowedTemplatesForMetaType(content.meta_type)[0]
         orig_content.content_layout_name = default
