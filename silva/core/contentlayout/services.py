@@ -8,6 +8,9 @@ from five import grok
 from zope.component import getUtility, getUtilitiesFor
 from persistent.mapping import PersistentMapping
 
+from AccessControl import ClassSecurityInfo
+
+from Globals import InitializeClass
 from silva.core.services.base import SilvaService
 from silva.translations import translate as _
 from zeam.form import silva as silvaforms
@@ -20,6 +23,8 @@ class ContentLayoutService(SilvaService):
     grok.implements(IContentLayoutService)
     default_service_identifier = 'service_contentlayout'
 
+    security = ClassSecurityInfo()
+    
     manage_options = (
         {'label':'Mappings',
          'action':'manage_main'},
@@ -74,6 +79,7 @@ class ContentLayoutService(SilvaService):
             return [ t[0] for t in self.getTemplateTuples() ]
         return allowed
 
+InitializeClass(ContentLayoutService)
 
     
 class ContentLayoutMappings(silvaforms.ZMIForm):

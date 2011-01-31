@@ -18,4 +18,3 @@ class IContentLayout(Interface):
     def getPartsForSlot(slot):
         """@slot - name of a slot for the current layout
            returns the list of parts in the specified slot"""
-        
