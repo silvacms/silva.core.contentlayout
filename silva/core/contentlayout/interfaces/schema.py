@@ -10,7 +10,7 @@ from silva.core.contentlayout.interfaces.services import IContentLayoutService
 
 @grok.provider(IContextSourceBinder)
 def templates_source(context):
-    cls = getUtility(IContentLayoutService, context=context)
+    cls = getUtility(IContentLayoutService)
     templates = cls.getTemplates()
     contents = []
     for t in templates:

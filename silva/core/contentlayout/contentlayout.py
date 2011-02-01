@@ -193,7 +193,7 @@ def layout_added(content, event):
         #this should only be None when the content is first created.
         # another possible check would be to see if event.oldName and/or 
         # event.oldParent are None (there was no previous parent, so new object)
-        cls = getUtility(IContentLayoutService,context=content)
+        cls = getUtility(IContentLayoutService)
         orig_content = content
         if IVersion.providedBy(content):
             #the template settings are stored by the VersionedContent meta_type,
