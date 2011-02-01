@@ -6,7 +6,8 @@ class Template(object):
     """Base class for Content Layout templates.
        Templates are global utilities which contain the information
        for each layout template.  Subclasses of this should be defined
-       as global utilities."""
+       as global utilities.
+    """
 
     grok.implements(ITemplate)
     grok.provides(ITemplate)
@@ -17,7 +18,7 @@ class Template(object):
     description = "Base for Content Layout Templates"
     icon = None
     #the heading level for page titles (if the layout has one)
-    titleHeadingLevel = 3
+    title_heading_level = 3
     #set default priority to low priority (higher number = lower priority)
     #in this way, institional templates can have higher priority
     priority = 50
@@ -34,10 +35,10 @@ class BaseView(object): #BrowserView):
         #filled when __call__ is called
         self.content_layout = None
         
-    def inLayoutEditor(self):
+    def in_layout_editor(self):
         return IContentLayoutEditorLayer.providedBy(self.request)
 
-    def getParts(self, slot, wrapClass=None):
+    def get_parts(self, slot, wrapClass=None):
         html = []
         
         """choose the interface depending on whether we are in 
@@ -68,8 +69,8 @@ class BaseView(object): #BrowserView):
         
         return [before, html, after]
     
-    def renderParts(self, slot, wrapClass=None):
-        parts = self.getParts(slot, wrapClass=wrapClass)
+    def render_parts(self, slot, wrapClass=None):
+        parts = self.get_parts(slot, wrapClass=wrapClass)
         ret = ''
         for p in parts:
             ret += '\n'.join(p) + '\n'
@@ -81,7 +82,7 @@ class BaseView(object): #BrowserView):
         return ret or ' '
     
 #    def renderPart(self, part, slot, interface = IContentLayoutPartView, wrapClass=None):
-    def renderPart(self, part, slot, interface, wrapClass=None):
+    def render_part(self, part, slot, interface, wrapClass=None):
         """this method will render the part using
            it's IContentLayoutPartViewWidget or IContentLayoutPartView"""
             
@@ -89,7 +90,7 @@ class BaseView(object): #BrowserView):
                              interface=interface)
         return ad(slot, self.content_layout, wrapClass=wrapClass)
     
-    def renderPageTitle(self):
+    def render_page_title(self):
         """Depending on whether self is an IContentLayoutEditView or an
            IContentLayoutView, this method will render the page title
            as an editable widget or the public view of the title"""

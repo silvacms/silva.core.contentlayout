@@ -34,22 +34,22 @@ class ExternalSourcePart(SimpleItem):
                          str(time.time()) + \
                          str(random.randint(-1000000,1000000)))
         
-    security.declareProtected(SilvaPermissions.ChangeSilvaContent, "setConfig")
-    def setConfig(self, config):
+    security.declareProtected(SilvaPermissions.ChangeSilvaContent, "set_config")
+    def set_config(self, config):
         self._config = config
         
-    security.declareProtected(SilvaPermissions.ReadSilvaContent, "getName")
-    def getName(self):
+    security.declareProtected(SilvaPermissions.ReadSilvaContent, "get_name")
+    def get_name(self):
         return self._name
         
-    security.declareProtected(SilvaPermissions.ReadSilvaContent, "getConfig")
-    def getConfig(self, copy=False):
+    security.declareProtected(SilvaPermissions.ReadSilvaContent, "get_config")
+    def get_config(self, copy=False):
         if copy:
             return dict(self._config)
         return self._config
     
-    security.declareProtected(SilvaPermissions.ReadSilvaContent, "getKey")
-    def getKey(self):
+    security.declareProtected(SilvaPermissions.ReadSilvaContent, "get_key")
+    def get_key(self):
         return self._key
     
 InitializeClass(ExternalSourcePart)
@@ -79,15 +79,17 @@ class ExternalSourcePartEditWidget(BasePartEditWidget, grok.View):
        IExternalSource,IContentLayout...
        Unfortunately, grok.View's only provide Interface, so they
        cannot be looked up by interface.  Instead they need to be
-       looked up by their name. (found in grokcore.views.meta.view)"""
+       looked up by their name. (found in grokcore.views.meta.view)
+    """
     grok.context(IExternalSource)
     grok.require('silva.ChangeSilvaContent')
     
     def default_namespace(self):
         """Since grok stupidly (ha!) doesn't by default pass parameters
-        to the template (via calling the template with a list of params), 
-        they aren't by default accessible through 'options' (it is always
-        empty).  So override it here"""
+           to the template (via calling the template with a list of params), 
+           they aren't by default accessible through 'options' (it is always
+           empty).  So override it here
+        """
         ns = super(ExternalSourcePartEditWidget,self).default_namespace()
         ns['options'] = self.options
         ns['content'] = self.content

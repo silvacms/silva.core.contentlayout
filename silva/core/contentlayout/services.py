@@ -36,28 +36,31 @@ class ContentLayoutService(SilvaService):
         super(ContentLayoutService, self).__init__(id)
         self._content_mapping = PersistentMapping()
         
-    security.declareProtected('Access contents information', 'getTemplates')
-    def getTemplates(self):
-        """return all registered ITemplates"""
+    security.declareProtected('Access contents information', 'get_templates')
+    def get_templates(self):
+        """return all registered ITemplates
+        """
         return getUtilitiesFor(ITemplate)
     
     security.declareProtected('Access contents information', 
-                              'getSortedTemplates')
-    def getSortedTemplates(self):
-        """returns the list of templates, sorted by their priority"""
+                              'get_sorted_templates')
+    def get_sorted_templates(self):
+        """returns the list of templates, sorted by their priority
+        """
         templates = [ (t[1].priority, t[1].name, t[0], t)  for \
-                      t in self.getTemplates() ]
+                      t in self.get_templates() ]
         return [ t[-1] for t in sorted(templates) ]
     
     security.declareProtected('Access contents information', 
-                              'getTemplateByName')
-    def getTemplateByName(self, name):
-        """returns the ITemplate with the given name"""
+                              'get_template_by_name')
+    def get_template_by_name(self, name):
+        """returns the ITemplate with the given name
+        """
         return getUtility(ITemplate, name)
     
     security.declareProtected('Access contents information', 
-                              'getDefaultTemplateForMetaType')
-    def getDefaultTemplateForMetaType(self, meta_type):
+                              'get_default_template_for_meta_type')
+    def get_default_template_for_meta_type(self, meta_type):
         """return the default template for ``meta_type``
         """
         logger.info("no default templates yet")
@@ -66,17 +69,17 @@ class ContentLayoutService(SilvaService):
             return self._content_template_mapping[meta_type].get('default', None)
         
     security.declareProtected('Access contents information',
-                              'getAllowedTemplatesForMetaType')
-    def getAllowedTemplatesForMetaType(self, meta_type):
+                              'get_allowed_templates_for_meta_type')
+    def get_allowed_templates_for_meta_type(self, meta_type):
         """return the list of allowed templates for ``meta_type``
         """
         logger.info("allowed templates not configured yet")
         #for now, just return the first template
-        return self.getSortedTemplates()[0]
+        return self.get_sorted_templates()[0]
         
         allowed = self._content_template_mapping.get(meta_type,{}).get('allowed',[])
         if not allowed:
-            return [ t[0] for t in self.getTemplateTuples() ]
+            return [ t[0] for t in self.get_templateTuples() ]
         return allowed
 
 InitializeClass(ContentLayoutService)
@@ -101,6 +104,6 @@ class ContentLayoutMappings(silvaforms.ZMIForm):
         from interfaces import *
         from zope.component import getUtility
         super(ContentLayoutMappings, self).update()
-        self.templates = self.context.getTemplates()
+        self.templates = self.context.get_templates()
 
         

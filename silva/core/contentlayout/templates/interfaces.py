@@ -3,54 +3,40 @@ from zope.interface import Interface
 class ITemplate(Interface):
    
    def getName(self):
-      """return user-friendly name of template"""
+      """return user-friendly name of template
+      """
 
    def getDescription(self):
-      """return description of template"""
+      """return description of template
+      """
         
    def getIcon(self):
-      """return icon representing template"""
+      """return icon representing template
+      """
 
       
       
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+#XXX the following are not ported yet
 class IBaseView(Interface):
    """base interface for both public and edit views of 
       layout templates"""
    
-   def inLayoutEditor():
+   def in_layout_editor():
       """returns True if the current request is actually "in"
          the layout editor (i.e. request provides IContentLayoutEditorLayer)
       """
       
-   def renderParts(slot):
+   def render_parts(slot):
       """renders the parts for the slot
       """
       
-   def renderPart(part, slot):
+   def render_part(part, slot):
       """renders the part for the slot.  Based on the view's interface
          (view or edit view, below), will render using IContentLayoutPartView
          or IContentLayoutPartViewWidget
       """
       
-   def renderPageTitle():
+   def render_page_title():
       """similar to renderPart, renders the page title either as 
          public view or edit viewwidget
       """
@@ -67,12 +53,15 @@ class IPublicView(IBaseView):
 class IEditView(IBaseView):
    """Interface for edit views of layout templates
       (this view renders the content layout using the layout's
-      template for display in the SMI"""
+      template for display in the SMI
+   """
 
 
 class IOneColumn(ITemplate):
-   """Interface for basic 'one column' template"""
+   """Interface for basic 'one column' template
+   """
 
 class ITwoColumn(ITemplate):
-   """Interface for basic 'two column' template"""
+   """Interface for basic 'two column' template
+   """
 

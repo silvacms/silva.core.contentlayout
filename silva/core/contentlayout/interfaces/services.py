@@ -13,7 +13,7 @@ class IContentLayoutService(ISilvaLocalService):
         tab in the ZMI
         """
         
-    def registerTemplates(meta_type, templates):
+    def register_templates(meta_type, templates):
         """set the allowed and default templates for ``meta_type``.
         ``templates`` is mapping of 
           {default: default template,
@@ -21,39 +21,40 @@ class IContentLayoutService(ISilvaLocalService):
            }
         """
     
-    def getAllowedTemplatesForMetaType(meta_type):
+    def get_allowed_templates_for_meta_type(meta_type):
         """return the list of allowed templates for ``meta_type``
         """
         
-    def getDefaultTemplateForMetaType(meta_type):
+    def get_default_template_for_meta_type(meta_type):
         """return the default template for ``meta_type``
         """
     
-    def getFormulatorTemplateTuples(meta_type):
+    def get_formulator_template_tuples(meta_type):
         """returns a list of [utility name, template name, description] 
            for the purpose of generating lists of templates.  Useful for 
            zope 2 page templates.
            If meta_type is passed in, restricts the list to just those
-             allowed for that meta_type"""
+             allowed for that meta_type
+        """
 
-    def getTemplateTuples():
+    def get_template_tuples():
         """returns a generator of [utility name, template name, description] for the purpose
            of generating lists of templates.  Useful for zope 2 page templates
         """
  
-    def getTemplates(self):
+    def get_templates(self):
         """returns a generator of [ utility name, template instance ]
         """
         
-    def getTemplateByName(name):
+    def get_template_by_name(name):
         """get a ContentLayoutTemplate by it's utility name
         """
     
-    def supportsContentLayout(meta_type):
+    def supports_content_layout(meta_type):
         """returns True if meta_type supports Content Layout
            (i.e. it implements IContentLayout or IVersionedContentLayout)
         """
         
-    def getSupportingMetaTypes():
+    def get_supporting_meta_types():
         """returns a list of meta_types which support content layout
         """

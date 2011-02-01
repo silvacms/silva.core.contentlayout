@@ -10,8 +10,11 @@ from silva.core.contentlayout.interfaces.services import IContentLayoutService
 
 @grok.provider(IContextSourceBinder)
 def templates_source(context):
+    """Source/Vocabulary for all templates
+    """
+    #XXX this should be converted to get all templates allowed for metatype
     cls = getUtility(IContentLayoutService)
-    templates = cls.getTemplates()
+    templates = cls.get_templates()
     contents = []
     for t in templates:
         contents.append(SimpleTerm(
@@ -21,7 +24,8 @@ def templates_source(context):
     return SimpleVocabulary(contents)
 
 class ITemplateSchema(Interface):
-    """Schema for the Silva Page add screen"""
+    """Schema for the Silva Page add screen
+    """
     template = schema.Choice(
             title=_(u"Content Layout Template"),
             description=_(u"The content layout template to use"),

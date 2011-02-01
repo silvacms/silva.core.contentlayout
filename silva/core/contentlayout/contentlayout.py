@@ -19,7 +19,8 @@ class ContentLayout(ObjectManager):
        and a set of ContentLayoutParts.  Each part is stored objectmanager-style
        via setObj.  The relationship between parts and the slots they are in
        are maintained via persistentmappings of slotname:[partid,].  When the
-       part is actually needed, it is looked up via getOb."""
+       part is actually needed, it is looked up via getOb.
+    """
     """XXX in grok, should this *still* inherit ObjectManager?"""
     grok.implements(IContentLayout)
     grok.baseclass()
@@ -34,36 +35,37 @@ class ContentLayout(ObjectManager):
         self.content_layout_name = None
         
     security.declareProtected(SilvaPermissions.AccessContentsInformation,
-                              "getLayoutName")
-    def getLayoutName(self):
+                              "get_layout_name")
+    def get_layout_name(self):
         return self.content_layout_name
     
     security.declareProtected(SilvaPermissions.AccessContentsInformation,
-                              "getSlot")
-    def getSlot(self, slotname, create=True):
+                              "get_slot")
+    def get_slot(self, slotname, create=True):
         """get the slot with name `slotname`.  If `create` is true (default),
            and there is no slot with given name, create the slot (i.e.
            PersistentList).  If false, return false.  This enables tests
-           like (does the slot exist?) without side-effects."""
+           like (does the slot exist?) without side-effects.
+        """
         if create and not self.content_slots.has_key(slotname):
             self.content_slots[slotname] = PersistentList()
         return self.content_slots.get(slotname, None)
 
     security.declareProtected(SilvaPermissions.AccessContentsInformation,
-                              "getSlotNameForPart")
-    def getSlotNameForPart(self, part):
+                              "get_slot_name_for_part")
+    def get_slot_name_for_part(self, part):
         return self.content_parts[part.getKey()]
 
     security.declareProtected(SilvaPermissions.ChangeSilvaContent,
-                              "addPartToSlot")
-    def addPartToSlot(self, part, slotname, beforepartkey=None):
+                              "add_part_to_slot")
+    def add_part_to_slot(self, part, slotname, beforepartkey=None):
         if not IContentLayoutPart.providedBy(part):
             raise AttributeError("Invalid part assignment")
         if not slotname:
             raise TypeError('slotname cannot be nothing')
         if hasattr(part, 'aq_base'):
             part = part.aq_base
-        partkey = part.getKey()
+        partkey = part.get_key()
         
         if self.content_parts.get(partkey, slotname) is not slotname:
             raise TypeError('Part already exists in another slot')
@@ -71,7 +73,7 @@ class ContentLayout(ObjectManager):
         #if the part exists, just update the slotname
         # (this can happen if the part is moving slots)
         self.content_parts[partkey] = slotname
-        slot = self.getSlot(slotname)
+        slot = self.get_slot(slotname)
         #remove the partkey if it was already in the slot
         if partkey in slot:
             del slot[slot.index(partkey)]
@@ -86,49 +88,51 @@ class ContentLayout(ObjectManager):
         return part
         
     security.declareProtected(SilvaPermissions.ChangeSilvaContent,
-                              "removePart")
-    def removePart(self, partkey):
+                              "remove_part")
+    def remove_part(self, partkey):
         slotname = self.content_parts[partkey]
         del self.content_parts[partkey]
-        slot = self.getSlot(slotname)
+        slot = self.get_slot(slotname)
         del slot[slot.index(partkey)]
         self._delObject(str(partkey))
         
     security.declareProtected(SilvaPermissions.ChangeSilvaContent,
-                              "movePartToSlot")
-    def movePartToSlot(self, partkey, slotname, beforepartkey=None):
-        #remove the part from the part's old slot
-        # add part to the new slot
-        #[part, slot]
+                              "move_part_to_slot")
+    def move_part_to_slot(self, partkey, slotname, beforepartkey=None):
+        """Moving an existing part to a new slot, using this algorithm:
+                remove the part from the part's old slot
+                add part to the new slot
+                [part, slot]
+        """
         oldslotname = self.content_parts[partkey]
-        oldSlot = self.getSlot(oldslotname)
+        oldSlot = self.get_slot(oldslotname)
         del oldSlot[oldSlot.index(partkey)]
         part = getattr(self.aq_explicit, str(partkey))
         del self.content_parts[partkey]
-        self.addPartToSlot(part, slotname, beforepartkey)
+        self.add_part_to_slot(part, slotname, beforepartkey)
      
     security.declareProtected(SilvaPermissions.AccessContentsInformation,
-                              "getPartsForSlot")
-    def getPartsForSlot(self, slot):
-        slot = self.getSlot(slot)
-        #this returns a list generator
+                              "get_parts_for_slot")
+    def get_parts_for_slot(self, slot):
+        """get all parts in slot, returning as a list generator"""
+        slot = self.get_slot(slot)
         return ( getattr(self.aq_explicit, str(partkey)) for partkey in slot )
     
     security.declareProtected(SilvaPermissions.AccessContentsInformation,
-                              "getPart")
-    def getPart(self, partkey):
+                              "get_part")
+    def get_part(self, partkey):
         return getattr(self.aq_explicit, str(partkey), None)
     
     
     security.declareProtected(SilvaPermissions.AccessContentsInformation,
-                              "getParts")
-    # Return all parts
-    def getParts(self):
+                              "get_parts")
+    def get_parts(self):
+        """get all all parts"""
         return ( getattr(self.aq_explicit, str(partkey)) for partkey in self.content_parts )
     
     security.declareProtected(SilvaPermissions.ChangeSilvaContent,
-                              "switchTemplate")
-    def switchTemplate(self, newTemplateName):
+                              "switch_template")
+    def switch_template(self, newTemplateName):
         """Switch the template to newTemplate. 
            - first get the template from service_content_templates
              (raise error if not found)
@@ -136,10 +140,11 @@ class ContentLayout(ObjectManager):
              1) for each slot in oldTemplate, move the parts to the slot with the
                 same index (in the new template's slot list).
              2) Any slots in oldTemplate which don't have a corresponding slot
-                in newTemplate are placed in the last slot in newTemplate"""
+                in newTemplate are placed in the last slot in newTemplate
+        """
         #XXX this needs to be fixed
-        newTemplate = self.service_content_templates.getTemplateByName(newTemplateName)
-        oldTemplate = self.service_content_templates.getTemplateByName(self.content_layout_name)
+        newTemplate = self.service_content_templates.get_template_by_name(newTemplateName)
+        oldTemplate = self.service_content_templates.get_template_by_name(self.content_layout_name)
         newSlots = PersistentMapping()
         newNames = newTemplate.slotnames[:]
         #pull the keys from the model's slotnames rather than the slotnames

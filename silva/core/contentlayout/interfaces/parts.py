@@ -12,14 +12,17 @@ class IPartFactory(Interface):
 
 class IPart(Interface):
     """An interface for objects that are "parts" in a content
-       layout slot"""
+       layout slot
+    """
     
     def getKey():
-        """returns a unique integer key identifying this external source"""
+        """returns a unique integer key identifying this external source
+        """
 
 class IExternalSourcePart(IPart):
     """An interface for objects that are "parts" in a content
-       layout slot which represent external source data"""
+       layout slot which represent external source data
+    """
     
     def getName():
         """return the name of the external source for this part
@@ -37,7 +40,8 @@ class IExternalSourcePart(IPart):
 class IPartEditWidget(Interface):    
     """ interface for adapters that render the edit view of 
         content layout parts (allowing authors to change
-        the IPart"""
+        the IPart
+    """
     
     def __call__(model, mode, slotname, partkey, partconfig):
         """render the edit view for a contentlayout part.

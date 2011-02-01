@@ -5,7 +5,7 @@
       metal:use-macro="context/@@standard_macros/page">
   <body>
     <div metal:fill-slot="body"
-      tal:define="templates context/getTemplates">
+      tal:define="templates context/get_templates">
       <p class="system-msg"
          tal:condition="view/status"
          tal:content="view/status">Status</p>
