@@ -22,6 +22,9 @@ class Installer(DefaultInstaller):
         if CLS.default_service_identifier not in root.objectIds():
             factory.manage_addContentLayoutService(CLS.default_service_identifier)
         super(Installer, self).install(root)
+# once sticky content is created...
+#    root.manage_permission('Add Silva Sticky Content Services', roleinfo.CHIEF_ROLES)
+
 
     def uninstall(self, root):
         if CLS.default_service_identifier in root.objectIds():
