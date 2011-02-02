@@ -14,10 +14,16 @@ from Products.Silva import SilvaPermissions
 from Products.SilvaExternalSources.interfaces import IExternalSource
 from Products.SilvaExternalSources.ExternalSource import ExternalSource
 
-from interfaces import (IExternalSourcePart, IPartFactory, IPartEditWidget,
-                        IContentLayout)
+from silva.core.contentlayout.interfaces import (IExternalSourcePart, 
+                                                 IPartFactory, IPartEditWidget,
+                                                 IContentLayout)
 
 class ExternalSourcePart(SimpleItem):
+    """An ExternalSourcePart represents a "part" in a content layout slot
+       which is defined by the settings for the specified external source.
+       The rendered part should be simply the rendered external source.
+    """
+
     meta_type = "External Source Part"
     grok.implements(IExternalSourcePart)
     security = ClassSecurityInfo()
@@ -55,6 +61,8 @@ class ExternalSourcePart(SimpleItem):
 InitializeClass(ExternalSourcePart)
 
 class PartFactory(grok.Adapter):
+    """The base class for factories which create a specific type of part"""
+    
     grok.baseclass()
     grok.provides(IPartFactory)
     def __init__(self, source):
@@ -66,10 +74,16 @@ class PartFactory(grok.Adapter):
 class ExternalSourcePartFactory(PartFactory):
     grok.context(IExternalSource)
     def create(self, result):
-        "Actually create an external source part for the source"
+        """Actually create an ExternalSourcePart for the result (which is the
+           validated results dictionary for an external source
+        """
         return ExternalSourcePart(self.source.id, result)
     
 class BasePartEditWidget(object):
+    """ base class mixin for adapters which render the edit view of 
+        content layout parts (allowing authors to change
+        the IPart
+    """
     grok.implements(IPartEditWidget)
     grok.name('part-edit-widget')
 
@@ -92,15 +106,20 @@ class ExternalSourcePartEditWidget(BasePartEditWidget, grok.View):
         """
         ns = super(ExternalSourcePartEditWidget,self).default_namespace()
         ns['options'] = self.options
-        ns['content'] = self.content
+        ns['contentlayout'] = self.content
         return ns
     
-    def __call__(self, content, mode='add', slotname=None, partkey=None, 
+    def __call__(self, contentlayout, mode='add', slotname=None, partkey=None, 
                  partconfig=None, submitButtonName=None, from_request=False,
                  suppressFormTag=True, submitOnTop=False):
+        """Call the edit widget. ``self.context`` is an IExternalSource,
+           self.contentlayout is the model containing the part (this could be
+           an IContentLayout or an IPageAsset.
+        """
+           
         if partkey:
             partkey = int(partkey)
-        self.content = content
+        self.contentlayout = contentlayout
         self.options = {
             'mode':mode,
             'slotname':slotname,

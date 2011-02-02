@@ -15,8 +15,8 @@ from silva.core.services.base import SilvaService
 from silva.translations import translate as _
 from zeam.form import silva as silvaforms
 
-from interfaces import IContentLayoutService
-from templates.interfaces import ITemplate
+from silva.core.contentlayout.interfaces import IContentLayoutService
+from silva.core.contentlayout.templates.interfaces import ITemplate
 
 class ContentLayoutService(SilvaService):
     meta_type = 'Silva Content Layout Service'

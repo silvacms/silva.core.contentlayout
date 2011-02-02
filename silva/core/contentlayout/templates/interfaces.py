@@ -1,20 +1,24 @@
-from zope.interface import Interface
+from zope.interface import Interface, Attribute
 
 class ITemplate(Interface):
    
-   def getName(self):
-      """return user-friendly name of template
-      """
+   name = Attribute("user-friendly name of template")
+   description = Attribute("a description of the template")
+   icon = Attribute("relative path to an icom representing the template")
+   title_heading_level = Attribute(("heading level for page titles, if the "
+                                    "tempalte has a page title"))
+   priority = Attribute(("The priority of the the template.is used to sort "
+                         "lists of templates."))
+   slotnames = Attribute("The list of slot names in this template")
+   
 
-   def getDescription(self):
-      """return description of template
-      """
-        
-   def getIcon(self):
-      """return icon representing template
-      """
+class IOneColumn(ITemplate):
+   """Interface for basic 'one column' template
+   """
 
-      
+class ITwoColumn(ITemplate):
+   """Interface for basic 'two column' template
+   """
       
 #XXX the following are not ported yet
 class IBaseView(Interface):
@@ -54,14 +58,5 @@ class IEditView(IBaseView):
    """Interface for edit views of layout templates
       (this view renders the content layout using the layout's
       template for display in the SMI
-   """
-
-
-class IOneColumn(ITemplate):
-   """Interface for basic 'one column' template
-   """
-
-class ITwoColumn(ITemplate):
-   """Interface for basic 'two column' template
    """
 

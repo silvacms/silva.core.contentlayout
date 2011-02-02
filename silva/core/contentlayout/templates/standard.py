@@ -1,7 +1,8 @@
 from five import grok
 
-from template import Template
-from interfaces import IOneColumn, ITwoColumn
+from silva.core.contentlayout.templates.template import Template
+from silva.core.contentlayout.templates.interfaces import (IOneColumn, 
+                                                           ITwoColumn)
 
 @grok.global_utility
 class OneColumn(Template):

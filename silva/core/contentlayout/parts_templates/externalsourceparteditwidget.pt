@@ -79,7 +79,7 @@
          tal:condition="required">*</span>
        <p tal:condition="desc"
           tal:content="desc"
-	  style="text-align:left;" />
+          style="text-align:left;" />
       </div>
       <input tal:condition="python:options['from_request']"
         tal:replace="structure python:field.render_from_request(request)" />

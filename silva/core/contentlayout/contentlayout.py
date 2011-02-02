@@ -12,7 +12,8 @@ from OFS.ObjectManager import ObjectManager
 from Products.Silva import SilvaPermissions
 from silva.core.interfaces import IVersion
 
-from interfaces import IContentLayout, IContentLayoutService
+from silva.core.contentlayout.interfaces import (IContentLayout, 
+                                                 IContentLayoutService)
 
 class ContentLayout(ObjectManager):
     """A ContentLayout stores the layout template name (z3 utility name)
@@ -44,7 +45,7 @@ class ContentLayout(ObjectManager):
     def get_slot(self, slotname, create=True):
         """get the slot with name `slotname`.  If `create` is true (default),
            and there is no slot with given name, create the slot (i.e.
-           PersistentList).  If false, return false.  This enables tests
+           PersistentList).  If false, return false.  This enables checks
            like (does the slot exist?) without side-effects.
         """
         if create and not self.content_slots.has_key(slotname):
@@ -116,7 +117,8 @@ class ContentLayout(ObjectManager):
     def get_parts_for_slot(self, slot):
         """get all parts in slot, returning as a list generator"""
         slot = self.get_slot(slot)
-        return ( getattr(self.aq_explicit, str(partkey)) for partkey in slot )
+        return ( getattr(self.aq_explicit, str(partkey)) \
+                 for partkey in slot )
     
     security.declareProtected(SilvaPermissions.AccessContentsInformation,
                               "get_part")
@@ -128,7 +130,8 @@ class ContentLayout(ObjectManager):
                               "get_parts")
     def get_parts(self):
         """get all all parts"""
-        return ( getattr(self.aq_explicit, str(partkey)) for partkey in self.content_parts )
+        return ( getattr(self.aq_explicit, str(partkey)) \
+                 for partkey in self.content_parts )
     
     security.declareProtected(SilvaPermissions.ChangeSilvaContent,
                               "switch_template")
@@ -142,7 +145,6 @@ class ContentLayout(ObjectManager):
              2) Any slots in oldTemplate which don't have a corresponding slot
                 in newTemplate are placed in the last slot in newTemplate
         """
-        #XXX this needs to be fixed
         newTemplate = self.service_content_templates.get_template_by_name(newTemplateName)
         oldTemplate = self.service_content_templates.get_template_by_name(self.content_layout_name)
         newSlots = PersistentMapping()
@@ -204,7 +206,7 @@ def layout_added(content, event):
             #the template settings are stored by the VersionedContent meta_type,
             # not the Version meta_type
             content = content.aq_parent
-        default = cls.getDefaultTemplateForMetaType(content.meta_type)
+        default = cls.get_default_template_for_meta_type(content.meta_type)
         if not default: #no default is set, so get the first one
-            default = cls.getAllowedTemplatesForMetaType(content.meta_type)[0]
+            default = cls.get_allowed_templates_for_meta_type(content.meta_type)[0]
         orig_content.content_layout_name = default

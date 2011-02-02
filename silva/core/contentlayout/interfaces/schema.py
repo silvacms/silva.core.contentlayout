@@ -32,3 +32,4 @@ class ITemplateSchema(Interface):
             source=templates_source,
     )
 
+__all__ = ['ITemplateSchema']

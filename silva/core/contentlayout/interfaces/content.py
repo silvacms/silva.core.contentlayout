@@ -22,3 +22,5 @@ class IContentLayout(Interface):
         """@slot - name of a slot for the current layout
            returns the list of parts in the specified slot
         """
+
+__all__ = ['IVersionedContentLayout','IContentLayout']

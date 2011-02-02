@@ -58,3 +58,5 @@ class IContentLayoutService(ISilvaLocalService):
     def get_supporting_meta_types():
         """returns a list of meta_types which support content layout
         """
+        
+__all__ = ['IContentLayoutService']

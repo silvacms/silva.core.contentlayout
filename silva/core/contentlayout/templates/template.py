@@ -13,6 +13,7 @@ class Template(object):
     grok.provides(ITemplate)
     grok.baseclass()
 
+    #XXX what is 'template'?
     template = None
     name = "Base for Content Layout Templates"
     description = "Base for Content Layout Templates"
@@ -24,6 +25,7 @@ class Template(object):
     priority = 50
     slotnames = []
 
+#XXX the following hasn't been implemented
 class BaseView(object): #BrowserView):
     grok.implements(IBaseView)
     grok.baseclass()

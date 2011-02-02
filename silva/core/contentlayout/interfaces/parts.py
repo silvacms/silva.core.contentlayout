@@ -15,7 +15,7 @@ class IPart(Interface):
        layout slot
     """
     
-    def getKey():
+    def get_key():
         """returns a unique integer key identifying this external source
         """
 
@@ -24,16 +24,16 @@ class IExternalSourcePart(IPart):
        layout slot which represent external source data
     """
     
-    def getName():
+    def get_name():
         """return the name of the external source for this part
         """
         
-    def setConfig(config):
+    def set_config(config):
         """update this part's configuration dictionary,
         which stores the parameters for this external source part
         """
         
-    def getConfig():
+    def get_config():
         """return the configuration dictionary
         """
         
@@ -61,3 +61,5 @@ class IPartEditWidget(Interface):
         ``submitOnTop`` boolean indicating whether to place a submit button
                         above the form inputs in addition to below
         """
+        
+__all__ = ['IPartFactory', 'IPart', 'IExternalSourcePart', 'IPartEditWidget']
