@@ -61,5 +61,10 @@ class IPartEditWidget(Interface):
         ``submitOnTop`` boolean indicating whether to place a submit button
                         above the form inputs in addition to below
         """
-        
-__all__ = ['IPartFactory', 'IPart', 'IExternalSourcePart', 'IPartEditWidget']
+
+class IRichTextExternalSource(Interface):
+    """ marker interface for the "rich text" external source, manually add
+        this to that external source"""
+
+__all__ = ['IPartFactory', 'IPart', 'IExternalSourcePart', 'IPartEditWidget',
+           'IRichTextExternalSource']

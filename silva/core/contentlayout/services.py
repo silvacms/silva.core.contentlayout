@@ -9,8 +9,8 @@ from zope.component import getUtility, getUtilitiesFor
 from persistent.mapping import PersistentMapping
 
 from AccessControl import ClassSecurityInfo
+from App.class_init import InitializeClass
 
-from Globals import InitializeClass
 from silva.core.services.base import SilvaService
 from silva.translations import translate as _
 from zeam.form import silva as silvaforms

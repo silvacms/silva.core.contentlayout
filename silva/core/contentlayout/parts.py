@@ -8,7 +8,7 @@ from persistent.mapping import PersistentMapping
 
 from OFS.SimpleItem import SimpleItem
 from AccessControl import ClassSecurityInfo
-from Globals import InitializeClass
+from App.class_init import InitializeClass
 
 from Products.Silva import SilvaPermissions
 from Products.SilvaExternalSources.interfaces import IExternalSource

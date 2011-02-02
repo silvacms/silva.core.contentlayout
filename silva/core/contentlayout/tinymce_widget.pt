@@ -1,0 +1,10 @@
+<tal:repl replace='structure string:<script type="text/javascript">' />
+tinyMCE.init({
+ elements: "<span tal:replace="options/key" />",
+ content_css: "<span tal:replace="options/field/globals/tinymce_content.css/absolute_url" />",
+ <span tal:replace="options/field/tinyMCE_properties"/>
+});
+<tal:repl replace='structure string:</script>' /><textarea class="mceEditor" style="width: 99%;height: 1px;visibility: hidden"
+ tal:attributes="name options/key;
+                 id options/key"
+ tal:content="options/value"></textarea>

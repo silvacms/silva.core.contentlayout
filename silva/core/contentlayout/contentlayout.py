@@ -6,7 +6,7 @@ from zope.app.container.interfaces import IObjectAddedEvent
 from persistent.mapping import PersistentMapping
 from persistent.list import PersistentList
 from AccessControl import ClassSecurityInfo
-from Globals import InitializeClass
+from App.class_init import InitializeClass
 from OFS.ObjectManager import ObjectManager
 
 from Products.Silva import SilvaPermissions

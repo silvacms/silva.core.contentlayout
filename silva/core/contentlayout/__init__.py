@@ -3,7 +3,7 @@
 from silva.core import conf as silvaconf
 from silva.core.conf.installer import DefaultInstaller
 from zope.interface import Interface
-
+import tinymce_field
 
 silvaconf.extensionName("silva.core.contentlayout")
 silvaconf.extensionTitle("Silva Content Layout Base")

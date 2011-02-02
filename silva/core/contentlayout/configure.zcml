@@ -10,4 +10,12 @@
 
   <grok:grok package="." />
 
+  <!-- adapter/view to render the tinymce field -->
+  <adapter
+    for="silva.core.contentlayout.interfaces.ITinyMCEWidget"
+    provides="silva.core.contentlayout.interfaces.IFormulatorWidgetView"
+    factory="silva.core.contentlayout.tinymce_field.TinyMCEWidgetView"
+    permission="zope.Public"
+  />
+  
 </configure>
