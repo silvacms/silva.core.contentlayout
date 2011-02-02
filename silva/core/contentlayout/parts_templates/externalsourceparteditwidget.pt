@@ -1,4 +1,4 @@
-<tal:init define="baseurl content/absolute_url;
+<tal:init define="baseurl contentlayout/absolute_url;
                   mode options/mode;
                   partconfig options/partconfig">
 <div class="header-title">

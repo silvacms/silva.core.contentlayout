@@ -106,7 +106,7 @@ class ExternalSourcePartEditWidget(BasePartEditWidget, grok.View):
         """
         ns = super(ExternalSourcePartEditWidget,self).default_namespace()
         ns['options'] = self.options
-        ns['contentlayout'] = self.content
+        ns['contentlayout'] = self.contentlayout
         return ns
     
     def __call__(self, contentlayout, mode='add', slotname=None, partkey=None, 
