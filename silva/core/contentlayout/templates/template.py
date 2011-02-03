@@ -4,17 +4,17 @@ from interfaces import ITemplate, IBaseView
 
 class Template(object):
     """Base class for Content Layout templates.
-       Templates are global utilities which contain the information
-       for each layout template.  Subclasses of this should be defined
-       as global utilities.
+       Templates are global utilities providing ITemplate which contain the 
+       information for each layout template.  Subclasses of this should be 
+       defined as global utilities.
+       
+       Public/Preview and Edit views are registered on these Templates.
     """
 
     grok.implements(ITemplate)
     grok.provides(ITemplate)
     grok.baseclass()
 
-    #XXX what is 'template'?
-    template = None
     name = "Base for Content Layout Templates"
     description = "Base for Content Layout Templates"
     icon = None
@@ -26,7 +26,7 @@ class Template(object):
     slotnames = []
 
 #XXX the following hasn't been implemented
-class BaseView(object): #BrowserView):
+class BaseView(GrokViewSupport):
     grok.implements(IBaseView)
     grok.baseclass()
     
@@ -110,3 +110,11 @@ class BaseView(object): #BrowserView):
         #stuff this into the context of the content_layout)
         self = self.__of__(content_layout)
         return self.template()
+    
+class PublicView(BaseView):
+    grok.implements(IPublicView)
+    grok.provides(IPublicView)
+    
+class EditView(BaseView):
+    grok.implements(IEditView)
+    grok.provides(IEditView)

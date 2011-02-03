@@ -16,7 +16,8 @@ from Products.SilvaExternalSources.ExternalSource import ExternalSource
 
 from silva.core.contentlayout.interfaces import (IExternalSourcePart, 
                                                  IPartFactory, IPartEditWidget,
-                                                 IContentLayout)
+                                                 IContentLayout, IRichTextPart,
+                                                 IRichTextExternalSource)
 
 class ExternalSourcePart(SimpleItem):
     """An ExternalSourcePart represents a "part" in a content layout slot
@@ -60,6 +61,16 @@ class ExternalSourcePart(SimpleItem):
     
 InitializeClass(ExternalSourcePart)
 
+class RichTextPart(ExternalSourcePart):
+    grok.implements(IRichTextPart)
+    meta_type = "Rich Text Part"
+    implements(IRichTextPart)
+    security = ClassSecurityInfo()
+
+    def __str__(self):
+        return "RichTextPart(%s): %s"%(self._name, self._config)
+InitializeClass(RichTextPart)
+
 class PartFactory(grok.Adapter):
     """The base class for factories which create a specific type of part"""
     
@@ -79,6 +90,11 @@ class ExternalSourcePartFactory(PartFactory):
         """
         return ExternalSourcePart(self.source.id, result)
     
+class RichTextPartFactory(PartFactory):
+    grok.context(IRichTextExternalSource)
+    def create(self, result):
+        return RichTextPart(self.source.id, result)
+
 class BasePartEditWidget(object):
     """ base class mixin for adapters which render the edit view of 
         content layout parts (allowing authors to change

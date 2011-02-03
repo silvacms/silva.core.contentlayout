@@ -36,7 +36,11 @@ class IExternalSourcePart(IPart):
     def get_config():
         """return the configuration dictionary
         """
-        
+
+class IRichTextPart(IPart):
+    """a part which stores rich text ONLY, e.g. it's external source object
+       has _only_ a rich text (i.e. tinymce) field"""
+
 class IPartEditWidget(Interface):    
     """ interface for adapters that render the edit view of 
         content layout parts (allowing authors to change
