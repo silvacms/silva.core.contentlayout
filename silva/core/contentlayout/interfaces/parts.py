@@ -70,5 +70,5 @@ class IRichTextExternalSource(Interface):
     """ marker interface for the "rich text" external source, manually add
         this to that external source"""
 
-__all__ = ['IPartFactory', 'IPart', 'IExternalSourcePart', 'IPartEditWidget',
-           'IRichTextExternalSource']
+__all__ = ['IPartFactory', 'IPart', 'IExternalSourcePart', 'IRichTextPart',
+           'IPartEditWidget', 'IRichTextExternalSource']

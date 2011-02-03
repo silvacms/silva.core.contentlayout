@@ -64,7 +64,6 @@ InitializeClass(ExternalSourcePart)
 class RichTextPart(ExternalSourcePart):
     grok.implements(IRichTextPart)
     meta_type = "Rich Text Part"
-    implements(IRichTextPart)
     security = ClassSecurityInfo()
 
     def __str__(self):

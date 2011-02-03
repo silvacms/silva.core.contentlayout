@@ -1,6 +1,9 @@
 from five import grok
 
-from interfaces import ITemplate, IBaseView
+from zeam.form.base.form import GrokViewSupport
+
+from silva.core.contentlayout.templates.interfaces import (ITemplate, IBaseView,
+                                                           IPublicView, IEditView)
 
 class Template(object):
     """Base class for Content Layout templates.
