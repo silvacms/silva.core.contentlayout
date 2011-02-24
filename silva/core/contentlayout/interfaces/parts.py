@@ -41,7 +41,7 @@ class IRichTextPart(IPart):
     """a part which stores rich text ONLY, e.g. it's external source object
        has _only_ a rich text (i.e. tinymce) field"""
 
-class IPartEditWidget(Interface):    
+class IPartEditWidget(Interface):
     """ interface for adapters that render the edit view of 
         content layout parts (allowing authors to change
         the IPart
@@ -70,5 +70,21 @@ class IRichTextExternalSource(Interface):
     """ marker interface for the "rich text" external source, manually add
         this to that external source"""
 
+class IPartView(Interface):
+    """ interface for adapters that render public views of
+        content layout parts """
+    
+    def __call__(*args, **kw):
+        """Part Views are callable adapters, meaning you get the
+           part view adapter and then call it.
+           Possible parameters:
+           ``slot`` is the name of the slot
+           ``content_layout`` is the IContentLayout model/object, e.g.
+                              a Silva Page Version.
+           Note that currently the part views do not use these
+           parameters, but they are allowed to be passed in so that the API
+           is the same for ICLPartView and PartViewWidget.
+           """
+        
 __all__ = ['IPartFactory', 'IPart', 'IExternalSourcePart', 'IRichTextPart',
-           'IPartEditWidget', 'IRichTextExternalSource']
+           'IPartEditWidget', 'IRichTextExternalSource', 'IPartView']

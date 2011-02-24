@@ -1,10 +1,12 @@
 import pickle
 import time
 import random
+import sys
 
 from five import grok
 
 from persistent.mapping import PersistentMapping
+from Acquisition import aq_inner, aq_acquire
 
 from OFS.SimpleItem import SimpleItem
 from AccessControl import ClassSecurityInfo
@@ -17,7 +19,8 @@ from Products.SilvaExternalSources.ExternalSource import ExternalSource
 from silva.core.contentlayout.interfaces import (IExternalSourcePart, 
                                                  IPartFactory, IPartEditWidget,
                                                  IContentLayout, IRichTextPart,
-                                                 IRichTextExternalSource)
+                                                 IRichTextExternalSource,
+                                                 IPartView)
 
 class ExternalSourcePart(SimpleItem):
     """An ExternalSourcePart represents a "part" in a content layout slot
@@ -93,6 +96,65 @@ class RichTextPartFactory(PartFactory):
     grok.context(IRichTextExternalSource)
     def create(self, result):
         return RichTextPart(self.source.id, result)
+    
+class BasePartView(object):
+    """ base class mixin for adapters which render the view of
+        content layout parts
+    """
+    
+    grok.implements(IPartView)
+    grok.name('part-view')
+    grok.baseclass()
+    
+class ExternalSourcePartView(BasePartView, grok.View):
+    """Part View Widget for external sources.
+       XXX see note below (edit widget) for new feature request
+    """
+    grok.context(IExternalSourcePart)
+
+    def render(self, *args, **kw):
+        """The public view for an external source part.  Two parameters may
+           be passed in to configure the output of this view:
+           1) checkPreviewable [boolean] : if True, will check whether this
+              external source is previewable.  If not, will output some std
+              'not previewable' language.
+            2) wrapClass [string] : if set, the rendered source will have a div
+               with class=wrapClass wrapped around it.
+        """
+        #slot and content_layout are parameters in the interface contract, but
+        #are ignore in this implementation.  They are in the contract
+        # to more easily support view switching with ContentLayoutPartViewWidget
+        try:
+            context = aq_inner(self.context)
+            source = aq_acquire(context, self.context.get_part_name())
+            #don't allow the keyword args specifically for this adapter
+            # to bleed into the external source view code.
+            wrapClass = ''
+            if kw.has_key('wrapClass'):
+                wrapClass = kw['wrapClass']
+                del kw['wrapClass']
+            checkPreviewable = False
+            if kw.has_key('checkPreviewable'):
+                checkPreviewable = kw['checkPreviewable']
+                del kw['checkPreviewable']
+            
+            if checkPreviewable and not source.is_previewable():
+                ret = "<div class='not-previewable'>This content, a '%s', is not previewable.</div>"%source.get_title()
+            else:
+                config = self.context.get_config(copy=True)
+                ret = source.to_html(content=self.context,
+                                     request=self.request, 
+                                     **config)
+            if wrapClass:
+                return '<div class="%s">%s</div>'%(wrapClass, ret)
+            else:
+                return ret
+        except Exception, e:
+            url = self.context.aq_acquire("error_log").raising( sys.exc_info() )
+            return """<div class="warning"><strong>[""" + \
+                   "content part is broken" + \
+                  "]</strong><br />error message: " + str(e) + \
+                   "<br />Check the error log for more information.</div>"
 
 class BasePartEditWidget(object):
     """ base class mixin for adapters which render the edit view of 

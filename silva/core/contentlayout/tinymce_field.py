@@ -32,7 +32,8 @@ class TinyMCEWidgetView(object):
 
     def __call__(self, field, key, value, request):
         #send the content through an RE
-        value = IRichTextCleanup(field).to_editor(value)
+        #XXX implement irichtextcleanup
+        #value = IRichTextCleanup(field).to_editor(value)
         if field.get_value('unicode') and not isinstance(value,UnicodeType):
             # use acquisition to get encoding of form
             value = unicode(value, field.get_form_encoding())
@@ -44,7 +45,8 @@ class TinyMCEValidator(StringValidator):
     def validate(self, field, key, REQUEST):
         value = StringValidator.validate(self, field, key, REQUEST)
         #send the rich text through cleanup, preparing for storage
-        value = IRichTextCleanup(field).from_editor(value)
+        #XXX implement irichtextcleanup
+        #value = IRichTextCleanup(field).from_editor(value)
         #make this unicode again, if needed.  lxml seems to operate and return
         # non-unicode chars
         if field.get_value('unicode') and not isinstance(value,UnicodeType):
@@ -92,7 +94,8 @@ document_base_url: containerurl""", required = 1)
         if value is None:
             return ''
         #send the rich text through cleanup, preparing for storage
-        value = IRichTextCleanup(field).to_public(value)
+        #XXX implement irichtextcleanup
+        #value = IRichTextCleanup(field).to_public(value)
         return value
 
     
