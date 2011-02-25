@@ -103,7 +103,10 @@ class BasePartView(object):
     """
     
     grok.implements(IPartView)
-    grok.name('part-view')
+    #all part views should are views which provide IPartView, so they
+    # can all be looked up by interface (NO name)
+    grok.provides(IPartView)
+    grok.name('')
     grok.baseclass()
     
 class ExternalSourcePartView(BasePartView, grok.View):
@@ -162,15 +165,14 @@ class BasePartEditWidget(object):
         the IPart
     """
     grok.implements(IPartEditWidget)
-    grok.name('part-edit-widget')
+    #all part edit widgets are unnamed views which provide IPartEditWidget,
+    # so they can all be looked up by interface (NO name)
+    grok.provides(IPartEditWidget)
+    grok.name('')
+    grok.baseclass()
 
 class ExternalSourcePartEditWidget(BasePartEditWidget, grok.View):
     """Part Edit Widget for External Sources.
-       XXX it would be nice if this could be a "view" adapter on 
-       IExternalSource,IContentLayout...
-       Unfortunately, grok.View's only provide Interface, so they
-       cannot be looked up by interface.  Instead they need to be
-       looked up by their name. (found in grokcore.views.meta.view)
     """
     grok.context(IExternalSource)
     grok.require('silva.ChangeSilvaContent')
