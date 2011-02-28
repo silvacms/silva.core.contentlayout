@@ -19,14 +19,16 @@ class DefaultContentTemplate(grok.View):
     grok.context(ISilvaObject)
     grok.implements(IDefaultContentTemplate)
     grok.provides(IDefaultContentTemplate)
-#    grok.name(u'contenttemplate.html')
     grok.name(u'')
     
-    def set_content(self, rendered_content):
-        self.rendered_content = rendered_content
-        
+    #these need to be set before this view is called, they will be added to
+    # the view template's namespace
+    page = None # the silva.core.views.views.Page calling this template
+    rendered_content = None # the rendered content for this template
+    
     def default_namespace(self):
         ns = super(DefaultContentTemplate, self).default_namespace()
         ns['rendered_content'] = self.rendered_content
+        ns['page'] = self.page
         return ns
     
