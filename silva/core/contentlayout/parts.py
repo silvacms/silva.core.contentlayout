@@ -15,10 +15,11 @@ from App.class_init import InitializeClass
 from Products.Silva import SilvaPermissions
 from Products.SilvaExternalSources.interfaces import IExternalSource
 from Products.SilvaExternalSources.ExternalSource import ExternalSource
+from silva.core.interfaces import IContentLayout
 
 from silva.core.contentlayout.interfaces import (IExternalSourcePart, 
                                                  IPartFactory, IPartEditWidget,
-                                                 IContentLayout, IRichTextPart,
+                                                 IRichTextPart,
                                                  IRichTextExternalSource,
                                                  IPartView)
 

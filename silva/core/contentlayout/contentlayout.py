@@ -10,10 +10,9 @@ from App.class_init import InitializeClass
 from OFS.ObjectManager import ObjectManager
 
 from Products.Silva import SilvaPermissions
-from silva.core.interfaces import IVersion
+from silva.core.interfaces import IVersion, IContentLayout
 
-from silva.core.contentlayout.interfaces import (IContentLayout, 
-                                                 IContentLayoutService)
+from silva.core.contentlayout.interfaces import IContentLayoutService
 
 class ContentLayout(ObjectManager):
     """A ContentLayout stores the layout template name (z3 utility name)
