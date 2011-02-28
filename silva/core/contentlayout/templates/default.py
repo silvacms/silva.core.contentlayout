@@ -1,6 +1,7 @@
 from five import grok
+from zope.interface import Interface
 
-from silva.core.interfaces import ISilvaObject
+from silva.core.interfaces import ISilvaObject, IDefaultContentTemplate
 from silva.core.layout.interfaces import ISilvaLayer
 
 grok.layer(ISilvaLayer)
@@ -16,10 +17,16 @@ class DefaultContentTemplate(grok.View):
        tailored for specific content types by changing the grok.context.
     """
     grok.context(ISilvaObject)
+    grok.implements(IDefaultContentTemplate)
+    grok.provides(IDefaultContentTemplate)
+#    grok.name(u'contenttemplate.html')
+    grok.name(u'')
     
     def set_content(self, rendered_content):
         self.rendered_content = rendered_content
         
-    def render(self):
-        return self.rendered_content
+    def default_namespace(self):
+        ns = super(DefaultContentTemplate, self).default_namespace()
+        ns['rendered_content'] = self.rendered_content
+        return ns
     
