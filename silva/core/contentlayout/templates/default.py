@@ -23,12 +23,14 @@ class DefaultContentTemplate(grok.View):
     
     #these need to be set before this view is called, they will be added to
     # the view template's namespace
-    page = None # the silva.core.views.views.Page calling this template
-    rendered_content = None # the rendered content for this template
+    layout = None
+    page = None
+    rendered_content = None
     
     def default_namespace(self):
         ns = super(DefaultContentTemplate, self).default_namespace()
         ns['rendered_content'] = self.rendered_content
         ns['page'] = self.page
+        ns['layout'] = self.layout
         return ns
     
