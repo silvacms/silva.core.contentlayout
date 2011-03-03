@@ -1,6 +1,6 @@
 from five import grok
 
-from silva.core.contentlayout.templates.template import Template
+from silva.core.contentlayout.templates.template import Template, TemplateView
 from silva.core.contentlayout.templates.interfaces import (IOneColumn, 
                                                            ITwoColumn)
 
@@ -13,7 +13,11 @@ class OneColumn(Template):
     description = "a simple one column layout"
     icon = None
     slotnames = ['maincontent']
-
+    
+class OneColumnView(TemplateView):
+    grok.context(IOneColumn)
+    grok.name(u'')
+    
 @grok.global_utility
 class TwoColumn(Template):
     grok.implements(ITwoColumn)
@@ -23,3 +27,7 @@ class TwoColumn(Template):
     description = "a simple two column layout"
     icon = None
     slotnames = ['feature','panel']
+
+class TwoColumnView(TemplateView):
+    grok.context(ITwoColumn)
+    grok.name(u'')

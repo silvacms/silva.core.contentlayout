@@ -1,0 +1,11 @@
+<div 
+  tal:define="inLE view/in_layout_editor"
+  tal:omit-tag="not:inLE"
+  tal:attributes="class python:inLE and 'yui-skin-sam' or nothing">
+ <div id="maincolumn">
+  <h3 tal:replace="structure view/render_page_title" />
+  <div tal:attributes="class python:inLE and 'slot' or nothing" 
+    id="maincontent"
+    tal:content="structure python:view.render_parts('maincontent')" />
+ </div>
+</div>

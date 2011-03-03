@@ -10,6 +10,8 @@
 
   <grok:grok package="." />
 
+  <include package=".browser" />
+  
   <!-- adapter/view to render the tinymce field -->
   <adapter
     for="silva.core.contentlayout.interfaces.ITinyMCEWidget"

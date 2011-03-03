@@ -20,10 +20,10 @@ class ITwoColumn(ITemplate):
    """Interface for basic 'two column' template
    """
       
-#XXX the following are not ported yet
-class IBaseView(Interface):
-   """base interface for both public and edit views of 
-      layout templates"""
+class ILayoutView(Interface):
+   """interface for both public and edit views of 
+      layout templates (the view is switched based on the layers in the request
+   """
    
    def in_layout_editor():
       """returns True if the current request is actually "in"
@@ -49,14 +49,3 @@ class IBaseView(Interface):
       """render the view.  ``content_layout`` is the IContentLayout object
          (e.g. Silva Page Version)
       """
-
-class IPublicView(IBaseView):
-   """Interface for public views of layout templates
-   """
-
-class IEditView(IBaseView):
-   """Interface for edit views of layout templates
-      (this view renders the content layout using the layout's
-      template for display in the SMI
-   """
-

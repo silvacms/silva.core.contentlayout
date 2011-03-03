@@ -1,9 +1,11 @@
 from five import grok
+from zope.component import getUtility
 
-from zeam.form.base.form import GrokViewSupport
-
-from silva.core.contentlayout.templates.interfaces import (ITemplate, IBaseView,
-                                                           IPublicView, IEditView)
+from silva.core.views.interfaces import ILayoutEditorLayer
+from silva.core.contentlayout.interfaces import (IPartView, IPartViewWidget,
+                                                 IContentLayoutService)
+from silva.core.contentlayout.templates.interfaces import (ITemplate, 
+                                                           ILayoutView)
 
 class Template(object):
     """Base class for Content Layout templates.
@@ -28,51 +30,57 @@ class Template(object):
     priority = 50
     slotnames = []
 
-#XXX the following hasn't been implemented
-class BaseView(GrokViewSupport):
-    grok.implements(IBaseView)
+class TemplateView(grok.View):
+    grok.implements(ILayoutView)
+    grok.provides(ILayoutView)
+    grok.context(ITemplate)
+    grok.name(u'')
     grok.baseclass()
     
     def __init__(self, context, request):
-        #context is an IContentLayoutTemplate
-        self.context = context
-        self.request = request
-        #filled when __call__ is called
+        super(TemplateView, self).__init__(context, request)
         self.content_layout = None
+        self.in_layout_editor = False
         
-    def in_layout_editor(self):
-        return IContentLayoutEditorLayer.providedBy(self.request)
-
+    def update(self):
+        self.in_layout_editor = ILayoutEditorLayer.providedBy(self.request)
+        
     def get_parts(self, slot, wrapClass=None):
-        html = []
-        
         """choose the interface depending on whether we are in 
         edit mode or not"""
-        interface = IContentLayoutPartView
-        if IContentLayoutEditView.providedBy(self):
-            interface=IContentLayoutPartViewWidget
+        interface = IPartView
+        if self.in_layout_editor:
+            interface=IPartViewWidget
 
         #get the sticky content parts
-        ssc = self.content_layout.service_sticky_content.aq_inner
-        sticky_content = ssc.getStickyContentForLayoutSlot(
-            self.content_layout.getLayoutName(),
-            slot)
+        #ssc = self.content_layout.service_sticky_content.aq_inner
+        #sticky_content = ssc.getStickyContentForLayoutSlot(
+            #self.content_layout.getLayoutName(),
+            #slot)
 
         before = []
         after = []
-        for sticky in sticky_content:
-            sticky_ad = IStickySupport(sticky)
-            rendered = self.renderPart(sticky, slot, wrapClass=wrapClass)
-            if sticky_ad.getPlacement() == 'above':
-                before.append(rendered)
-            else:
-                after.append(rendered)
-        
-        for part in self.content_layout.getPartsForSlot(slot):
-            rendered = self.renderPart(part, slot, interface, wrapClass=wrapClass)
+        #for sticky in sticky_content:
+            #sticky_ad = IStickySupport(sticky)
+            #rendered = self.renderPart(sticky, slot, wrapClass=wrapClass)
+            #if sticky_ad.getPlacement() == 'above':
+                #before.append(rendered)
+            #else:
+                #after.append(rendered)
+        html = []
+        for part in self.content_layout.get_parts_for_slot(slot):
+            rendered = self.render_part(part, slot, interface, wrapClass=wrapClass)
             html.append(rendered)
         
         return [before, html, after]
+    
+    def render_part(self, part, slot, interface=IPartView, wrapClass=None):
+        """this method will render the part using
+           it's IPartViewWidget or IPartView"""
+        return "part"
+        ad = getMultiAdapter((part, self.request),
+                             interface=interface)
+        return ad(slot, self.content_layout, wrapClass=wrapClass)
     
     def render_parts(self, slot, wrapClass=None):
         parts = self.get_parts(slot, wrapClass=wrapClass)
@@ -80,25 +88,17 @@ class BaseView(GrokViewSupport):
         for p in parts:
             ret += '\n'.join(p) + '\n'
             
-        if IContentLayoutEditView.providedBy(self):
+        if self.in_layout_editor:
             ret = '<div class="bd">%s</div>'%ret
 
         #yui needs a non-empty body div
         return ret or ' '
     
-#    def renderPart(self, part, slot, interface = IContentLayoutPartView, wrapClass=None):
-    def render_part(self, part, slot, interface, wrapClass=None):
-        """this method will render the part using
-           it's IContentLayoutPartViewWidget or IContentLayoutPartView"""
-            
-        ad = getMultiAdapter((part, self.request),
-                             interface=interface)
-        return ad(slot, self.content_layout, wrapClass=wrapClass)
-    
     def render_page_title(self):
-        """Depending on whether self is an IContentLayoutEditView or an
-           IContentLayoutView, this method will render the page title
-           as an editable widget or the public view of the title"""
+        """Depending on whether we're in the layout editor this method will 
+           render the page title as an editable widget or the public view 
+        """
+        return "title"
         interface = IContentLayoutTitleView
         if IContentLayoutEditView.providedBy(self):
             interface=IContentLayoutTitleViewWidget
@@ -106,18 +106,3 @@ class BaseView(GrokViewSupport):
         ad = getMultiAdapter((self.content_layout, self.request),
                              interface=interface)
         return ad()
-    
-    def __call__(self, content_layout):
-        self.content_layout = content_layout
-        self.request['model'] = self.content_layout.aq_inner.get_content()
-        #stuff this into the context of the content_layout)
-        self = self.__of__(content_layout)
-        return self.template()
-    
-class PublicView(BaseView):
-    grok.implements(IPublicView)
-    grok.provides(IPublicView)
-    
-class EditView(BaseView):
-    grok.implements(IEditView)
-    grok.provides(IEditView)

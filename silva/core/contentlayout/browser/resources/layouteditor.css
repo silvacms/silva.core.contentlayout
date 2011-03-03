@@ -1,0 +1,120 @@
+/* @override https://cms-editor.xp.bethel.edu/silva/++resource++Silva.contentlayout.browser.resources/layouteditor.css */
+/* this is the css for the ++layouteditor++ view of the content layout editor
+   i.e. the "public preview" editor iframe */
+
+.part {
+	xpadding: 1px;
+	margin-bottom: 10px;
+	width: 100%;
+}
+
+.part:hover {
+	padding: 0px;
+	xborder: 1px solid #bbb;
+	background: #eee;
+}
+
+.part-content {
+	margin: 0;
+	padding: 0;
+}
+
+.part-content p {
+	margin: 0;
+	padding: 15px 0;
+}
+
+.add-container {
+	height: 30px;
+	margin: 0 0 0 -10px;
+	padding: 0;
+}
+
+.add-button {
+	font: bold .85em "Lucida Grande", verdana, helvetica, arial, sans-serif;
+	text-decoration: none;
+	color: #fff;
+	margin: 0;
+	padding: 0 0 0px;
+	height: 25px;
+	width: 34px;
+	background: transparent url(arrow-add.png) 0px 0px no-repeat;
+}
+
+.add-button:hover {
+	background: transparent url(arrow-add.png) 0px -56px no-repeat;
+	cursor: pointer;
+}
+
+.add-button:active {
+	margin-top: 1px;
+}
+
+.add-button.manipulator {
+	padding: 5px 0 0 12px;
+}
+
+.part-controls {
+    font: bold .85em "Lucida Grande", verdana, helvetica, arial, sans-serif;
+	margin: 0;
+	padding: 5px 0;
+	overflow: visible;
+	z-index: 10;
+}
+
+.part-controls span {
+	color: #fff;
+	margin: 2px 3px 0 0;
+	padding: 2px 4px 3px;
+	background: #777;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
+	border: 1px solid #777;
+	position: relative;
+	top: 6px;
+	right: 2px;
+	background: #237fd7 url(overlay.png) top left repeat-x;
+	text-shadow: 0px 1px 0px hsla(0,0%,0%,.3);
+}
+
+.part-controls .remover {
+	background-color: #752e2f;
+}
+
+.part-controls span:hover {
+	background-image: none;
+	-webkit-box-shadow: none;
+	-moz-box-shadow:none;
+	box-shadow:none;
+	cursor: pointer;
+}
+
+.part-controls .move-control:hover {
+	cursor: move;
+}
+
+/* styles for move mode */
+.movemode .add-container {
+	display:none;
+}
+
+.movemode .slot > .bd{
+	min-height: 40px;
+	padding: 5px;
+	margin-left: -5px;
+	border: 1px dashed #ccc;
+	overflow: hidden;
+}
+
+.movemode .part {
+	cursor: move;
+}
+
+.movemode .part:hover {
+	opacity: .75;
+}
+
+.movemode .part-controls {
+	display: none;
+}
