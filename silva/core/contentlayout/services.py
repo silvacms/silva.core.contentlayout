@@ -1,6 +1,7 @@
 # Copyright (c) 2010 Infrae. All rights reserved.
 # See also LICENSE.txt
 
+import sys, os
 from logging import getLogger
 logger = getLogger('silva.core.contentlayout.services')
 
@@ -10,6 +11,8 @@ from persistent.mapping import PersistentMapping
 
 from AccessControl import ClassSecurityInfo
 from App.class_init import InitializeClass
+from App.ImageFile import ImageFile
+from OFS import misc_ as icons
 
 from silva.core.services.base import SilvaService
 from silva.translations import translate as _
@@ -107,3 +110,58 @@ class ContentLayoutMappings(silvaforms.ZMIForm):
         self.templates = self.context.get_templates()
 
         
+
+class TemplateIcons(grok.View):
+    grok.context(IContentLayoutService)
+    grok.require("silva.ReadSilvaContent")
+    grok.name('templateicons.css')
+    
+    def register_icon(self, name, template):
+        """register the template's icon.  This takes the 'icon' attribute
+           (which is a path relative to the package directory), creates
+           and ImageFile from it, and registers that ImageFile as an icon
+           in the misc_ namespace.  This code is generally copied from
+           Products.Silva.zcml.handlers.registerIcon"""
+        #skip if no icon is defined for this template, or if the
+        # icon is already initialized
+        if not template.icon or hasattr(template,'real_icon'):
+            return
+        #when the template lives in an egg, template.__module__ is zope.component.zcml
+        # so use template.__class__.__module__ (which appears to be correct)
+        __import__(template.__class__.__module__)
+        t_module = sys.modules[template.__class__.__module__]
+        t_file = t_module.__file__
+        dirpath = os.path.dirname(t_file)
+        iconpath = os.path.join(dirpath, template.icon)
+        
+        (iconPrefix, iconName) = os.path.split(iconpath)
+        icon = ImageFile(iconName, iconPrefix)
+        icon.__roles__ = None
+        extension_name = '.'.join(template.__class__.__module__.split('.')[:-1])
+        if not hasattr(icons.misc_, extension_name):
+            setattr(icons.misc_, extension_name,
+                    icons.Misc_(extension_name, {}))
+        getattr(icons.misc_, extension_name)[iconName] = icon
+        webPath = 'misc_/%s/%s' % (extension_name, iconName)
+
+        template.__class__.real_icon = icon
+        template.__class__.real_icon_path = iconpath
+        template.__class__.real_icon_web_path = webPath
+        
+    def render(self):
+        """return a css file with all icons mapped to specifiers"""
+        templates = self.context.get_templates()
+        response = self.request.RESPONSE
+        response.setHeader("content-type","text/css;charset=utf-8")
+        css = []
+        css_template = u"""
+.%s-icon {
+background-image: url("%s");
+}"""
+        for (name, template) in templates:
+            if template.icon:
+                self.register_icon(name, template)
+                name = name.replace('.','')
+                css.append(css_template%(name, template.real_icon_web_path))
+                #response.write(output.encode('utf-8'))
+        return u'\n'.join(css)

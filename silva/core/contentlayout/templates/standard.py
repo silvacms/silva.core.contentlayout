@@ -11,7 +11,7 @@ class OneColumn(Template):
 
     name = "One Column"
     description = "a simple one column layout"
-    icon = None
+    icon = "full.png"
     slotnames = ['maincontent']
     
 class OneColumnView(TemplateView):
@@ -25,7 +25,7 @@ class TwoColumn(Template):
     
     name = "Two Column"
     description = "a simple two column layout"
-    icon = None
+    icon = "fifty-fifty.png"
     slotnames = ['feature','panel']
 
 class TwoColumnView(TemplateView):
