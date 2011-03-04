@@ -15,6 +15,10 @@ class ContentLayoutView(silvaviews.View):
     """
     grok.context(IVersionedContentLayout)
     
+    def update(self):
+        super(ContentLayoutView, self).update()
+        self.version = self.context.get_viewable()
+    
     def render(self):
         """ rendering the layout requires the following:
           1) get the context's layout template
@@ -25,16 +29,19 @@ class ContentLayoutView(silvaviews.View):
           3) call and return the view
         """
         sct = getUtility(IContentLayoutService)
-        editable = self.context.get_editable()
-        layout_name = editable.get_layout_name()
+        layout_name = self.version.get_layout_name()
         template = sct.get_template_by_name(layout_name)
         view = queryMultiAdapter( (template, self.request),
                                   interface=ILayoutView)
         if not view:
             msg = "No LayoutView for template %s defined"%(template)
             raise NoViewError, msg
-        view.content_layout = editable
+        view.content_layout = self.version
         return view()
+    
+class NotEditableError(Exception):
+    """this is raised if attempting to access the edit view of a
+       non-editable (published or closed) object"""
     
 class ContentLayoutEditView(ContentLayoutView):
     """ editor "content.html" view for content layout objects.
@@ -42,3 +49,9 @@ class ContentLayoutEditView(ContentLayoutView):
     """
     grok.layer(ILayoutEditorLayer)
     grok.require("silva.ReadSilvaContent")
+    
+    def update(self):
+        super(ContentLayoutEditView, self).update()
+        self.version = self.context.get_editable()
+        if self.version is None:
+            raise NotEditableError()

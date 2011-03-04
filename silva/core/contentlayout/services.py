@@ -74,8 +74,8 @@ class ContentLayoutService(SilvaService):
         """return the list of allowed templates for ``meta_type``
         """
         logger.info("allowed templates not configured yet")
-        #for now, just return the first template
-        return self.get_sorted_templates()[0]
+        #for now, just return all templates
+        return [ a[0] for a in self.get_sorted_templates() ]
         
         allowed = self._content_template_mapping.get(meta_type,{}).get('allowed',[])
         if not allowed:

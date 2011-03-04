@@ -1,4 +1,4 @@
-<tal:init define="baseurl contentlayout/absolute_url;
+<tal:init define="baseurl string:${contentlayout/absolute_url}/edit;
                   mode options/mode;
                   partconfig options/partconfig">
 <div class="header-title">
@@ -22,10 +22,10 @@
 
 <form name="edit-dialog-form" id="edit-dialog-form" method="post"
  tal:omit-tag="options/suppressFormTag"
- tal:attributes="action python:baseurl + (mode=='add' and '/@@tab_edit_cl_add_es_to_slot' or '/@@tab_edit_cl_save_part')"
+ tal:attributes="action python:baseurl + (mode=='add' and '/addparttoslot' or '/savepart')"
  tal:define="fields python:context.get_parameters_form().get_fields()">
-<!-- <div class="description" tal:condition="context/description"
-    tal:content="context/description" />--><div class="description">DESCRIPTION</div>
+ <div class="description" tal:condition="context/get_description"
+    tal:content="context/get_description" />
  <input type="hidden" name="parttype" value="es" />
  <input type="hidden" name="slotname"
    tal:attributes="value options/slotname" />

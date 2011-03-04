@@ -1,0 +1,37 @@
+<html>
+<head>
+<base tal:attributes="href string:${context/absolute_url}/edit" />
+<tal:rep replace="structure string:<script type='text/javascript'>" />
+var objurl = '<span tal:replace="python:context.get_editable().absolute_url()" />/edit';
+var containerurl = '<span tal:replace="python:context.get_container().absolute_url() + '/'" />';
+<tal:rep replace="structure string:</script>" />
+<script type="text/javascript" 
+    tal:attributes="src string:${request/resourcebase/absolute_url}/++resource++Products.Silva.browser.scripts/reference.js"></script>
+<!--<script type="text/javascript" tal:attributes="src string:${request/resourcebase/absolute_url}/globals/tinymce/jscripts/tiny_mce/tiny_mce.js"></script>-->
+
+<tal:replace replace="structure provider:resources" />
+<link rel="stylesheet" type="text/css"
+    tal:attributes="href string:${request/resourcebase/absolute_url}/++resource++silva.core.contentlayout.browser.resources/smi.css" />
+
+</head>
+<body id="editiframebody">
+<div id="addables">
+<tal:rep tal:repeat="source view/common_sources">
+ <div class="option"
+      tal:attributes="name python:source[2]"
+      tal:define="s_obj python:source[3];
+                  spec_icon python:hasattr(s_obj.aq_explicit, 'get_icon') and s_obj.get_icon()">
+                  
+  <img tal:condition="spec_icon" tal:replace="structure python:spec_icon.tag()" />
+  <img tal:condition="not:spec_icon" tal:replace="structure python:s_obj.render_icon(s_obj)" />
+ 
+  <h2 tal:content="python:source[1]" />
+  <p tal:content="s_obj/get_description" />
+ </div>
+
+</tal:rep>
+
+</div>
+
+</body>
+</html>

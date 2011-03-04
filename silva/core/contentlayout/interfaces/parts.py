@@ -66,7 +66,7 @@ class IPartViewWidget(Interface):
        IPart as a widget for the layout template's
        edit screen (in the smi)"""
 
-    def renderPart(interface):
+    def render_part(interface):
         """render the part (i.e. self.context) using it's 
            IPartView, or an alternate passed in as ``interface``.
            This method is used by __call__"""
@@ -105,6 +105,29 @@ class IPartEditWidget(Interface):
                         above the form inputs in addition to below
         """
 
+class ITitleView(IPartView):
+    """ interface for adapters that render the public view of a page title.
+        This is to enable page titles to be editable in the
+        content layout editor.  The contentlayout interface treats
+        page titles as a static part, which is why this inherits from
+        IPartView"""
+    
+class ITitleViewWidget(IPartViewWidget):
+    """ interface for adapters that render the public view widget
+        of a page title.  This is to enable page titles to be editable in the
+        content layout editor"""
+    
+class ITitleEditWidget(IPartEditWidget):
+    """ interface for adapters that render the edit widget
+        for a page title."""
+    
+    def __call__(self):
+        """shows an input field allowing authors to edit the title
+          of the contentlayout object.
+          The parameters passed in to IPartEditWidget are not used, so
+          this interface overrides __call__"""
+
 __all__ = ['IPartFactory', 'IPart', 'IExternalSourcePart', 'IRichTextPart',
            'IPartEditWidget', 'IRichTextExternalSource', 'IPartView',
-           'IPartViewWidget']
+           'IPartViewWidget', 'ITitleView', 'ITitleViewWidget',
+           'ITitleEditWidget']

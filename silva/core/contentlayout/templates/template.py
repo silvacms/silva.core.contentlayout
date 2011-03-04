@@ -1,9 +1,10 @@
 from five import grok
-from zope.component import getUtility
+from zope.component import getUtility, getMultiAdapter
 
 from silva.core.views.interfaces import ILayoutEditorLayer
 from silva.core.contentlayout.interfaces import (IPartView, IPartViewWidget,
-                                                 IContentLayoutService)
+                                                 IContentLayoutService,
+                                                 ITitleView, ITitleViewWidget)
 from silva.core.contentlayout.templates.interfaces import (ITemplate, 
                                                            ILayoutView)
 
@@ -24,7 +25,7 @@ class Template(object):
     description = "Base for Content Layout Templates"
     icon = None
     #the heading level for page titles (if the layout has one)
-    title_heading_level = 3
+    title_heading_level = 1
     #set default priority to low priority (higher number = lower priority)
     #in this way, institional templates can have higher priority
     priority = 50
@@ -77,15 +78,17 @@ class TemplateView(grok.View):
     def render_part(self, part, slot, interface=IPartView, wrapClass=None):
         """this method will render the part using
            it's IPartViewWidget or IPartView"""
-        return "part"
         ad = getMultiAdapter((part, self.request),
                              interface=interface)
-        return ad(slot, self.content_layout, wrapClass=wrapClass)
+        ad.contentlayout = self.content_layout
+        ad.slot = slot
+        ad.wrapClass = wrapClass
+        return ad()
     
     def render_parts(self, slot, wrapClass=None):
-        parts = self.get_parts(slot, wrapClass=wrapClass)
+        part_sections = self.get_parts(slot, wrapClass=wrapClass)
         ret = ''
-        for p in parts:
+        for p in part_sections:
             ret += '\n'.join(p) + '\n'
             
         if self.in_layout_editor:
@@ -98,10 +101,9 @@ class TemplateView(grok.View):
         """Depending on whether we're in the layout editor this method will 
            render the page title as an editable widget or the public view 
         """
-        return "title"
-        interface = IContentLayoutTitleView
-        if IContentLayoutEditView.providedBy(self):
-            interface=IContentLayoutTitleViewWidget
+        interface = ITitleView
+        if ILayoutEditorLayer.providedBy(self.request):
+            interface=ITitleViewWidget
             
         ad = getMultiAdapter((self.content_layout, self.request),
                              interface=interface)

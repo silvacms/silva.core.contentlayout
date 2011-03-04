@@ -12,7 +12,7 @@ from OFS.ObjectManager import ObjectManager
 from Products.Silva import SilvaPermissions
 from silva.core.interfaces import IVersion, IContentLayout
 
-from silva.core.contentlayout.interfaces import IContentLayoutService
+from silva.core.contentlayout.interfaces import IPart, IContentLayoutService
 
 class ContentLayout(ObjectManager):
     """A ContentLayout stores the layout template name (z3 utility name)
@@ -54,12 +54,12 @@ class ContentLayout(ObjectManager):
     security.declareProtected(SilvaPermissions.AccessContentsInformation,
                               "get_slot_name_for_part")
     def get_slot_name_for_part(self, part):
-        return self.content_parts[part.getKey()]
+        return self.content_parts[part.get_key()]
 
     security.declareProtected(SilvaPermissions.ChangeSilvaContent,
                               "add_part_to_slot")
     def add_part_to_slot(self, part, slotname, beforepartkey=None):
-        if not IContentLayoutPart.providedBy(part):
+        if not IPart.providedBy(part):
             raise AttributeError("Invalid part assignment")
         if not slotname:
             raise TypeError('slotname cannot be nothing')
@@ -144,8 +144,9 @@ class ContentLayout(ObjectManager):
              2) Any slots in oldTemplate which don't have a corresponding slot
                 in newTemplate are placed in the last slot in newTemplate
         """
-        newTemplate = self.service_content_templates.get_template_by_name(newTemplateName)
-        oldTemplate = self.service_content_templates.get_template_by_name(self.content_layout_name)
+        sct = getUtility(IContentLayoutService)
+        newTemplate = sct.get_template_by_name(newTemplateName)
+        oldTemplate = sct.get_template_by_name(self.content_layout_name)
         newSlots = PersistentMapping()
         newNames = newTemplate.slotnames[:]
         #pull the keys from the model's slotnames rather than the slotnames
@@ -203,7 +204,7 @@ def layout_added(content, event):
         orig_content = content
         if IVersion.providedBy(content):
             #the template settings are stored by the VersionedContent meta_type,
-            # not the Version meta_type
+            # not the Versione meta_type
             content = content.aq_parent
         default = cls.get_default_template_for_meta_type(content.meta_type)
         if not default: #no default is set, so get the first one

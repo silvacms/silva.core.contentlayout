@@ -4,11 +4,11 @@
   tal:attributes="class python:inLE and 'yui-skin-sam' or nothing">
  <h3 tal:replace="structure view/render_page_title" />
 
- <div id="feature" style="width: 200px; float: right;"
+ <div id="feature" style="width: 200px; float: right;min-height: 400px;"
    tal:attributes="class python:inLE and 'slot' or nothing"
    tal:content="structure python:view.render_parts('feature')" />
 
  <div tal:attributes="class python:inLE and 'slot' or nothing" 
-     id="panel" style="margin-right: 210px;"
+     id="panel" style="margin-right: 210px;min-height: 400px;"
      tal:content="structure python:view.render_parts('panel')" />
 </div>

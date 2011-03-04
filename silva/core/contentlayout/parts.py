@@ -4,6 +4,7 @@ import random
 import sys
 
 from five import grok
+from zope.component import getMultiAdapter, getUtility
 
 from persistent.mapping import PersistentMapping
 from Acquisition import aq_inner, aq_acquire
@@ -17,11 +18,14 @@ from Products.SilvaExternalSources.interfaces import IExternalSource
 from Products.SilvaExternalSources.ExternalSource import ExternalSource
 from silva.core.interfaces import IContentLayout
 
-from silva.core.contentlayout.interfaces import (IExternalSourcePart, 
+from silva.core.contentlayout.interfaces import (IPart, IExternalSourcePart, 
                                                  IPartFactory, IPartEditWidget,
                                                  IRichTextPart,
                                                  IRichTextExternalSource,
-                                                 IPartView)
+                                                 IPartView, IPartViewWidget,
+                                                 ITitleView, ITitleViewWidget,
+                                                 ITitleEditWidget,
+                                                 IContentLayoutService)
 
 class ExternalSourcePart(SimpleItem):
     """An ExternalSourcePart represents a "part" in a content layout slot
@@ -62,7 +66,6 @@ class ExternalSourcePart(SimpleItem):
     security.declareProtected(SilvaPermissions.ReadSilvaContent, "get_key")
     def get_key(self):
         return self._key
-    
 InitializeClass(ExternalSourcePart)
 
 class RichTextPart(ExternalSourcePart):
@@ -98,7 +101,7 @@ class RichTextPartFactory(PartFactory):
     def create(self, result):
         return RichTextPart(self.source.id, result)
     
-class BasePartView(object):
+class BasePartView(grok.View):
     """ base class mixin for adapters which render the view of
         content layout parts
     """
@@ -109,14 +112,19 @@ class BasePartView(object):
     grok.provides(IPartView)
     grok.name('')
     grok.baseclass()
+    contentlayout = None
+    checkPreviewable = False
+    slot = None
+    contentlayout = None
+    wrapClass = None
     
-class ExternalSourcePartView(BasePartView, grok.View):
+class ExternalSourcePartView(BasePartView):
     """Part View Widget for external sources.
-       XXX see note below (edit widget) for new feature request
     """
     grok.context(IExternalSourcePart)
+    grok.name('')
 
-    def render(self, *args, **kw):
+    def render(self):
         """The public view for an external source part.  Two parameters may
            be passed in to configure the output of this view:
            1) checkPreviewable [boolean] : if True, will check whether this
@@ -130,26 +138,17 @@ class ExternalSourcePartView(BasePartView, grok.View):
         # to more easily support view switching with ContentLayoutPartViewWidget
         try:
             context = aq_inner(self.context)
-            source = aq_acquire(context, self.context.get_part_name())
+            source = aq_acquire(context, self.context.get_name())
             #don't allow the keyword args specifically for this adapter
             # to bleed into the external source view code.
-            wrapClass = ''
-            if kw.has_key('wrapClass'):
-                wrapClass = kw['wrapClass']
-                del kw['wrapClass']
-            checkPreviewable = False
-            if kw.has_key('checkPreviewable'):
-                checkPreviewable = kw['checkPreviewable']
-                del kw['checkPreviewable']
-            
-            if checkPreviewable and not source.is_previewable():
+            if self.checkPreviewable and not source.is_previewable():
                 ret = "<div class='not-previewable'>This content, a '%s', is not previewable.</div>"%source.get_title()
             else:
                 config = self.context.get_config(copy=True)
                 ret = source.to_html(content=self.context,
                                      request=self.request, 
                                      **config)
-            if wrapClass:
+            if self.wrapClass:
                 return '<div class="%s">%s</div>'%(wrapClass, ret)
             else:
                 return ret
@@ -160,7 +159,32 @@ class ExternalSourcePartView(BasePartView, grok.View):
                   "]</strong><br />error message: " + str(e) + \
                    "<br />Check the error log for more information.</div>"
 
-class BasePartEditWidget(object):
+class PartViewWidget(grok.View):
+    """Renders the preview of an IContentLayoutPart
+        as a widget for the layout template's
+        edit screen (in the smi)"""
+    grok.context(IPart)
+    grok.implements(IPartViewWidget)
+    grok.provides(IPartViewWidget)
+    grok.name(u'')
+    slot = None
+    contentlayout = None
+    wrapClass = None
+    
+    def render_part(self, interface=IPartView):
+        """given the IPart part (self.context),
+           render it using it's IPartView, or an alternate interface passed
+           in via the `interface` parameter.
+        """
+        ad = getMultiAdapter((self.context, self.request), 
+                             interface=interface)
+        ad.slot = self.slot
+        ad.contentlayout = self.contentlayout
+        ad.wrapClass = self.wrapClass
+        ad.checkPreviewable=True
+        return ad()
+
+class BasePartEditWidget(grok.View):
     """ base class mixin for adapters which render the edit view of 
         content layout parts (allowing authors to change
         the IPart
@@ -171,8 +195,10 @@ class BasePartEditWidget(object):
     grok.provides(IPartEditWidget)
     grok.name('')
     grok.baseclass()
+    #the content layout object associated with this part
+    content_layout = None
 
-class ExternalSourcePartEditWidget(BasePartEditWidget, grok.View):
+class ExternalSourcePartEditWidget(BasePartEditWidget):
     """Part Edit Widget for External Sources.
     """
     grok.context(IExternalSource)
@@ -211,3 +237,47 @@ class ExternalSourcePartEditWidget(BasePartEditWidget, grok.View):
             'submitOnTop':submitOnTop
             }
         return super(ExternalSourcePartEditWidget,self).__call__()
+    
+class TitleView(BasePartView):
+    grok.implements(ITitleView)
+    grok.provides(ITitleView)
+    grok.context(IContentLayout)
+    grok.name(u'')
+    
+    def render_title(self):
+        """get the title heading level from the content template
+           generate the title html by hand, since each template may have
+           a different heading level
+        """
+        sct = getUtility(IContentLayoutService)
+        layout_name = self.context.get_layout_name()
+        template = sct.get_template_by_name(layout_name)
+        level = template.title_heading_level
+        title = self.context.get_title()
+        extra = self.request.get('title-extra',None)
+        if extra:
+            title += ' ' + extra
+        return '<h%s class="page-title">%s</h%s>'%(level, title, level)
+    
+    def render(self):
+        return self.render_title()
+
+class TitleViewWidget(grok.View):
+    """Wraps the TitleView inside HTML to make the title an editable
+       widget in the layout editor.
+    """
+    grok.implements(ITitleViewWidget)
+    grok.provides(ITitleViewWidget)
+    grok.context(IContentLayout)
+    grok.name(u'')
+    
+    def render_part(self):
+        """Render the `part` (the title)"""
+        return getMultiAdapter((self.context, self.request),
+                               interface=ITitleView)()
+
+class TitleEditWidget(BasePartEditWidget):
+    grok.implements(ITitleEditWidget)
+    grok.provides(ITitleEditWidget)
+    grok.context(IContentLayout)
+    grok.name('')

@@ -1,0 +1,7 @@
+<div class="part" id="page-title-widget">
+ <div class="hd"></div>
+ <div class="bd">
+  <div class="part-content"
+    tal:content="structure view/render_part" />
+ </div>
+</div>

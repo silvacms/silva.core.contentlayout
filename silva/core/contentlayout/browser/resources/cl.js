@@ -372,10 +372,14 @@ YAHOO.namespace("bethel.contentlayout");
                 templates service */
             
             /* Creates the confirm window */
-            var handleConfirmChange = function() {   
+            var handleConfirmChange = function() {  
                 var templateName,
                      ts_select = document.templateSelect.Select_Template;
                 /* Finds the selected template from the Switch Template list by looping through them. */
+                if (!ts_select.length) { /* in case there is only one radio button,
+                                             this won't be a list */
+                    ts_select = [ts_select];
+                }
                 for (var i=ts_select.length; i--;) { /* reverse loops are faster */
                     if (ts_select[i].checked) {
                         templateName = ts_select[i].value;
@@ -383,7 +387,7 @@ YAHOO.namespace("bethel.contentlayout");
                     }
                 }
                 /* Constructs the new request using the selected template. */
-                var url = objurl + "/tab_edit_cl_switch_template";
+                var url = objurl + "/switchlayouttemplate";
                 var params = "newTemplate="+templateName;
                 /* Sends the request to change the template */
                 Connect.asyncRequest('POST', url,
@@ -664,7 +668,7 @@ YAHOO.namespace("bethel.contentlayout");
                 newSlotParts[partId] = partModule;
             
                 /* the part has moved.  Inform Silva that the part has moved */
-                var url = top.objurl + "/tab_edit_cl_move_part_to_slot";
+                var url = top.objurl + "/moveparttoslot";
                 var params = "partkey=" + this.app._getPartInfoFromID(partId)[1] + "&slotname="+newSlotId
                 var next = Dom.getNextSibling(partModule.element);
                 while (next) {
@@ -1224,7 +1228,7 @@ YAHOO.namespace("bethel.contentlayout");
             /* this happens when the iframe is originally
                loaded (i.e. it has no src attribute) */
             return;
-        } else if (href.search(/addables_screen/) > -1) {
+        } else if (href.search(/addablesscreen/) > -1) {
             /* this is the addables screen.  Loop through table
                cells, making each clickable */
             var cells = Selector.query('div.option', this.editorIFrame.document);
@@ -1286,7 +1290,7 @@ YAHOO.namespace("bethel.contentlayout");
                     editor */
             }
         }
-        var url = objurl + "/tab_edit_cl_get_edit_dialog_iframe";
+        var url = objurl + "/editdialogiframe";
         this.editorIFrame.location.href = url + '?' + params;
     },
 
@@ -1301,25 +1305,27 @@ YAHOO.namespace("bethel.contentlayout");
             AJAX request, is inserted into the body as pat of the responseText, and
             then moved to the header */
         var header = Selector.query('.header-title', this.editorIFrame.document, true);
-        /* chrome requires that importNode be used, which creates a new node in
-           the specified document.  when just setHeader is used (which ultimately
-           calls appendNode, opera and firefox will update the node's ownerDocument,
-           perhaps using importNode internally, and remove the node from the other
-           document.  But this isn't universally supported */
-        if (this.body.ownerDocument.importNode) {
-            var newHeader = this.body.ownerDocument.importNode(header, true);
-            header.parentNode.removeChild(header);
-            header = newHeader;
+        if (header) {
+            /* chrome requires that importNode be used, which creates a new node in
+               the specified document.  when just setHeader is used (which ultimately
+               calls appendNode, opera and firefox will update the node's ownerDocument,
+               perhaps using importNode internally, and remove the node from the other
+               document.  But this isn't universally supported */
+            if (this.body.ownerDocument.importNode) {
+                var newHeader = this.body.ownerDocument.importNode(header, true);
+                header.parentNode.removeChild(header);
+                header = newHeader;
+            }
+            /* Hack for IE... here's an interesting article:
+               http://www.alistapart.com/articles/crossbrowserscripting/ */
+            if (YAHOO.env.ua.ie) {
+                var newHeader = parent.document.createElement("div");
+                newHeader.innerHTML = header.outerHTML;
+                header.parentNode.removeChild(header);
+                header = newHeader.firstChild;
+            }
+            this.setHeader(header);
         }
-        /* Hack for IE... here's an interesting article:
-           http://www.alistapart.com/articles/crossbrowserscripting/ */
-        if (YAHOO.env.ua.ie) {
-            var newHeader = parent.document.createElement("div");
-            newHeader.innerHTML = header.outerHTML;
-            header.parentNode.removeChild(header);
-            header = newHeader.firstChild;
-        }
-        this.setHeader(header);
         
         PartEditorPanel.superclass.displayEditDialog.call(this);
      },
@@ -1391,7 +1397,7 @@ YAHOO.namespace("bethel.contentlayout");
                 post: post},
             scope: this
         };
-        var url = objurl + "/tab_edit_cl_validate_edit_dialog";
+        var url = objurl + "/validateeditdialog";
         Connect.asyncRequest('POST', 
             url, 
             dialogCallback, 
@@ -1482,7 +1488,7 @@ YAHOO.namespace("bethel.contentlayout");
             placed in the editorIFrame.  The entire region for each common 
             addable is clickable */
         if (this.editorIFrame.location.href != url) { /* don't reload */
-            var url = objurl + "/tab_edit_cl_get_addables_screen";
+            var url = objurl + "/addablesscreen";
             this.editorIFrame.location.href = url;
         }
     },
@@ -2189,7 +2195,7 @@ YAHOO.namespace("bethel.contentlayout");
         var handleYes = function() {
             var partModule = this.callback['partModule'],
             app = this.callback['app'];
-            var url = objurl + "/tab_edit_cl_remove_part";
+            var url = objurl + "/removepart";
             var params = "partkey="+app._getPartInfoFromID(partModule.element.id)[1];
             var trans = Connect.asyncRequest('POST', url,
                 { success: function(resp) {

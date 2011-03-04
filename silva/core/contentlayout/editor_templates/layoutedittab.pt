@@ -1,5 +1,5 @@
 <tal:rep replace="structure string:<script type='text/javascript'>" />
-var objurl = '<span tal:replace="python:context.get_editable().absolute_url()" />';
+var objurl = '<span tal:replace="python:context.get_editable().absolute_url()" />/edit';
 var containerurl = '<span tal:replace="python:context.get_container().absolute_url() + '/'" />';
 <tal:rep replace="structure string:</script>" />
 
@@ -21,7 +21,7 @@ var containerurl = '<span tal:replace="python:context.get_container().absolute_u
        <a class="yuimenuitemlabel"
           tal:attributes="value python:template[0]">
         <span class="template-name"
-              tal:content="python:template[1].get_name()"/>
+              tal:content="python:template[1].name"/>
        </a>
       </label>
      </li>
