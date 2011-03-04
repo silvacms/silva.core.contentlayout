@@ -7,6 +7,8 @@ logger = getLogger('silva.core.contentlayout.services')
 
 from five import grok
 from zope.component import getUtility, getUtilitiesFor
+from zope.interface import Interface
+from zope import schema
 from persistent.mapping import PersistentMapping
 
 from AccessControl import ClassSecurityInfo
@@ -14,12 +16,17 @@ from App.class_init import InitializeClass
 from App.ImageFile import ImageFile
 from OFS import misc_ as icons
 
+from Products.Silva.Folder import meta_types_for_interface
 from silva.core.services.base import SilvaService
 from silva.translations import translate as _
 from zeam.form import silva as silvaforms
+from zeam.form.base.fields import Fields
 
 from silva.core.contentlayout.interfaces import IContentLayoutService
+from silva.core.contentlayout.interfaces.schema import templates_source
+from silva.core.interfaces import IContentLayout, IVersionedContentLayout
 from silva.core.contentlayout.templates.interfaces import ITemplate
+
 
 class ContentLayoutService(SilvaService):
     meta_type = 'Silva Content Layout Service'
@@ -85,10 +92,30 @@ class ContentLayoutService(SilvaService):
             return [ t[0] for t in self.get_templateTuples() ]
         return allowed
 
+    security.declareProtected('Access contents information',
+                               'get_supporting_meta_types')
+    def get_supporting_meta_types(self):
+        mts = meta_types_for_interface(IVersionedContentLayout) + \
+            meta_types_for_interface(IContentLayout)
+        mts.sort()
+        return mts
+            
 InitializeClass(ContentLayoutService)
 
+class IMappings(Interface):
+    """Schema definition for the template mappings for a single 
+       content layout type"""
+    default_template = schema.Choice(
+        title=_(u"Default Content Template"),
+        description=_(u"The default content template for this type"),
+        source = templates_source)
+
+class MappingSubForm(silvaforms.SubForm):
+    grok.context(IContentLayoutService)
+    fields = Fields(IMappings)
+    prefix = "mapping"
     
-class ContentLayoutMappings(silvaforms.ZMIForm):
+class ContentLayoutMappings(silvaforms.ZMIComposedForm):
     name = 'manage_main'
     grok.name(name)
     grok.context(IContentLayoutService)
@@ -101,15 +128,23 @@ class ContentLayoutMappings(silvaforms.ZMIForm):
                    u"the content layout editor's info panel "
                    u"(allowing authors to switch between templates)")
     
+    def __init__(self, context, request):
+        super(ContentLayoutMappings, self).__init__(context, request)
+        #zeam.form.composed.SubFormGroupBase gathers subforms using
+        # adaptation.  We, however, can't use adaptation as we have an
+        # arbitrary number of subforms -- all being the same subform
+        # operating on different data sets.
+        # dynamically gather the subforms here
+        subforms = []
+        for addable in self.context.get_supporting_meta_types():
+            sf = MappingSubForm(self.context, self, self.request)
+            sf.label = addable
+            subforms.append(sf)
+        self.allSubforms = subforms
+        self.subforms = filter(lambda f: f.available(), self.allSubforms)
+    
     def update(self):
-        from silva.core.contentlayout import contentlayout as cl
-        from silva.core.contentlayout.interfaces import IContentLayoutService
-        from interfaces import *
-        from zope.component import getUtility
         super(ContentLayoutMappings, self).update()
-        self.templates = self.context.get_templates()
-
-        
 
 class TemplateIcons(grok.View):
     grok.context(IContentLayoutService)
