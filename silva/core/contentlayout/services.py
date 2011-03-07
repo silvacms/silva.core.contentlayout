@@ -26,7 +26,8 @@ from zeam.form import silva as silvaforms
 from zeam.form.base.fields import Fields
 from zeam.form.base.datamanager import BaseDataManager
 
-from silva.core.contentlayout.interfaces import IContentLayoutService
+from silva.core.contentlayout.interfaces import (IContentLayoutService,
+                                                 IStickyContentService)
 from silva.core.contentlayout.interfaces.schema import templates_source
 from silva.core.interfaces import IContentLayout, IVersionedContentLayout
 from silva.core.contentlayout.templates.interfaces import ITemplate
