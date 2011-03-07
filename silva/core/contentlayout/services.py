@@ -31,6 +31,10 @@ from silva.core.contentlayout.interfaces.schema import templates_source
 from silva.core.interfaces import IContentLayout, IVersionedContentLayout
 from silva.core.contentlayout.templates.interfaces import ITemplate
 
+class StickyContentService(SilvaService):
+    meta_type = "Silva Sticky Content Service"
+    grok.implements(IStickyContentService)
+    default_service_identifier = 'service_stickycontent'
 
 class ContentLayoutService(SilvaService):
     meta_type = 'Silva Content Layout Service'

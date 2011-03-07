@@ -59,4 +59,16 @@ class IContentLayoutService(ISilvaLocalService):
         """returns a list of meta_types which support content layout
         """
         
-__all__ = ['IContentLayoutService']
+class IStickyContentService(ISilvaLocalService):
+    """A local service where sticky content mappings are stored.
+       Sticky content are page assets are associated with individual
+       content templates and will display on every page using that
+       content template within the same container and below.
+       
+       Mappings are acquired from higher sticky services, so it is
+       possible to add more sticky content at a lower level.  It is
+       also possible to negate / prevent sticky content from appearing
+       within a lower level.
+       """
+    
+__all__ = ['IContentLayoutService', 'IStickyContentService']

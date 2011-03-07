@@ -27,4 +27,8 @@ setup(name='silva.core.contentlayout',
           'silva.core.services',
           'silva.core.conf',
       ],
+      entry_points="""
+      [zodbupdate]
+      renames = silva.core.contentlayout:CLASS_CHANGES
+      """
       )
