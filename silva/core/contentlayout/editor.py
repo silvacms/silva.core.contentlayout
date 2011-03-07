@@ -72,9 +72,9 @@ class LayoutEditTab(grok.View):
         ns['sct'] = sct
         
         mt = editable.get_content().meta_type
-        allowed = sct.get_allowed_templates_for_meta_type(mt)
-        templates = [ c for c in sct.get_sorted_templates() if 
-                      c[0] != layout_name and c[0] in allowed ]
+        allowed = sct.get_allowed_templates(mt)
+        templates = [ c for c in allowed if 
+                      c[0] != layout_name ]
         ns['templates'] = templates
         return ns
     

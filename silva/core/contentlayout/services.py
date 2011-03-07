@@ -7,7 +7,8 @@ logger = getLogger('silva.core.contentlayout.services')
 
 from five import grok
 from zope.component import getUtility, getUtilitiesFor
-from zope.interface import Interface
+from zope.interface import Interface, alsoProvides
+from zope.publisher.interfaces.browser import IDefaultBrowserLayer
 from zope import schema
 from persistent.mapping import PersistentMapping
 
@@ -19,6 +20,7 @@ from OFS import misc_ as icons
 from Products.Silva.Folder import meta_types_for_interface
 from Products.Silva import SilvaPermissions
 from silva.core.services.base import SilvaService
+from silva.core import conf as silvaconf
 from silva.translations import translate as _
 from zeam.form import silva as silvaforms
 from zeam.form.base.fields import Fields
@@ -57,11 +59,12 @@ class ContentLayoutService(SilvaService):
     security.declareProtected('Access contents information', 
                               'get_sorted_templates')
     def get_sorted_templates(self):
-        """returns the list of templates, sorted by their priority
+        """returns the list of templates, sorted by their priority, then name
+           then dotted-name
         """
         templates = [ (t[1].priority, t[1].name, t[0], t)  for \
                       t in self.get_templates() ]
-        return [ t[-1] for t in sorted(templates) ]
+        return ( t[-1] for t in sorted(templates) )
     
     security.declareProtected('Access contents information', 
                               'get_template_by_name')
@@ -73,7 +76,7 @@ class ContentLayoutService(SilvaService):
     security.declareProtected('Access contents information', 
                               'get_default_template_for_meta_type')
     def get_default_template(self, meta_type):
-        """return the default template for ``meta_type``
+        """return the default template name for ``meta_type``
         """
         if self._template_mapping.has_key(meta_type):
             return self._template_mapping[meta_type].get('default', None)
@@ -84,9 +87,15 @@ class ContentLayoutService(SilvaService):
         """return the list of allowed templates for ``meta_type``
         """
         allowed = self._template_mapping.get(meta_type,{}).get('allowed',[])
+        st = self.get_sorted_templates()
         if not allowed:
-            return [ t[0] for t in self.get_templateTuples() ]
-        return allowed
+            return stt
+        return ( t for t in st if t[0] in allowed )
+    
+    def get_allowed_template_names(self, meta_type):
+        """Get just the name for each allowed template"""
+        at = self.get_allowed_templates(meta_type)
+        return (t[0] for t in at)
 
     security.declareProtected('Access contents information',
                                'get_supporting_meta_types')
@@ -126,6 +135,10 @@ class ContentLayoutService(SilvaService):
         self._template_mapping[meta_type]['allowed'] = allowed
 InitializeClass(ContentLayoutService)
 
+class IMappingsServiceZMILayer(IDefaultBrowserLayer):
+    """Layer to add custom css to the mappings service form"""
+    silvaconf.resource('mappings.css')
+
 class IMappings(Interface):
     """Schema definition for the template mappings for a single 
        content layout type"""
@@ -150,7 +163,8 @@ class TemplateDataManager(BaseDataManager):
         if identifier == 'default':
             return self.content.get_default_template(self.meta_type)
         elif identifier == 'allowed':
-            return self.content.get_allowed_templates(self.meta_type)
+            #get just the name
+            return self.content.get_allowed_template_names(self.meta_type)
         else:
             raise KeyError(identifier)
     
@@ -164,7 +178,7 @@ class TemplateDataManager(BaseDataManager):
         else:
             raise KeyError(identifier)
             
-class MappingSubForm(silvaforms.SubForm):
+class MappingSubForm(silvaforms.ZMISubForm):
     grok.context(IContentLayoutService)
     fields = Fields(IMappings)
     fields['allowed'].mode = 'multiselect'
@@ -178,8 +192,8 @@ class MappingSubForm(silvaforms.SubForm):
     
     @silvaforms.action(u"Save Mappings", identifier="savemappings")
     def save(self):
-        #XXX I would like the action to be on the composed form, not the
-        # subforms
+        """save the mappings for this meta_type only.
+        """
         data, errors = self.extractData()
         #get this data manager
         content = self.getContentData()
@@ -223,9 +237,11 @@ class ContentLayoutMappings(silvaforms.ZMIComposedForm):
         self.subforms = filter(lambda f: f.available(), self.allSubforms)
     
     def update(self):
+        alsoProvides(self.request, IMappingsServiceZMILayer)
         super(ContentLayoutMappings, self).update()
 
 class TemplateIcons(grok.View):
+    """return a css file with all icons mapped to specifiers"""
     grok.context(IContentLayoutService)
     grok.require("silva.ReadSilvaContent")
     grok.name('templateicons.css')
@@ -263,7 +279,6 @@ class TemplateIcons(grok.View):
         template.__class__.real_icon_web_path = webPath
         
     def render(self):
-        """return a css file with all icons mapped to specifiers"""
         templates = self.context.get_templates()
         response = self.request.RESPONSE
         response.setHeader("content-type","text/css;charset=utf-8")

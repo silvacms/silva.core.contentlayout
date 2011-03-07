@@ -206,7 +206,7 @@ def layout_added(content, event):
             #the template settings are stored by the VersionedContent meta_type,
             # not the Versione meta_type
             content = content.aq_parent
-        default = cls.get_default_template_for_meta_type(content.meta_type)
+        default = cls.get_default_template(content.meta_type)
         if not default: #no default is set, so get the first one
-            default = cls.get_allowed_templates_for_meta_type(content.meta_type)[0]
+            default = cls.get_allowed_template_names(content.meta_type)[0]
         orig_content.content_layout_name = default
