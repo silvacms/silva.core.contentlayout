@@ -79,7 +79,7 @@ class ContentLayoutService(SilvaService):
         return getUtility(ITemplate, name)
     
     security.declareProtected('Access contents information', 
-                              'get_default_template_for_meta_type')
+                              'get_default_template')
     def get_default_template(self, meta_type):
         """return the default template name for ``meta_type``
         """
@@ -87,7 +87,7 @@ class ContentLayoutService(SilvaService):
             return self._template_mapping[meta_type].get('default', None)
         
     security.declareProtected('Access contents information',
-                              'get_allowed_templates_for_meta_type')
+                              'get_allowed_templates')
     def get_allowed_templates(self, meta_type):
         """return the list of allowed templates for ``meta_type``
         """
@@ -97,6 +97,8 @@ class ContentLayoutService(SilvaService):
             return stt
         return ( t for t in st if t[0] in allowed )
     
+    security.declareProtected('Access contents information',
+                              'get_allowed_template_names')
     def get_allowed_template_names(self, meta_type):
         """Get just the name for each allowed template"""
         at = self.get_allowed_templates(meta_type)

@@ -1,14 +1,15 @@
 <configure
    xmlns="http://namespaces.zope.org/zope"
-   xmlns:browser="http://namespaces.zope.org/browser"
-   xmlns:grok="http://namespaces.zope.org/grok"
-   xmlns:five="http://namespaces.zope.org/five">
+   xmlns:five="http://namespaces.zope.org/five"
+   xmlns:grok="http://namespaces.zope.org/grok">
+   >
 
-  <five:registerPackage package="." />
 
+  <include package="Products.Silva" />
   <include package="silva.core.conf" />
 
-  <grok:grok package="." />
+  <five:registerPackage package="." />
+  <grok:grok package="." exclude=".browser" />
 
   <include package=".browser" />
   

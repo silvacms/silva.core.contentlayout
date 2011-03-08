@@ -41,4 +41,7 @@ CLASS_CHANGES = {
     'silva.core.contentlayout.services ContentLayoutService',
     'Products.Silva.contentlayout.ServiceStickyContent StickyContentService':
     'silva.core.contentlayout.services StickyContentService',
+    'Products.Silva.contentlayout.parts ExternalSourcePart':
+    'silva.core.contentlayout.parts ExternalSourcePart',
+    
     }
