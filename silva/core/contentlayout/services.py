@@ -94,7 +94,7 @@ class ContentLayoutService(SilvaService):
         allowed = self._template_mapping.get(meta_type,{}).get('allowed',[])
         st = self.get_sorted_templates()
         if not allowed:
-            return stt
+            return st
         return ( t for t in st if t[0] in allowed )
     
     security.declareProtected('Access contents information',
@@ -137,7 +137,9 @@ class ContentLayoutService(SilvaService):
             m = PersistentMapping({'default':None, 'allowed':set()})
             self._template_mapping[meta_type] = m
         m = self._template_mapping[meta_type]
-        if m['default'] not in allowed:
+        #add default to allowed if allowed is not empty.
+        # (if it is empty, all templates are allowed)
+        if allowed and m['default'] not in allowed:
             allowed.add(m['default'])
         self._template_mapping[meta_type]['allowed'] = allowed
 InitializeClass(ContentLayoutService)
