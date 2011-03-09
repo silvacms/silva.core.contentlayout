@@ -37,11 +37,14 @@ class IExtension(Interface):
 install = Installer("silva.core.contentlayout", IExtension)
 
 CLASS_CHANGES = {
-    'Products.Silva.contentlayout.ServiceContentLayout ContentLayoutTemplatesService':
+    'Products.Silva.contentlayout.ServiceContentLayoutTemplates ContentLayoutTemplatesService':
     'silva.core.contentlayout.services ContentLayoutService',
     'Products.Silva.contentlayout.ServiceStickyContent StickyContentService':
     'silva.core.contentlayout.services StickyContentService',
     'Products.Silva.contentlayout.parts ExternalSourcePart':
     'silva.core.contentlayout.parts ExternalSourcePart',
-    
+    'Products.Silva.contentlayout.parts RichTextPart':
+    'silva.core.contentlayout.parts RichTextPart',
+    'Products.Silva.contentlayout.tinymce_field TinyMCEField':
+    'silva.core.contentlayout.tinymce_field TinyMCEField'
     }

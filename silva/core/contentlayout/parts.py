@@ -149,7 +149,7 @@ class ExternalSourcePartView(BasePartView):
                                      request=self.request, 
                                      **config)
             if self.wrapClass:
-                return '<div class="%s">%s</div>'%(wrapClass, ret)
+                return '<div class="%s">%s</div>'%(self.wrapClass, ret)
             else:
                 return ret
         except Exception, e:

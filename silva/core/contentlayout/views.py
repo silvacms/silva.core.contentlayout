@@ -36,7 +36,11 @@ class ContentLayoutView(silvaviews.View):
         if not view:
             msg = "No LayoutView for template %s defined"%(template)
             raise NoViewError, msg
-        view.content_layout = self.version
+        #need to fixup the context here.  the context needs to be the
+        # content_layout content (i.e. an ISilvaObject)
+        view.layout_template = view.context
+        view.context = self.context
+        view.version = self.version
         return view()
     
 class NotEditableError(Exception):

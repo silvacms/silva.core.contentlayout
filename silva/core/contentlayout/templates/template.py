@@ -40,7 +40,7 @@ class TemplateView(grok.View):
     
     def __init__(self, context, request):
         super(TemplateView, self).__init__(context, request)
-        self.content_layout = None
+        self.version = None
         self.in_layout_editor = False
         
     def update(self):
@@ -69,7 +69,7 @@ class TemplateView(grok.View):
             #else:
                 #after.append(rendered)
         html = []
-        for part in self.content_layout.get_parts_for_slot(slot):
+        for part in self.version.get_parts_for_slot(slot):
             rendered = self.render_part(part, slot, interface, wrapClass=wrapClass)
             html.append(rendered)
         
@@ -80,7 +80,7 @@ class TemplateView(grok.View):
            it's IPartViewWidget or IPartView"""
         ad = getMultiAdapter((part, self.request),
                              interface=interface)
-        ad.contentlayout = self.content_layout
+        ad.contentlayout = self.version
         ad.slot = slot
         ad.wrapClass = wrapClass
         return ad()
@@ -105,6 +105,6 @@ class TemplateView(grok.View):
         if ILayoutEditorLayer.providedBy(self.request):
             interface=ITitleViewWidget
             
-        ad = getMultiAdapter((self.content_layout, self.request),
+        ad = getMultiAdapter((self.version, self.request),
                              interface=interface)
         return ad()
