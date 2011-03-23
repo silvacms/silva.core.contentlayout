@@ -2,7 +2,7 @@ from five import grok
 from zope.component import getMultiAdapter, queryMultiAdapter, getUtility
 
 from silva.core.views import views as silvaviews
-from silva.core.views.interfaces import ILayoutEditorLayer
+from silva.core.views.interfaces import ILayoutEditorLayer, IPreviewLayer
 from silva.core.interfaces import IContentLayout, IVersionedContentLayout
 from silva.core.contentlayout.interfaces import IContentLayoutService
 from silva.core.contentlayout.templates.interfaces import ILayoutView
@@ -46,6 +46,16 @@ class ContentLayoutView(silvaviews.View):
 class NotEditableError(Exception):
     """this is raised if attempting to access the edit view of a
        non-editable (published or closed) object"""
+    
+class ContentLayoutPreviewView(ContentLayoutView):
+    """ content.htmlv iew for content layout objects being previewed
+        (i.e. through the ++preview++ layer"""
+    grok.layer(IPreviewLayer)
+    grok.require("silva.ReadSilvaContent")
+    
+    def update(self):
+        super(ContentLayoutPreviewView, self).update()
+        self.version = self.context.get_previewable()
     
 class ContentLayoutEditView(ContentLayoutView):
     """ editor "content.html" view for content layout objects.

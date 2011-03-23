@@ -56,6 +56,11 @@ class LayoutEditHeaders(silvaviews.Viewlet):
        the content layout public rendering"""
     grok.viewletmanager(porto.HTMLHeadInsert)
 
+class PropertiesPreviewProvider(silvaviews.ContentProvider):
+    """defines a content provider which provides "properties"-related
+       content for the layout editor, to be displayed in the content layout
+       template ONLY when in preview mode"""
+
 class LayoutEditTab(grok.View):
     grok.context(IContentLayout)
     grok.require("silva.ReadSilvaContent")
@@ -242,7 +247,6 @@ class SavePart(grok.View):
     def __call__(self, parttype):
         self.parttype = parttype
         return super(SavePart, self).__call__()
-        
     
 class AddPartToSlot(grok.View):
     """Validate the result to the ExternalSource `esname`.
