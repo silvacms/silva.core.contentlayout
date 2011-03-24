@@ -80,8 +80,9 @@ YAHOO.namespace("bethel.contentlayout");
         
                     switch (sTagName) {
                     case "INPUT":
-                        if (sType == "checkbox") {
-                            oData[sName] = oElement.value;
+                        if (sType == "checkbox" || sType == "radio") {
+                            if (oElement.checked)
+                              oData[sName] = oElement.value;
                         } else if (sType != "radio") {
                             oData[sName] = oElement.value;
                         }
