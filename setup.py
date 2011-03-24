@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 import os
-
+ 
 version = '1.0'
 
 setup(name='silva.core.contentlayout',
