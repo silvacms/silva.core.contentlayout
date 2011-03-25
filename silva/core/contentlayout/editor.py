@@ -55,6 +55,7 @@ class LayoutEditHeaders(silvaviews.Viewlet):
     """defines a viewlet to add layout editor code to the html head of
        the content layout public rendering"""
     grok.viewletmanager(porto.HTMLHeadInsert)
+    grok.layer(ILayoutEditorLayer)
 
 class PropertiesPreviewProvider(silvaviews.ContentProvider):
     """defines a content provider which provides "properties"-related

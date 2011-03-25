@@ -9,7 +9,7 @@ class OneColumn(Template):
     grok.implements(IOneColumn)
     grok.name('silva.core.contentlayout.templates.OneColumn')
 
-    name = "One Column"
+    name = "One Column (standard)"
     description = "a simple one column layout"
     icon = "full.png"
     slotnames = ['maincontent']
@@ -23,7 +23,7 @@ class TwoColumn(Template):
     grok.implements(ITwoColumn)
     grok.name('silva.core.contentlayout.templates.TwoColumn')
     
-    name = "Two Column"
+    name = "Two Column (standard)"
     description = "a simple two column layout"
     icon = "fifty-fifty.png"
     slotnames = ['feature','panel']
