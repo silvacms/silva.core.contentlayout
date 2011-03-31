@@ -8,8 +8,6 @@ import tinymce_field
 silvaconf.extensionName("silva.core.contentlayout")
 silvaconf.extensionTitle("Silva Content Layout Base")
 
-from services import ContentLayoutService as CLS
-
 class Installer(DefaultInstaller):
     """Installer for the Silva Content Layout base extension.
     Override install, uninstall to add more actions.
@@ -18,16 +16,31 @@ class Installer(DefaultInstaller):
     def install(self, root):
         factory = root.manage_addProduct['silva.core.contentlayout']
 
+        from services import ContentLayoutService as CLS
+        from services import StickyContentService as SCS
+
         if CLS.default_service_identifier not in root.objectIds():
             factory.manage_addContentLayoutService(CLS.default_service_identifier)
+
+        if SCS.default_service_identifier not in root.objectIds():
+            factory.manage_addStickyContentService(SCS.default_service_identifier)
         super(Installer, self).install(root)
-# once sticky content is created...
-#    root.manage_permission('Add Silva Sticky Content Services', roleinfo.CHIEF_ROLES)
+
+        from Products.Silva import roleinfo
+        root.manage_permission('Add Silva Sticky Content Services', roleinfo.CHIEF_ROLES)
 
 
     def uninstall(self, root):
+        from services import ContentLayoutService as CLS
+        from services import StickyContentService as SCS
+
+        to_remove = []
         if CLS.default_service_identifier in root.objectIds():
-            root.manage_delObjects([CLS.default_service_identifier])
+            to_remove.append(CLS.default_service_identifier)
+        if SCS.default_service_identifier in root.objectIds():
+            to_remove.append(SCS.default_service_identifier)
+        if len(to_remove):
+            root.manage_delObjects(to_remove)
         super(Installer, self).uninstall(root)
 
 class IExtension(Interface):

@@ -42,3 +42,4 @@ class ContentLayoutTestCase(TestCase):
         self.root = self.layer.get_application()
         self.service = self.root.service_contentlayout
         self.pub1 = self.add_publication(self.root, 'pub', "Publication")
+        self.pub2 = self.add_publication(self.root, 'pub2', "Publication")

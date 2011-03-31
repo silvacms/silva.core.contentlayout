@@ -15,7 +15,6 @@ def templates_source(context):
     """Source/Vocabulary for all templates
     """
     cls = getUtility(IContentLayoutService)
-    templates = cls.get_templates()
     if IContentLayout.providedBy(context) or \
        IVersionedContentLayout.providedBy(context):
         templates = cls.get_allowed_templates(context.meta_type)
@@ -26,6 +25,8 @@ def templates_source(context):
         if r and len(r.steps) > 2 and r.steps[-2] == '+':
             meta_type = r.steps[-1]
             templates = cls.get_allowed_templates(meta_type)
+    else:
+        templates = cls.get_templates()
     contents = []
     for t in templates:
         contents.append(SimpleTerm(

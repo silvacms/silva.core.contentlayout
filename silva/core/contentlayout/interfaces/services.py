@@ -1,4 +1,4 @@
-from silva.core.interfaces import ISilvaLocalService
+from silva.core.interfaces import ISilvaLocalService, IContentLayout
 
 class IContentLayoutService(ISilvaLocalService):
     """This service displays all of the registered content templates.
@@ -69,6 +69,65 @@ class IStickyContentService(ISilvaLocalService):
        possible to add more sticky content at a lower level.  It is
        also possible to negate / prevent sticky content from appearing
        within a lower level.
-       """
+    """
     
-__all__ = ['IContentLayoutService', 'IStickyContentService']
+    def getStickyContentLayout(self, layout, create=True):
+        """get the StickyContentLayout for `layout` (the name of the layout).
+           if `create` and a StickyContentLayout does not exist, create one.
+           (so this method can also be used to determine if sticky content
+            exists (anywhere) for a layout)
+        """
+    
+    def getBlockedPartsForLayout(self, layout):
+        """returns the list of blocked parts for ``layout``
+        """
+    
+    def getStickyContentForLayoutSlot(self, layout, slot):
+        """get the sticky content in the `slot` in the `layout`.
+           will return an empty list if there is no 
+           sticky content
+        """
+
+    def hasStickyContentForLayout(self, layout):
+        """return True if service has sticky content for `layout`, in 
+           _any_ slot
+        """
+           
+    def hasStickyContentForLayoutSlot(self, layout, slot):
+        """return True if service has sticky content for `layout` in
+           `slot`
+        """
+        
+    def addStickyContent(self, template_name, part, slotname, beforepartkey=None):
+        """Add a Sticky Content Part to the template `template_name`
+        Sticky Content Parts are ContentLayoutParts which are
+        instances of cs_page_asset (every sticky content is a page asset)
+        """
+
+    def blockAcquiredStickyContent(self, template_name, partkey):
+        """block an acquired sticky content part for a template, given
+        the parts key"""
+        
+    def unblockAcquiredStickyContent(self, template_name, partkey):
+        """block an acquired sticky content part for a template, given
+        the parts key
+        """    
+
+class IStickyContentLayout(IContentLayout):
+    """StickyContentLayout stores the sticky content parts for a
+       template.  Adds support for blocking parts"""
+
+    def get_blocked_parts():
+        """return the list of blocked part keys
+        """
+        
+    def add_blocked_part(partkey):
+        """add a parts (it's key) to the list of blocked parts
+        """
+        
+    def remove_blocked_part(partkey):
+        """remove a part (it's key) from the list of blocked parts
+        """
+    
+__all__ = ['IContentLayoutService', 'IStickyContentService', 
+           'IStickyContentLayout']

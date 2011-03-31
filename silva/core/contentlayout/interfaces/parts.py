@@ -127,7 +127,12 @@ class ITitleEditWidget(IPartEditWidget):
           The parameters passed in to IPartEditWidget are not used, so
           this interface overrides __call__"""
 
+class IStickySupport(Interface):
+    """interface for adapters on parts which can be made sticky
+       (i.e. they provide IPartSupportsSicky").  This adapter is
+       used to get the sticky settings out of the part"""
+
 __all__ = ['IPartFactory', 'IPart', 'IExternalSourcePart', 'IRichTextPart',
            'IPartEditWidget', 'IRichTextExternalSource', 'IPartView',
            'IPartViewWidget', 'ITitleView', 'ITitleViewWidget',
-           'ITitleEditWidget']
+           'ITitleEditWidget', 'IStickySupport']

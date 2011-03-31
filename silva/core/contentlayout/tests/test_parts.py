@@ -1,7 +1,7 @@
 from ContentLayoutTestCase import ContentLayoutTestCase
 from zExceptions import NotFound
-from Products.Silva.contentlayout.parts import ExternalSourcePart
-from Products.Silva.contentlayout.interfaces import IPartFactory
+from silva.core.contentlayout.parts import ExternalSourcePart
+from silva.core.contentlayout.interfaces import IPartFactory
 
 class PartsTestCase(ContentLayoutTestCase):
     
