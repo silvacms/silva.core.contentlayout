@@ -18,6 +18,7 @@ from AccessControl import ClassSecurityInfo
 from App.class_init import InitializeClass
 from App.ImageFile import ImageFile
 from OFS import misc_ as icons
+from OFS.Folder import Folder
 
 from Products.Silva.Folder import meta_types_for_interface
 from Products.Silva import SilvaPermissions
@@ -34,7 +35,9 @@ from silva.core.interfaces import (IContentLayout, IVersionedContentLayout,
                                    IPublication, ISiteManager, IRoot)
 from silva.core.contentlayout.interfaces import (IContentLayoutService,
                                                  IStickyContentService,
-                                                 IStickyContentLayout)
+                                                 IStickyContentLayout,
+                                                 IPartFactory,
+                                                 IStickySupport)
 from silva.core.contentlayout.contentlayout import ContentLayout
 from silva.core.contentlayout.interfaces.schema import templates_source
 from silva.core.contentlayout.templates.interfaces import ITemplate
@@ -50,7 +53,8 @@ class StickyServiceButton(smi.SMIMiddleGroundButton):
     label = _(u"sticky content")
     help = _(u"manage the sticky content applied to this container")
     
-class StickyContentService(SilvaService):
+    
+class StickyContentService(SilvaService, Folder):
     meta_type = "Silva Sticky Content Service"
     grok.implements(IStickyContentService)
     default_service_identifier = 'service_sticky_content'
@@ -89,7 +93,7 @@ class StickyContentService(SilvaService):
         layout = self._getStickyContentLayout(layout, create=False)
         if not layout:
             return []
-        return layout.getBlockedParts()
+        return layout.get_blocked_parts()
     
     security.declareProtected(SilvaPermissions.AccessContentsInformation,
                               "getStickyContentForLayoutSlot")
@@ -119,7 +123,7 @@ class StickyContentService(SilvaService):
            hasattr(container.aq_parent, self.id):
             parent_parts = getattr(container.aq_parent, self.id).getStickyContentForLayoutSlot(layout, slot)
             acquired_parts.extend( [ p for p in parent_parts
-                                     if p.getKey() not in blocked_parts ] )
+                                     if p.get_key() not in blocked_parts ] )
         
         layout = self._getStickyContentLayout(layout, create=False)
         if not layout: 
@@ -131,8 +135,8 @@ class StickyContentService(SilvaService):
         # order (top, bottom), and is easy to determine whether
         # a part is acquired or not.
         
-        ordered_parts = [ (IStickySupport(p).getPlacement(), i, p) for i,p in 
-                          enumerate(layout.getPartsForSlot(slot)) ]
+        ordered_parts = [ (IStickySupport(p).get_placement(), i, p) for i,p in 
+                          enumerate(layout.get_parts_for_slot(slot)) ]
         ordered_parts.sort()
 
         return [ acquired_parts,  [ p[2] for p in ordered_parts ] ]
@@ -141,23 +145,23 @@ class StickyContentService(SilvaService):
                               "getPlacementForStickyContent")
     def getPlacementForStickyContent(self, part):
         ad = IStickySupport(part)
-        return ad.getPlacement()
+        return ad.get_placement()
 
     security.declareProtected(SilvaPermissions.AccessContentsInformation,
                               "changePlacementForStickyContent")
     def changePlacementForStickyContent(self, layout, partkey, current):
         sticky_layout = self._getStickyContentLayout(layout)
-        part = sticky_layout.getPart(partkey)
+        part = sticky_layout.get_part(partkey)
         
         ad = IStickySupport(part)
         if current=='above':
-            ad.changePlacement('below')
+            ad.change_placement('below')
         else:
-            ad.changePlacement('above')
+            ad.change_placement('above')
             
     def getStickyContent(self, layout, partkey, acquire=True):
         sticky_layout = self._getStickyContentLayout(layout)
-        part = sticky_layout.getPart(partkey)
+        part = sticky_layout.get_part(partkey)
 
         #return part or None if part or we're not acquiring
         if part or not acquire:
@@ -190,7 +194,7 @@ class StickyContentService(SilvaService):
             return False
         #this will return None if the slot does not exist (preventing 
         # side-effect of creating the slot
-        slot = layout.getSlot(slot, create=False)
+        slot = layout.get_slot(slot, create=False)
         return not slot or len(slot)>0
         
     security.declareProtected(SilvaPermissions.ChangeSilvaContent,
@@ -201,7 +205,7 @@ class StickyContentService(SilvaService):
         instances of cs_page_asset (every sticky content is a page asset)
         """
         sticky_layout = self._getStickyContentLayout(layoutname)
-        part = sticky_layout.addPartToSlot(part, slotname, beforepartkey)
+        part = sticky_layout.add_part_to_slot(part, slotname, beforepartkey)
         return part
     
     security.declareProtected(SilvaPermissions.ChangeSilvaContent,
@@ -209,29 +213,29 @@ class StickyContentService(SilvaService):
     def removeStickyContent(self, layoutname, partkey):
         """remove a local sticky content from a layout"""
         sticky_layout = self._getStickyContentLayout(layoutname)
-        sticky_layout.removePart(partkey)
+        sticky_layout.remove_part(partkey)
         
     security.declareProtected(SilvaPermissions.ChangeSilvaContent,
                               "moveStickyContent")
     def moveStickyContent(self, layoutname, partkey, beforepartkey):
         sticky_layout = self._getStickyContentLayout(layoutname)
-        part = sticky_layout.getPart(int(partkey))
-        slotname = sticky_layout.getSlotNameForPart(part)
-        sticky_layout.addPartToSlot(part, slotname, int(beforepartkey))
+        part = sticky_layout.get_part(int(partkey))
+        slotname = sticky_layout.get_slot_name_for_part(part)
+        sticky_layout.add_part_to_slot(part, slotname, int(beforepartkey))
 
     security.declareProtected(SilvaPermissions.ChangeSilvaContent,
                               "blockAcquiredStickyContent")
     def blockAcquiredStickyContent(self, template_name, partkey):
         """block an acquired sticky content part for a template, given
         the parts key"""
-        self._getStickyContentLayout(template_name).addBlockedPart(partkey)
+        self._getStickyContentLayout(template_name).add_blocked_part(partkey)
         
     security.declareProtected(SilvaPermissions.ChangeSilvaContent,
                               "unblockAcquiredStickyContent")
     def unblockAcquiredStickyContent(self, template_name, partkey):
         """block an acquired sticky content part for a template, given
         the parts key"""
-        self._getStickyContentLayout(template_name).removeBlockedPart(partkey)
+        self._getStickyContentLayout(template_name).remove_blocked_part(partkey)
         
     security.declareProtected(SilvaPermissions.ChangeSilvaContent,
                               "manage_block")
@@ -281,6 +285,12 @@ class StickyContentService(SilvaService):
                               )
 InitializeClass(StickyContentService)
 
+
+class StickyMacros(grok.View):
+    """a macro view / page template for tab_sticky_content"""
+    grok.context(IStickyContentService)
+
+    
 class StickyContentLayout(ContentLayout):
     """StickyContentLayout stores the sticky content parts for a
        template
@@ -317,6 +327,7 @@ class StickyContentLayout(ContentLayout):
         if partkey in self._blocked_parts:
             self._blocked_parts.remove(partkey)
 InitializeClass(StickyContentLayout)
+
 
 #class StickyContentForm(silvaforms.SMIComposedForm):
     #"""outer "form" to manage sticky content"""
@@ -566,10 +577,12 @@ class ContentLayoutService(SilvaService):
         self._template_mapping[meta_type]['allowed'] = allowed
 InitializeClass(ContentLayoutService)
 
+
 class IMappingsServiceZMILayer(IDefaultBrowserLayer):
     """Layer to add custom css to the mappings service form"""
     silvaconf.resource('mappings.css')
 
+    
 class IMappings(Interface):
     """Schema definition for the template mappings for a single 
        content layout type"""
@@ -583,6 +596,7 @@ class IMappings(Interface):
         value_type=schema.Choice(source=templates_source),
         required=False)
 
+    
 class TemplateDataManager(BaseDataManager):
     """A data manager specifically tailored to managing the templates"""
     
@@ -608,7 +622,8 @@ class TemplateDataManager(BaseDataManager):
                                                value)
         else:
             raise KeyError(identifier)
-            
+
+        
 class MappingSubForm(silvaforms.ZMISubForm):
     grok.context(IContentLayoutService)
     fields = Fields(IMappings)
@@ -633,6 +648,7 @@ class MappingSubForm(silvaforms.ZMISubForm):
         self.status = "Mappings for %s updated."%self.meta_type
         return silvaforms.SUCCESS
 
+    
 class ContentLayoutMappings(silvaforms.ZMIComposedForm):
     name = 'manage_main'
     grok.name(name)
@@ -671,6 +687,7 @@ class ContentLayoutMappings(silvaforms.ZMIComposedForm):
         alsoProvides(self.request, IMappingsServiceZMILayer)
         super(ContentLayoutMappings, self).update()
 
+        
 class TemplateIcons(grok.View):
     """return a css file with all icons mapped to specifiers"""
     grok.context(IContentLayoutService)
@@ -725,3 +742,5 @@ background-image: url("%s");
                 css.append(css_template%(name, template.real_icon_web_path))
                 #response.write(output.encode('utf-8'))
         return u'\n'.join(css)
+    
+pass #improved code folding support in wing

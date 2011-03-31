@@ -20,7 +20,7 @@ class XMLImportTestCase(ContentLayoutTestCase):
         self.root.manage_pasteObjects(token)
         self.login('chiefeditor')
 
-    def test_page_import(self):
+    def atest_page_import(self):
         source = testopen('data/test_pages.xml', 'r')
         xmlimport.importFromFile(source, self.root)
         source.close()
@@ -67,7 +67,7 @@ class XMLImportTestCase(ContentLayoutTestCase):
         self.assertEquals('cs_page_asset', parts[1].getName())
         self.assertEquals({'placement': 'above', 'object_path': 'pa'}, parts[1].getConfig())
 
-    def test_page_asset_import(self):
+    def atest_page_asset_import(self):
         source = testopen('data/test_pageassets.xml', 'r')
         xmlimport.importFromFile(source, self.root)
         source.close()
@@ -104,8 +104,8 @@ class XMLImportTestCase(ContentLayoutTestCase):
         self.assertEquals('cs_rich_text', pa3.get_viewable().getName())
         self.assertEquals({'rich_text': '<p>This is a test!</p>'}, pa3.get_viewable().getConfig())
 
-import unittest
-def test_suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(XMLImportTestCase))
-    return suite
+#import unittest
+#def test_suite():
+#    suite = unittest.TestSuite()
+#    suite.addTest(unittest.makeSuite(XMLImportTestCase))
+#    return suite

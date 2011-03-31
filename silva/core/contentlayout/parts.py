@@ -25,7 +25,8 @@ from silva.core.contentlayout.interfaces import (IPart, IExternalSourcePart,
                                                  IPartView, IPartViewWidget,
                                                  ITitleView, ITitleViewWidget,
                                                  ITitleEditWidget,
-                                                 IContentLayoutService)
+                                                 IContentLayoutService,
+                                                 IStickySupport)
 
 class ExternalSourcePart(SimpleItem):
     """An ExternalSourcePart represents a "part" in a content layout slot
@@ -68,6 +69,7 @@ class ExternalSourcePart(SimpleItem):
         return self._key
 InitializeClass(ExternalSourcePart)
 
+
 class RichTextPart(ExternalSourcePart):
     grok.implements(IRichTextPart)
     meta_type = "Rich Text Part"
@@ -76,6 +78,7 @@ class RichTextPart(ExternalSourcePart):
     def __str__(self):
         return "RichTextPart(%s): %s"%(self._name, self._config)
 InitializeClass(RichTextPart)
+
 
 class PartFactory(grok.Adapter):
     """The base class for factories which create a specific type of part"""
@@ -88,6 +91,7 @@ class PartFactory(grok.Adapter):
     def create(self, result):
         raise NotImplemented, "the create method is implemented in subclasses"
 
+    
 class ExternalSourcePartFactory(PartFactory):
     grok.context(IExternalSource)
     def create(self, result):
@@ -96,10 +100,12 @@ class ExternalSourcePartFactory(PartFactory):
         """
         return ExternalSourcePart(self.source.id, result)
     
+    
 class RichTextPartFactory(PartFactory):
     grok.context(IRichTextExternalSource)
     def create(self, result):
         return RichTextPart(self.source.id, result)
+    
     
 class BasePartView(grok.View):
     """ base class mixin for adapters which render the view of
@@ -117,6 +123,7 @@ class BasePartView(grok.View):
     slot = None
     contentlayout = None
     wrapClass = None
+    
     
 class ExternalSourcePartView(BasePartView):
     """Part View Widget for external sources.
@@ -159,6 +166,7 @@ class ExternalSourcePartView(BasePartView):
                   "]</strong><br />error message: " + str(e) + \
                    "<br />Check the error log for more information.</div>"
 
+        
 class PartViewWidget(grok.View):
     """Renders the preview of an IContentLayoutPart
         as a widget for the layout template's
@@ -184,6 +192,7 @@ class PartViewWidget(grok.View):
         ad.checkPreviewable=True
         return ad()
 
+    
 class BasePartEditWidget(grok.View):
     """ base class mixin for adapters which render the edit view of 
         content layout parts (allowing authors to change
@@ -198,6 +207,7 @@ class BasePartEditWidget(grok.View):
     #the content layout object associated with this part
     content_layout = None
 
+    
 class ExternalSourcePartEditWidget(BasePartEditWidget):
     """Part Edit Widget for External Sources.
     """
@@ -238,6 +248,7 @@ class ExternalSourcePartEditWidget(BasePartEditWidget):
             }
         return super(ExternalSourcePartEditWidget,self).__call__()
     
+    
 class TitleView(BasePartView):
     grok.implements(ITitleView)
     grok.provides(ITitleView)
@@ -262,6 +273,7 @@ class TitleView(BasePartView):
     def render(self):
         return self.render_title()
 
+    
 class TitleViewWidget(grok.View):
     """Wraps the TitleView inside HTML to make the title an editable
        widget in the layout editor.
@@ -276,8 +288,43 @@ class TitleViewWidget(grok.View):
         return getMultiAdapter((self.context, self.request),
                                interface=ITitleView)()
 
+    
 class TitleEditWidget(BasePartEditWidget):
     grok.implements(ITitleEditWidget)
     grok.provides(ITitleEditWidget)
     grok.context(IContentLayout)
     grok.name('')
+
+    
+class StickySupport(grok.Adapter):
+    """class to get sticky settings (above, below, possibly others)
+    out of an ISupportsSticky part (which should only be the
+    cs_page_asset, but could possibly include others"""
+    grok.context(IExternalSourcePart)
+    grok.implements(IStickySupport)
+    
+    def __init__(self, part):
+        self.part = part
+        
+    def get_placement(self):
+        """Get the placement (either above or below)
+           for a sticky content part.  This assumes
+           the part has a config param 'placement', which
+           stores the string 'above' or 'below'.  If not,
+           the placement is below"""
+        c = self.part.get_config()
+        if c.has_key('placement'):
+            if c['placement'] == 'above':
+                return 'above'
+        return 'below'
+    
+    def change_placement(self, newplacement):
+        """newplacement is either 'above' or 'below'.
+           If the part has a config param 'placement',
+           this updates the value of that configparam to
+           `newplacement`"""
+        c = self.part.get_config()
+        if newplacement=='above':
+            c['placement'] = 'above'
+        else:
+            c['placement'] = 'below'

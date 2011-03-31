@@ -28,19 +28,13 @@ class ContentLayoutServiceTestCase(ContentLayoutTestCase):
         self.assertEquals([t[0] for t in self.service.get_sorted_templates()], 
                           list(self.service.get_allowed_template_names('Silva Page')))
         self.assertEquals(None, self.service.get_default_template('Silva Page'))
-    
-    def test_getSupportingMetaTypes(self):
-        # Might need to adjust if additional products like Silva News are installed in these test cases
-        # also needs to be moved to silva.app.page
-        self.assertEquals(['Silva Page'], self.service.get_supporting_meta_types())
-        
+         
     def test_getTemplateByName(self):
         #Basic tests for get_template_by_name
-        self.assertEquals('One Column', self.service.get_template_by_name(self.one).name)
-        self.assertEquals('Two Column', self.service.get_template_by_name(self.two).name)
+        self.assertEquals('One Column (standard)', self.service.get_template_by_name(self.one).name)
+        self.assertEquals('Two Column (standard)', self.service.get_template_by_name(self.two).name)
         #Make sure the appropriate error is raised for non-existent template name
         self.assertRaises(ComponentLookupError, self.service.get_template_by_name, 'String')
-
 
     def test_getSortedTemplates(self):
         st = []
