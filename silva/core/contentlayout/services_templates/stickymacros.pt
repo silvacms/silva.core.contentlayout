@@ -18,22 +18,22 @@
 
    <tal:rep repeat="index python:range(0,len(sticky[1]))">
     <div tal:define="s python:sticky[1][index];
-                     config python:s.getConfig(copy=True);
+                     config python:s.get_config(copy=True);
                      asset python:service.restrictedTraverse(config['object_path'], None)">
-     <a tal:attributes="href string:${action_prefix}_remove?layout=${templateId}&partkey=${s/getKey}" onclick="if (confirm('confirm removal of sticky content.  this action cannot be undone.')) return true;return false;">remove</a>
+     <a tal:attributes="href string:${action_prefix}_remove?layout=${templateId}&partkey=${s/get_key}" onclick="if (confirm('confirm removal of sticky content.  this action cannot be undone.')) return true;return false;">remove</a>
      <a tal:define="pla python:service.getPlacementForStickyContent(s)"
-        tal:attributes="href string:${action_prefix}_change_placement?layout=${templateId}&partkey=${s/getKey}&current=${pla}"
+        tal:attributes="href string:${action_prefix}_change_placement?layout=${templateId}&partkey=${s/get_key}&current=${pla}"
         tal:content="pla" />
      <a tal:omit-tag="not:asset"
         tal:attributes="href python:asset and '%s/edit'%asset.absolute_url()"
-        tal:content="python:asset and '%s (%s)'%(asset.get_title(), asset.id) or s.getKey()" />
+        tal:content="python:asset and '%s (%s)'%(asset.get_title(), asset.id) or s.get_key()" />
      <span tal:condition="not:asset">sticky content is broken.  unable to find page asset: <span tal:replace="config/object_path" /></span>
      <!-- controls for moving up and down -->
      <tal:def define="next python:index+1 < len(sticky[1]) and sticky[1][index+1] or None;
                       prev python:index > 0 and sticky[1][index-1] or None;">
      <a  tal:condition="prev"
         title="move up"
-        tal:attributes="href string:${action_prefix}_move?layout=${templateId}&partkey=${s/getKey}&beforepartkey=${prev/getKey}"
+        tal:attributes="href string:${action_prefix}_move?layout=${templateId}&partkey=${s/get_key}&beforepartkey=${prev/get_key}"
         i18n:attributes="title"
      ><img alt="move up"
              height="12"
@@ -42,7 +42,7 @@
               i18n:attributes="alt"
       /></a><a tal:condition="next"
                title="move down"
-               tal:attributes="href string:${action_prefix}_move?layout=${templateId}&partkey=${next/getKey}&beforepartkey=${s/getKey}"
+               tal:attributes="href string:${action_prefix}_move?layout=${templateId}&partkey=${next/get_key}&beforepartkey=${s/get_key}"
                i18n:attributes="title"
       ><img alt="move down"
  	   height="12"
@@ -56,12 +56,12 @@
 
    <h5 tal:condition="python:sticky[0]">acquired</h5>
    <tal:rep repeat="s python:sticky[0]">
-     <div tal:define="config python:s.getConfig(copy=True);
+     <div tal:define="config python:s.get_config(copy=True);
                       asset python:service.restrictedTraverse(config['object_path'], None)">
-       <a tal:attributes="href string:${action_prefix}_block?layout=${templateId}&partkey=${s/getKey}">block</a>
+       <a tal:attributes="href string:${action_prefix}_block?layout=${templateId}&partkey=${s/get_key}">block</a>
      <a tal:omit-tag="not:asset"
         tal:attributes="href python:asset and '%s/edit'%asset.absolute_url()"
-        tal:content="python:asset and '%s (%s)'%(asset.get_title(), asset.id) or s.getKey()" />
+        tal:content="python:asset and '%s (%s)'%(asset.get_title(), asset.id) or s.get_key()" />
        <span tal:condition="not:asset">sticky content is broken.  unable to find page asset: <span tal:replace="config/object_path" /></span>
      </div>
    </tal:rep>
@@ -74,7 +74,7 @@
   <tal:block condition="blocked">
    <div tal:repeat="b blocked">
     <tal:def define="s python:service.getStickyContent(cl_template[0], b);
-                     config python:s and s.getConfig(copy=True);
+                     config python:s and s.get_config(copy=True);
                      asset python:config and service.restrictedTraverse(config['object_path'], None)">
      <a tal:attributes="href string:${action_prefix}_unblock?layout=${templateId}&partkey=${b}">unblock</a>
      <a tal:omit-tag="not:asset"

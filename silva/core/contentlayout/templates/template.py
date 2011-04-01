@@ -4,7 +4,9 @@ from zope.component import getUtility, getMultiAdapter
 from silva.core.views.interfaces import ILayoutEditorLayer
 from silva.core.contentlayout.interfaces import (IPartView, IPartViewWidget,
                                                  IContentLayoutService,
-                                                 ITitleView, ITitleViewWidget)
+                                                 ITitleView, ITitleViewWidget,
+                                                 IStickyContentService,
+                                                 IStickySupport)
 from silva.core.contentlayout.templates.interfaces import (ITemplate, 
                                                            ILayoutView)
 
@@ -31,6 +33,7 @@ class Template(object):
     priority = 50
     slotnames = []
 
+
 class TemplateView(grok.View):
     grok.implements(ILayoutView)
     grok.provides(ILayoutView)
@@ -54,23 +57,25 @@ class TemplateView(grok.View):
             interface=IPartViewWidget
 
         #get the sticky content parts
-        #ssc = self.content_layout.service_sticky_content.aq_inner
-        #sticky_content = ssc.getStickyContentForLayoutSlot(
-            #self.content_layout.getLayoutName(),
-            #slot)
+        ssc = getUtility(IStickyContentService)
+        sticky_content = ssc.getStickyContentForLayoutSlot(
+            self.version.get_layout_name(),
+            slot)
 
         before = []
         after = []
-        #for sticky in sticky_content:
-            #sticky_ad = IStickySupport(sticky)
-            #rendered = self.renderPart(sticky, slot, wrapClass=wrapClass)
-            #if sticky_ad.getPlacement() == 'above':
-                #before.append(rendered)
-            #else:
-                #after.append(rendered)
+        for sticky in sticky_content:
+            sticky_ad = IStickySupport(sticky)
+            rendered = self.render_part(sticky, slot, interface, 
+                                        wrapClass=wrapClass)
+            if sticky_ad.get_placement() == 'above':
+                before.append(rendered)
+            else:
+                after.append(rendered)
         html = []
         for part in self.version.get_parts_for_slot(slot):
-            rendered = self.render_part(part, slot, interface, wrapClass=wrapClass)
+            rendered = self.render_part(part, slot, interface, 
+                                        wrapClass=wrapClass)
             html.append(rendered)
         
         return [before, html, after]

@@ -152,7 +152,21 @@ class ExternalSourcePartView(BasePartView):
                 ret = "<div class='not-previewable'>This content, a '%s', is not previewable.</div>"%source.get_title()
             else:
                 config = self.context.get_config(copy=True)
-                ret = source.to_html(content=self.context,
+                #an IContent or IVersion is required to be passed in to to_html
+                # (since the codesource sniffs and tried to detect the version)
+                # This isn't a problem when the part is in a Page, but when
+                # using the "embed page asset" source, it is.  In particular,
+                # if it's sticky content, self.context cannot acquire get_content,
+                # since it's a service in a folder (NOT content).  In this case,
+                # self.contentlayout IS specified.  But some times it isn't
+                # (i.e. the part "pointed to" in the "embed page asset" cs.
+                # But here, self.context DOES work.
+                # failing all that, fallback to the outer exception block.
+                content = self.contentlayout
+                if not self.contentlayout:
+                    if hasattr(self.context, 'get_content'):
+                        content = self.context.get_content()
+                ret = source.to_html(content=content,
                                      request=self.request, 
                                      **config)
             if self.wrapClass:

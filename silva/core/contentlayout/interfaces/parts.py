@@ -10,6 +10,7 @@ class IPartFactory(Interface):
         in result_dict
         """
 
+        
 class IPart(Interface):
     """An interface for objects that are "parts" in a content
        layout slot
@@ -19,6 +20,7 @@ class IPart(Interface):
         """returns a unique integer key identifying this external source
         """
 
+        
 class IExternalSourcePart(IPart):
     """An interface for objects that are "parts" in a content
        layout slot which represent external source data
@@ -37,14 +39,17 @@ class IExternalSourcePart(IPart):
         """return the configuration dictionary
         """
 
+        
 class IRichTextPart(IPart):
     """a part which stores rich text ONLY, e.g. it's external source object
        has _only_ a rich text (i.e. tinymce) field"""
 
+    
 class IRichTextExternalSource(Interface):
     """ marker interface for the "rich text" external source, manually add
         this to that external source"""
 
+    
 class IPartView(Interface):
     """ interface for adapters that render public views of
         content layout parts """
@@ -61,6 +66,7 @@ class IPartView(Interface):
            is the same for ICLPartView and PartViewWidget.
            """
 
+        
 class IPartViewWidget(Interface):
     """Interface for adapters that render the preview of an 
        IPart as a widget for the layout template's
@@ -80,6 +86,7 @@ class IPartViewWidget(Interface):
            ``content_layout`` is the IContentLayout, e.g.
            a Silva Page Version"""
 
+        
 class IPartEditWidget(Interface):
     """ interface for adapters that render the edit view of 
         content layout parts (allowing authors to change
@@ -105,17 +112,20 @@ class IPartEditWidget(Interface):
                         above the form inputs in addition to below
         """
 
+        
 class ITitleView(IPartView):
     """ interface for adapters that render the public view of a page title.
         This is to enable page titles to be editable in the
         content layout editor.  The contentlayout interface treats
         page titles as a static part, which is why this inherits from
         IPartView"""
+
     
 class ITitleViewWidget(IPartViewWidget):
     """ interface for adapters that render the public view widget
         of a page title.  This is to enable page titles to be editable in the
         content layout editor"""
+
     
 class ITitleEditWidget(IPartEditWidget):
     """ interface for adapters that render the edit widget
@@ -127,10 +137,12 @@ class ITitleEditWidget(IPartEditWidget):
           The parameters passed in to IPartEditWidget are not used, so
           this interface overrides __call__"""
 
+        
 class IStickySupport(Interface):
     """interface for adapters on parts which can be made sticky
        (i.e. they provide IPartSupportsSicky").  This adapter is
        used to get the sticky settings out of the part"""
+
 
 __all__ = ['IPartFactory', 'IPart', 'IExternalSourcePart', 'IRichTextPart',
            'IPartEditWidget', 'IRichTextExternalSource', 'IPartView',
