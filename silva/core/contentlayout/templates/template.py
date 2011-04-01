@@ -66,7 +66,9 @@ class TemplateView(grok.View):
         after = []
         for sticky in sticky_content:
             sticky_ad = IStickySupport(sticky)
-            rendered = self.render_part(sticky, slot, interface, 
+            #DO NOT send the "interface" through to sticky content.  it is
+            # ALWAYS IPartView (NEVER IPartViewWidget)
+            rendered = self.render_part(sticky, slot, 
                                         wrapClass=wrapClass)
             if sticky_ad.get_placement() == 'above':
                 before.append(rendered)
