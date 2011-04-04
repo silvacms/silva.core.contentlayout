@@ -59,5 +59,7 @@ CLASS_CHANGES = {
     'Products.Silva.contentlayout.parts RichTextPart':
     'silva.core.contentlayout.parts RichTextPart',
     'Products.Silva.contentlayout.tinymce_field TinyMCEField':
-    'silva.core.contentlayout.tinymce_field TinyMCEField'
+    'silva.core.contentlayout.tinymce_field TinyMCEField',
+    'Products.Silva.contentlayout.ServiceStickyContent StickyContentLayout':
+    'silva.core.contentlayout.services StickyContentLayout'
     }
