@@ -10,6 +10,7 @@ from silva.core.upgrade.upgrade import BaseUpgrader, content_path
 
 logger = logging.getLogger('silva.core.contentlayout')
 
+VERSION_B1 = '2.3a1'
 VERSION_FINAL='2.3'
 
 class ContentLayoutServiceUpgrader(BaseUpgrader):
@@ -23,13 +24,14 @@ class ContentLayoutServiceUpgrader(BaseUpgrader):
             #change allowed to a set
             if val.has_key('allowed'):
                 val['allowed'] = set(val['allowed'])
+        return obj
 
 cls_upgrader = ContentLayoutServiceUpgrader(VERSION_FINAL, 
                                             'Silva Content Layout Service')
 
 class RootUpgrader(BaseUpgrader):
     def upgrade(self, root):
-        #need to remove some views things here
-        pass
+        #XXXneed to remove some views things here
+        return root
 root_upgrader = RootUpgrader(VERSION_FINAL,
                              'Silva Root')
