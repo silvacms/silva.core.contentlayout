@@ -17,21 +17,17 @@ class ContentLayoutServiceUpgrader(BaseUpgrader):
     
     def upgrade(self, obj):
         #content storage has changed, update it
-        if hasattr(self, '_content_template_mapping'):
-            self._template_mapping = self._content_template_mapping
-            del self._content_template_mapping
-        for key,val in self._template_mapping.iteritems():
+        if hasattr(obj, '_content_template_mapping'):
+            obj._template_mapping = obj._content_template_mapping
+            del obj._content_template_mapping
+        if hasattr(obj, '_default_non_cl'):
+            del obj._default_non_cl
+        for key,val in obj._template_mapping.iteritems():
             #change allowed to a set
             if val.has_key('allowed'):
                 val['allowed'] = set(val['allowed'])
         return obj
 
-cls_upgrader = ContentLayoutServiceUpgrader(VERSION_FINAL, 
+cls_upgrader = ContentLayoutServiceUpgrader(VERSION_B1, 
                                             'Silva Content Layout Service')
 
-class RootUpgrader(BaseUpgrader):
-    def upgrade(self, root):
-        #XXXneed to remove some views things here
-        return root
-root_upgrader = RootUpgrader(VERSION_FINAL,
-                             'Silva Root')
