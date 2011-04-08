@@ -10,8 +10,20 @@ from silva.core.upgrade.upgrade import BaseUpgrader, content_path
 
 logger = logging.getLogger('silva.core.contentlayout')
 
-VERSION_B1 = '2.3a1'
+VERSION_B1 = '2.3b1'
 VERSION_FINAL='2.3'
+
+class ContentLayoutServiceRenamer(BaseUpgrader):
+    
+    def upgrade(self, root):
+        #rename service, if the old name is present
+        if hasattr(root, 'service_content_templates'):
+            root.manage_renameObject('service_content_templates',
+                                      'service_contentlayout')
+        return root
+            
+#renamer = ContentLayoutServiceRenamer(VERSION_B1, 'Silva Root')
+renamer = ContentLayoutServiceRenamer('2.3.1b1', 'Silva Root')
 
 class ContentLayoutServiceUpgrader(BaseUpgrader):
     
@@ -28,6 +40,6 @@ class ContentLayoutServiceUpgrader(BaseUpgrader):
                 val['allowed'] = set(val['allowed'])
         return obj
 
-cls_upgrader = ContentLayoutServiceUpgrader(VERSION_B1, 
+cls_upgrader = ContentLayoutServiceUpgrader(VERSION_FINAL, 
                                             'Silva Content Layout Service')
 
