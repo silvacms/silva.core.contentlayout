@@ -22,8 +22,7 @@ class ContentLayoutServiceRenamer(BaseUpgrader):
                                       'service_contentlayout')
         return root
             
-#renamer = ContentLayoutServiceRenamer(VERSION_B1, 'Silva Root')
-renamer = ContentLayoutServiceRenamer('2.3.1b1', 'Silva Root')
+renamer = ContentLayoutServiceRenamer(VERSION_B1, 'Silva Root')
 
 class ContentLayoutServiceUpgrader(BaseUpgrader):
     
