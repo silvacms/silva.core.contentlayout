@@ -11,7 +11,7 @@ from five import grok
 from silva.core.interfaces.adapters import IPath
 from silva.core.interfaces import ISilvaObject, IImage
 
-from bethel.core.zopecache import silva
+#from bethel.core.zopecache import silva
 
 #local
 from silva.core.contentlayout.interfaces import (IRichTextCleanup,
