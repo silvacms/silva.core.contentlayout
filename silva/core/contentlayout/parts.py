@@ -146,6 +146,7 @@ class ExternalSourcePartView(BasePartView):
         try:
             context = aq_inner(self.context)
             source = aq_acquire(context, self.context.get_name())
+            __traceback_info__ = "external source %s"%(source.id)
             #don't allow the keyword args specifically for this adapter
             # to bleed into the external source view code.
             if self.checkPreviewable and not source.is_previewable():
