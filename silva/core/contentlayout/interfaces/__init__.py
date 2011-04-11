@@ -4,3 +4,5 @@ from silva.core.contentlayout.interfaces.services import *
 from silva.core.contentlayout.interfaces.content import *
 from silva.core.contentlayout.interfaces.parts import *
 from silva.core.contentlayout.interfaces.formulator import *
+from silva.core.contentlayout.interfaces.adapters import *
+

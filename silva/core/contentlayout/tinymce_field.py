@@ -6,7 +6,9 @@ from zope.component import getMultiAdapter
 from zope.pagetemplate.pagetemplatefile import PageTemplateFile
 
 from Products.Five import BrowserView
+from App.class_init import InitializeClass
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+from AccessControl import ClassSecurityInfo
 
 from Products.Formulator.DummyField import fields
 from Products.Formulator.FieldRegistry import FieldRegistry
@@ -18,7 +20,8 @@ from silva.core.contentlayout.interfaces import (ITinyMCEField,
                                                  ITinyMCEWidget, 
                                                  ITinyMCEValidator,
                                                  IFormulatorWidgetView)
-#from silva.core.contentlayout.adapters.interfaces import IRichTextCleanup
+from silva.core.contentlayout.interfaces import IRichTextCleanup
+
 
 class TinyMCEWidgetView(object):
     """The rendered view of an ExternalSourcePart."""
@@ -32,28 +35,29 @@ class TinyMCEWidgetView(object):
 
     def __call__(self, field, key, value, request):
         #send the content through an RE
-        #XXX implement irichtextcleanup
-        #value = IRichTextCleanup(field).to_editor(value)
+        value = IRichTextCleanup(field).to_editor(value)
         if field.get_value('unicode') and not isinstance(value,UnicodeType):
             # use acquisition to get encoding of form
             value = unicode(value, field.get_form_encoding())
         return self.template(field=field,key=key,value=value,request=request)
 
+
 class TinyMCEValidator(StringValidator):
     implements(ITinyMCEValidator)
     
     def validate(self, field, key, REQUEST):
+
         value = StringValidator.validate(self, field, key, REQUEST)
         #send the rich text through cleanup, preparing for storage
-        #XXX implement irichtextcleanup
-        #value = IRichTextCleanup(field).from_editor(value)
+        value = IRichTextCleanup(field).from_editor(value)
         #make this unicode again, if needed.  lxml seems to operate and return
         # non-unicode chars
         if field.get_value('unicode') and not isinstance(value,UnicodeType):
             # use acquisition to get encoding of form
             value = unicode(value, field.get_form_encoding())
         return value
-    
+
+
 class TinyMCEWidget(TextWidget):
     implements(ITinyMCEWidget)
     property_names = TextWidget.property_names + ['tinyMCE_properties']
@@ -88,22 +92,39 @@ document_base_url: containerurl""", required = 1)
         ad = IFormulatorWidgetView(self)
         return ad(field, key, value, request)
     
-    def render_view(self, field, value):
+    def render_view(self, field, value, model=None, version=None):
         """pass the rich text through IRichTextCleanup, to prepare it for
-           public viewing (this resolves urls, updates image attributes, etc)"""
+           public viewing (this resolves urls, updates image attributes, etc)
+           
+           The parameters for this method are different than a standard 
+           formulator field.  model and version were added to improve support
+           for using this field in a code source (which has the correct
+           model and version passed in already).  This bypasses the need to
+           inspect request.model (which may be incorrect, in the case of
+           a page asset pointing to a rich text code source)"""
         if value is None:
             return ''
         #send the rich text through cleanup, preparing for storage
-        #XXX implement irichtextcleanup
-        #value = IRichTextCleanup(field).to_public(value)
+        value = IRichTextCleanup(field).to_public(value, model, version)
         return value
 
-    
+
 class TinyMCEField(StringField):
     implements(ITinyMCEField)
     
+    security = ClassSecurityInfo()
     meta_type = "TinyMCEField"
     validator = TinyMCEValidator()
-    widget = TinyMCEWidget()    
+    widget = TinyMCEWidget()
     
+    security.declareProtected('View', 'render_view')
+    def render_view(self, value, model=None, version=None):
+        """Render value to be viewed.
+           Override Field.render_view to allow passing in model and version
+           (improve support for cs_rich_text code source)
+        """
+        return self.widget.render_view(self, value, model, version)
+InitializeClass(TinyMCEField)
+
+
 FieldRegistry.registerField(TinyMCEField)
