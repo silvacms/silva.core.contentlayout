@@ -11,7 +11,7 @@ from silva.core.upgrade.upgrade import BaseUpgrader, content_path
 logger = logging.getLogger('silva.core.contentlayout')
 
 VERSION_B1 = '2.3b1'
-VERSION_FINAL='2.3'
+VERSION_FINAL='2.3.0'
 
 class ContentLayoutServiceRenamer(BaseUpgrader):
     
@@ -22,12 +22,15 @@ class ContentLayoutServiceRenamer(BaseUpgrader):
                                       'service_contentlayout')
         return root
             
-renamer = ContentLayoutServiceRenamer(VERSION_B1, 'Silva Root')
+renamer = ContentLayoutServiceRenamer('2.1.22', 'Silva Root')
 
 class ContentLayoutServiceUpgrader(BaseUpgrader):
     
-    def upgrade(self, obj):
+    def upgrade(self, root):
         #content storage has changed, update it
+        obj = getattr(root, 'service_contentlayout', None)
+        if not obj:
+            return root
         if hasattr(obj, '_content_template_mapping'):
             obj._template_mapping = obj._content_template_mapping
             del obj._content_template_mapping
@@ -37,8 +40,9 @@ class ContentLayoutServiceUpgrader(BaseUpgrader):
             #change allowed to a set
             if val.has_key('allowed'):
                 val['allowed'] = set(val['allowed'])
-        return obj
-
-cls_upgrader = ContentLayoutServiceUpgrader(VERSION_FINAL, 
-                                            'Silva Content Layout Service')
+        return root
+#register this on the root rather than the obj, since this needs to be updated
+# BEFORE the SNN 2.8 upgrade (registered on Silva 2.2b1)
+cls_upgrader = ContentLayoutServiceUpgrader('2.1.23', 
+                                            'Silva Root')
 
