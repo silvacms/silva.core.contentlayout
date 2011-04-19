@@ -52,8 +52,8 @@ class StickyServiceButton(smi.SMIMiddleGroundButton):
     tab = 'tab_sticky_content'
     label = _(u"sticky content")
     help = _(u"manage the sticky content applied to this container")
-    
-    
+
+
 class StickyContentService(SilvaService, Folder):
     meta_type = "Silva Sticky Content Service"
     grok.implements(IStickyContentService)
