@@ -11,14 +11,14 @@ var containerurl = '<span tal:replace="python:context.get_container().absolute_u
 <!--
 <script type="text/javascript"
  tal:attributes="src string:${resource_url}/edit/helperscripts.js"></script>
-<script type="text/javascript" tal:attributes="src string:${resource_url}/globals/tinymce/jscripts/tiny_mce/tiny_mce.js"></script>
 -->
+<script type="text/javascript" tal:attributes="src string:${resource_url}/globals/tinymce/jscripts/tiny_mce/tiny_mce.js"></script>
 <tal:replace replace="structure provider:resources" />
 
 <link rel="stylesheet" type="text/css"
     tal:attributes="href string:${resource_url}/++resource++silva.core.contentlayout.browser.resources/smi.css" />
 
-<!--<script type="text/javascript">
+<script type="text/javascript">
 function cleanupTinyMCE(remove) {
     /* cleans up any tiny mce fields in the edit form.
         First the editors are saved.
@@ -34,7 +34,7 @@ function cleanupTinyMCE(remove) {
     this /* the scope to run the callback in */
     );
 };
-</script>-->
+</script>
 
 </head>
 <body id="editiframebody" style="visibility: hidden; overflow: hidden;">
