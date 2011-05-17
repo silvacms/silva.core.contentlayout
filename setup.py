@@ -26,6 +26,8 @@ setup(name='silva.core.contentlayout',
           'silva.core.interfaces',
           'silva.core.services',
           'silva.core.conf',
+          'silva.core.cache',
+          'bethel.core.zopecache'
       ],
       entry_points="""
       [zodbupdate]

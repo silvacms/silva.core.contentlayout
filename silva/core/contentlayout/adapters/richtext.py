@@ -11,7 +11,8 @@ from five import grok
 from silva.core.interfaces.adapters import IPath
 from silva.core.interfaces import ISilvaObject, IImage
 
-#from bethel.core.zopecache import silva
+from silva.core.cache.descriptors import cached_method
+from bethel.core.zopecache import keygen
 
 #local
 from silva.core.contentlayout.interfaces import (IRichTextCleanup,
@@ -121,9 +122,9 @@ class TinyMCERichText(grok.Adapter):
             text = etree.tostring(doc, encoding='utf-8', method='html')
         return text
     
-    #@silva.codesourcecache()
-    #(900, key_with_params=True, func_in_class=True,
-    #                  include_model_path=True)
+    #this is used within a codesource, so the codesource_key is
+    # appropriate here.
+    @cached_method(key=keygen.codesource_key)
     def to_public(self, text, model, version):
         els = html.fragments_fromstring(text)
         request_pad = IPath(self.context.REQUEST)
