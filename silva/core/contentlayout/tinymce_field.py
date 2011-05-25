@@ -105,7 +105,9 @@ document_base_url: containerurl""", required = 1)
         if value is None:
             return ''
         #send the rich text through cleanup, preparing for storage
-        value = IRichTextCleanup(field).to_public(value, model, version)
+        value = IRichTextCleanup(field).to_public(value, 
+                                                  model=model,
+                                                  version=version)
         return value
 
 
