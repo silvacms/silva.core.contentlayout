@@ -18,11 +18,20 @@ class ContentLayoutServiceRenamer(BaseUpgrader):
     def upgrade(self, root):
         #rename service, if the old name is present
         if hasattr(root, 'service_content_templates'):
-            root.manage_renameObject('service_content_templates',
-                                      'service_contentlayout')
+            #rename doesn't work, so attempt a manual recreate
+#            root.manage_renameObject('service_content_templates',
+#                                      'service_contentlayout')
+            from silva.core.contentlayout.services import \
+                 manage_addContentLayoutService
+            manage_addContentLayoutService(root, 'service_contentlayout')
+            scl = root.service_contentlayout
+            sct = root.service_content_templates
+            for o in ('_content_template_mapping','_default_non_cl'):
+                scl.__dict__[o] = getattr(sct, o)
+            root.manage_delObjects(['service_content_templates'])
         return root
             
-renamer = ContentLayoutServiceRenamer('2.1.22', 'Silva Root')
+renamer = ContentLayoutServiceRenamer('2.2.22', 'Silva Root')
 
 class ContentLayoutServiceUpgrader(BaseUpgrader):
     
@@ -43,6 +52,6 @@ class ContentLayoutServiceUpgrader(BaseUpgrader):
         return root
 #register this on the root rather than the obj, since this needs to be updated
 # BEFORE the SNN 2.8 upgrade (registered on Silva 2.2b1)
-cls_upgrader = ContentLayoutServiceUpgrader('2.1.23', 
+cls_upgrader = ContentLayoutServiceUpgrader('2.2.23', 
                                             'Silva Root')
 
