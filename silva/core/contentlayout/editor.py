@@ -88,7 +88,7 @@ class LayoutEditTab(grok.View):
         """Return an ordered list of the External Sources within the
            current context.  Each item is a three-tuple of 
            [ priority, title, name, source ]"""
-        sources = [ [s[1].priority(),s[1].title.encode('utf-8'),s[0], s[1]] \
+        sources = [ [s[1].priority(),s[1].get_title().encode('utf-8'),s[0], s[1]] \
                     for s in ExternalSource.availableSources(self.context.aq_inner) ]
         sources.sort()
         return sources
@@ -356,7 +356,7 @@ class AddablesScreen(grok.View):
         """Return an ordered list of the External Sources within the
            current context.  Each item is a three-tuple of 
            [ priority, title, name, source ]"""
-        sources = [ [s[1].priority(),s[1].title.encode('utf-8'),s[0], s[1]] \
+        sources = [ [s[1].priority(),s[1].get_title().encode('utf-8'),s[0], s[1]] \
                     for s in ExternalSource.availableSources(self.context.aq_inner) ]
         sources.sort()
         return sources
