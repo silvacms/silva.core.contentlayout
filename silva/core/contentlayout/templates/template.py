@@ -57,7 +57,7 @@ class TemplateView(grok.View):
             interface=IPartViewWidget
 
         #get the sticky content parts
-        ssc = getUtility(IStickyContentService)
+        ssc = getUtility(IStickyContentService, context=self.version)
         sticky_content = ssc.getStickyContentForLayoutSlot(
             self.version.get_layout_name(),
             slot)

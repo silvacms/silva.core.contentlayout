@@ -1,7 +1,12 @@
 Changelog
 =========
 
+1.0.1 (2011-08-10)
+------------------
+
+- fixed bug when acquiring the nearest IStickyContentService local utility
+
 1.0 (2011-07-07)
--------------------
+----------------
 
 - Initial release
