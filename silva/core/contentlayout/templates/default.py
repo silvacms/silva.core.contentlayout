@@ -1,7 +1,8 @@
 from five import grok
 from zope.interface import Interface
 
-from silva.core.interfaces import ISilvaObject, IDefaultContentTemplate
+from silva.core.interfaces import (ISilvaObject, IDefaultContentTemplate,
+                                   IGhost)
 from silva.core.layout.interfaces import ISilvaLayer
 
 grok.layer(ISilvaLayer)
@@ -33,4 +34,24 @@ class DefaultContentTemplate(grok.View):
         ns['page'] = self.page
         ns['layout'] = self.layout
         return ns
+    
+class DefaultGhostTemplate(DefaultContentTemplate):
+    """Default content template for Silva Ghosts.  Basically renders the
+       haunted view in place of itself.
+       
+       What we want for ghosts are to _always_ only return the rendered_content
+       itself.  No other templating or chroming should happen here.  This is
+       the behavior of the default content template, however in order
+       to ensure that extensions do not override this behavior for ghosts, we
+       create our own view.
+       
+       As with anything ghosty, you need to be careful that the ghost gets
+       out of the way as soon as possible, or you may end up with duplicate
+       content on the screen (e.g. content within content) or something like
+       that.
+       
+    """
+    
+    grok.context(IGhost)
+    grok.name(u'')
     

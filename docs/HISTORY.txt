@@ -6,6 +6,9 @@ Changelog
 
 - fixed bug when acquiring the nearest IStickyContentService local utility
 
+- created a default content template for Ghosts, so that their rendering
+  is isolated from the rest.
+
 1.0 (2011-07-07)
 ----------------
 
