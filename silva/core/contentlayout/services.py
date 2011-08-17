@@ -32,7 +32,7 @@ from zeam.form.base.fields import Fields
 from zeam.form.base.datamanager import BaseDataManager
     
 from silva.core.interfaces import (IContentLayout, IVersionedContentLayout,
-                                   IPublication, ISiteManager, IRoot)
+                                   ISiteManager, IRoot, IContainer)
 from silva.core.contentlayout.interfaces import (IContentLayoutService,
                                                  IStickyContentService,
                                                  IStickyContentLayout,
@@ -46,7 +46,7 @@ class StickyServiceButton(smi.SMIMiddleGroundButton):
     """middle ground button to access the sticky content service within
        the SMI"""
     grok.view(IPropertiesTab)
-    grok.context(IPublication)
+    grok.context(IContainer)
     grok.require('silva.ManageSilvaContentSettings')
     
     tab = 'tab_sticky_content'
