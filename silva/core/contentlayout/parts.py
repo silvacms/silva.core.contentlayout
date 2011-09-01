@@ -21,12 +21,15 @@ from silva.core.interfaces import IContentLayout
 from silva.core.contentlayout.interfaces import (IPart, IExternalSourcePart, 
                                                  IPartFactory, IPartEditWidget,
                                                  IRichTextPart,
-                                                 IRichTextExternalSource,
                                                  IPartView, IPartViewWidget,
                                                  ITitleView, ITitleViewWidget,
                                                  ITitleEditWidget,
                                                  IContentLayoutService,
                                                  IStickySupport)
+#this needs to explictly be imported from interfaces.content, because apparrently
+# interfaces.IRTES != content.IRTES; the interface that the external source 
+# provides is content.IRTES, so we need to use that one.
+from silva.core.contentlayout.interfaces.content import IRichTextExternalSource
 
 class ExternalSourcePart(SimpleItem):
     """An ExternalSourcePart represents a "part" in a content layout slot
@@ -264,6 +267,12 @@ class ExternalSourcePartEditWidget(BasePartEditWidget):
         return super(ExternalSourcePartEditWidget,self).__call__()
     
     
+class RichTextPartEditWidget(ExternalSourcePartEditWidget):
+    """Override default edit widget, to provide a custom view for this
+       external source"""
+    grok.context(IRichTextExternalSource)
+
+
 class TitleView(BasePartView):
     grok.implements(ITitleView)
     grok.provides(ITitleView)

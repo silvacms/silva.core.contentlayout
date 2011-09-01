@@ -1,0 +1,61 @@
+<tal:init define="baseurl string:${contentlayout/absolute_url}/edit;
+                  mode options/mode;
+                  partconfig options/partconfig">
+<div class="header-title">
+ <div tal:condition="options/submitOnTop" class="float-right">
+ <input class="button"
+        type="submit"
+        value="save"
+        tal:attributes="name options/submitButtonName"
+        i18n:attributes="value;title"
+    />
+ </div>
+ <tal:cond condition="python:hasattr(context.aq_explicit, 'get_icon') and context.get_icon()">
+  <img tal:replace="structure python:context.get_icon().tag()" />
+ </tal:cond>
+ <tal:cond condition="python:not(hasattr(context.aq_explicit, 'get_icon') and context.get_icon())">
+  <img tal:replace="structure python:context.render_icon(context)" />
+ </tal:cond>
+<span tal:content="python:mode == 'add' and 'Add' or 'Edit'" />
+<span tal:content="context/title" />
+</div>
+
+<form name="edit-dialog-form" id="edit-dialog-form" method="post"
+ tal:omit-tag="options/suppressFormTag"
+ tal:attributes="action python:baseurl + (mode=='add' and '/addparttoslot' or '/savepart')"
+ tal:define="fields python:context.get_parameters_form().get_fields()">
+ <div class="description" tal:condition="python:context.id!='cs_rich_text' and context.description()"
+    tal:content="context/description" />
+ <input type="hidden" name="parttype" value="es" />
+ <input type="hidden" name="slotname"
+   tal:attributes="value options/slotname" />
+ <input type="hidden" name="partkey"
+   tal:condition="options/partkey"
+   tal:attributes="value options/partkey" />
+ <input type="hidden" name="esname" 
+   tal:attributes="value context/id" />
+ <table class="richtext listing" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 0px;">
+  <tbody>
+  <tr tal:repeat="field python:context.get_parameters_form().get_fields()">
+   <td>
+    <tal:block define="value python:partconfig and partconfig.get(field.id,None) or None">
+     <input tal:replace="structure python:field.render(value)" />
+    </tal:block>
+   </td>
+  </tr>
+  </tbody>
+  <tfoot tal:condition="python:options['submitButtonName']">
+  <tr class="controls">
+   <td class="align-right">
+    <input class="button"
+           type="submit"
+           value="save"
+           tal:attributes="name options/submitButtonName"
+           i18n:attributes="value;title"
+       />
+   </td>
+  </tr>
+  </tfoot>
+ </table>
+</form>
+</tal:init>
