@@ -1,4 +1,4 @@
-qwerty<tal:init define="baseurl string:${contentlayout/absolute_url}/edit;
+<tal:init define="baseurl string:${contentlayout/absolute_url}/edit;
                   mode options/mode;
                   partconfig options/partconfig">
 <div class="header-title">
