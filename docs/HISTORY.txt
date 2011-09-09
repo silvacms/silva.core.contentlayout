@@ -6,6 +6,10 @@ Changelog
 
 - add missing custom rich text edit widget, work around import bug
 
+- fix preview button, so it points to the correct ++preview++ path 
+  (++preview++ is not on IFolder, just IPublication, so add after the
+  first path component -- assumes the first is a publication)
+
 1.0.2 (2011-08-17)
 ------------------
 

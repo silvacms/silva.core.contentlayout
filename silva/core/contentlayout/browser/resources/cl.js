@@ -1936,13 +1936,16 @@ YAHOO.namespace("bethel.contentlayout");
             if (newmode == 'preview') {
                 // first only remove the layouteditor layer, rather than replacing with
                 // the preview, in case it isn't the last path component
-                var newurl = this.editorframe.location.href.replace(/\+\+layouteditor\+\+/,'');
-                //if newurl ends in a slash, remove it
-                newurl = newurl.replace(/\/$/, '');
-                // add ++preview++ after the second-to-last path component
-                newurl = newurl.replace(/(\/[^\/]*?$)/, '/++preview++$1');
-                this.editorframe.location.href = newurl;
-                /* clean out the contentlayout datastructures */
+                var path = this.editorframe.location.pathname.replace(/\+\+layouteditor\+\+/,'');
+                //if path ends in a slash, remove it
+                path = path.replace(/\/$/, '');
+                // add ++preview++ after a publication (it's only on publications,
+                // buh.  Assume the first path component is a publication
+                // (this is fragile, it's still possible to break it, but
+                // the best we can do at this point)
+                path = path.replace(/^(\/[^\/]*?\/)/, '$1++preview++/')
+                this.editorframe.location.pathname = path;
+                // clean out the contentlayout datastructures
                 this.parts = {};
                 this.slots = {};
                 this.parts_outside_slots = {};
