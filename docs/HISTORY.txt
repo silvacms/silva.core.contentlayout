@@ -10,6 +10,9 @@ Changelog
   (++preview++ is not on IFolder, just IPublication, so add after the
   first path component -- assumes the first is a publication)
 
+- make cursor a pointer when hovering over ES options on the 'add to page'
+  interface
+
 1.0.2 (2011-08-17)
 ------------------
 
