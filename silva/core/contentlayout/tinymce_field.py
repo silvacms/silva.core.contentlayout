@@ -82,8 +82,9 @@ table_inline_editing : false,
 object_resizing : false,
 height: 455,
 width: '100%',
-extended_valid_elements: "a[name|href|target|title|onclick|rel]",
+extended_valid_elements: "a[name|href|target|title|onclick|rel|class]",
 silvaimage_styles: "numbers=numbers",
+silvalink_styles: "Button 1=button-1;Button 1 Big=button-1-big;Button 2=button-2;Button 2 Big=button-2-big;Button 3=button-3;Button 3 Big=button-3-big",
 document_base_url: containerurl""", required = 1)
     
     def render(self, field, key, value, request):
