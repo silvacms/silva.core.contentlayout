@@ -4,7 +4,8 @@ from five import grok
 from zope.publisher.interfaces.browser import IBrowserRequest
 from zope.traversing.interfaces import ITraversable
 from zope.interface import alsoProvides
-from zope.component import getUtility, getMultiAdapter
+from zope.component import getUtility, getMultiAdapter, ComponentLookupError
+from zope.schema.interfaces import ConstraintNotSatisfied
 from zExceptions import BadRequest
 
 from Products.Formulator.Errors import FormValidationError
@@ -25,7 +26,8 @@ from silva.core.contentlayout.interfaces import (IContentLayoutService,
                                                  IPartEditWidget,
                                                  IPartViewWidget,
                                                  IPartView,
-                                                 IPartFactory)
+                                                 IPartFactory,
+                                                 IPartInvariantValidator)
 
 class EditorTraversable(grok.MultiAdapter):
     """Traverser to the layout editor layer -- converts a content layout
@@ -332,6 +334,21 @@ class ValidateEditDialog(grok.View):
                                      for e in e.errors])
                 else:
                     raise e
+            try:
+                #this will raise a ConstraintNotSatisfied exception if the 
+                # validator fails
+                IPartInvariantValidator(source).validate(result, self.request)
+            except ComponentLookupError:
+                pass
+            except ConstraintNotSatisfied, error:
+                if not self.returnResult:
+                    #coming in from an AJAX request, respond by sending error
+                    # messages back
+                    self.request.RESPONSE.setStatus(400, 'Bad Request')
+                    return '&'.join(['%s=%s' %e for e in error])
+                else:
+                    raise e
+            
             if self.returnResult:
                 return result
             return "Success"

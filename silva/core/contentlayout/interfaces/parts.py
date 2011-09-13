@@ -137,7 +137,24 @@ class ITitleEditWidget(IPartEditWidget):
           The parameters passed in to IPartEditWidget are not used, so
           this interface overrides __call__"""
 
-        
+
+class IPartInvariantValidator(Interface):
+    """Beyond the standard external source validation which 
+       silva.core.contentlayout.editor.ValidateEditDialog performs, a source
+       can have an extra validator to further validation.  This emulates or
+       is similar to zope3 interface invariants.
+    """
+    
+    def validate(self, formulator_result):
+        """Validates invariants of the external source.  The formulator result
+           dictionary (from form.validate_all) is passed in.
+           
+           If an invariant fails, raise a 
+            zope.schema.interfaces.ConstraintNotSatisfied exception. The first
+            argument to the exception should be a 2-tuple of (title, error)
+            messages.
+        """
+
 class IStickySupport(Interface):
     """interface for adapters on parts which can be made sticky
        (i.e. they provide IPartSupportsSicky").  This adapter is
@@ -147,4 +164,5 @@ class IStickySupport(Interface):
 __all__ = ['IPartFactory', 'IPart', 'IExternalSourcePart', 'IRichTextPart',
            'IPartEditWidget', 'IRichTextExternalSource', 'IPartView',
            'IPartViewWidget', 'ITitleView', 'ITitleViewWidget',
-           'ITitleEditWidget', 'IStickySupport']
+           'ITitleEditWidget', 'IPartInvariantValidator',
+           'IStickySupport']

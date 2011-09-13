@@ -8,6 +8,10 @@ Changelog
 
 - fix bug in TinyMCERichText adapter's to_public, to allow empty strings
   to be rendered
+  
+- add support for third-part validators - to validate invariants of IParts.
+  (invariants are hard to implement for external sources with formulator forms,
+  using IPartInvariantValidator adapters are a way to mediate this)
 
 1.0.3 (2011-09-09)
 ------------------
