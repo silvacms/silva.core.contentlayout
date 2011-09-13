@@ -131,6 +131,8 @@ class TinyMCERichText(grok.Adapter):
         if len(els) > 1:
             doc = html.Element('div')
             doc.extend(els)
+        elif len(els) == 0:
+            doc = html.Element('div')
         else:
             doc = els[0]
         for root in els:

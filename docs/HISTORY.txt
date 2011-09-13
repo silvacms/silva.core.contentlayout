@@ -6,6 +6,9 @@ Changelog
 
 - adjusted the default tinymce configuration
 
+- fix bug in TinyMCERichText adapter's to_public, to allow empty strings
+  to be rendered
+
 1.0.3 (2011-09-09)
 ------------------
 
