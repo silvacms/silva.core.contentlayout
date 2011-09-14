@@ -13,6 +13,8 @@ Changelog
   (invariants are hard to implement for external sources with formulator forms,
   using IPartInvariantValidator adapters are a way to mediate this)
 
+- adjust the width of the editor/add panels
+
 1.0.3 (2011-09-09)
 ------------------
 
