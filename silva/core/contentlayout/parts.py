@@ -5,6 +5,7 @@ import sys
 
 from five import grok
 from zope.component import getMultiAdapter, getUtility
+from zope.interface import Interface
 
 from persistent.mapping import PersistentMapping
 from Acquisition import aq_inner, aq_acquire
@@ -25,11 +26,26 @@ from silva.core.contentlayout.interfaces import (IPart, IExternalSourcePart,
                                                  ITitleView, ITitleViewWidget,
                                                  ITitleEditWidget,
                                                  IContentLayoutService,
-                                                 IStickySupport)
+                                                 IStickySupport,
+                                                 IPartInvariantValidator)
 #this needs to explictly be imported from interfaces.content, because apparrently
 # interfaces.IRTES != content.IRTES; the interface that the external source 
 # provides is content.IRTES, so we need to use that one.
 from silva.core.contentlayout.interfaces.content import IRichTextExternalSource
+
+class DefaultPartInvariantValidator(grok.Adapter):
+    """called by silva.core.contentlayout.editor.ValidateEditDialog to
+       validate invariants of this part.  By default there are no
+       invariants, so this just returns itself.  (in ValidateEditDialog, easier
+       than using queryAdapter)"""
+    
+    grok.implements(IPartInvariantValidator)
+    grok.context(Interface)
+    grok.name('')
+    
+    def validate(self, results, result):
+        """do nothing here.  Actually validators will raise an exception on error
+           but return nothing"""
 
 class ExternalSourcePart(SimpleItem):
     """An ExternalSourcePart represents a "part" in a content layout slot
