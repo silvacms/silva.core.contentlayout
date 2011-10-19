@@ -1,3 +1,5 @@
+/* @override https://editor.its.bethel.edu/silva/www/news-events/news/2010/++resource++silva.core.contentlayout.browser.resources/smi.css */
+
 /* @override https://silva23.bethel.edu/silva/www/giving/++resource++silva.core.contentlayout.browser.resources/smi.css */
 /* @override https://editor.its.bethel.edu/silva/++resource++Silva.contentlayout.browser.resources/smi.css */
 
@@ -249,7 +251,8 @@ iframe {
 
 .bethel-skin.yui-skin-sam .yui-button button,
 .bethel-skin.yui-skin-sam .yui-button a,
-.bethel-skin.yui-skin-sam .yui-button a:visited {
+.bethel-skin.yui-skin-sam .yui-button a:visited,
+.multi-actions input[type=submit] {
     display: inline-block;
     margin: 0px 3px 0 2px;
     padding: 4px 7px 5px;
@@ -282,7 +285,8 @@ iframe {
 
 .bethel-skin.yui-skin-sam .yui-button button:hover,
 .bethel-skin.yui-skin-sam .yui-button a:hover,
-.bethel-skin.yui-skin-sam .yui-button a:visited:hover {
+.bethel-skin.yui-skin-sam .yui-button a:visited:hover,
+.multi-actions input[type=submit]:hover {
 	background-image: none;
 	-webkit-box-shadow: none;
 	-moz-box-shadow:none;
@@ -299,6 +303,37 @@ button#part-editor-panelpanel-layoutpanel-layout-cancel-button-button,
 
 .bethel-skin.yui-skin-sam .yui-button button.remover {
 	background-color: #752e2f;
+}
+
+.bethel-skin.yui-skin-sam button[title*=Move] {
+	border: 1px solid #aaa;
+	background: #eee;
+	padding-left: 0;
+	-webkit-border-radius: 2px;
+	-moz-border-radius: 2px;
+	border-radius: 2px;
+}
+
+.bethel-skin.yui-skin-sam button[title*=Move]:hover {
+	background: #fff;
+	cursor: pointer;
+}
+
+.bethel-skin.yui-skin-sam button[title*=up]:after {
+	content: "\2191";
+}
+
+.bethel-skin.yui-skin-sam button[title*=down]:after {
+	content: "\2193";
+}
+
+.field-collection-line {
+	clear: right;
+	margin-bottom: 15px;
+}
+
+.ordering-actions {
+	float: right;
 }
 
 /* =================== External Source Form Table ================= */
