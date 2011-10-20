@@ -1,7 +1,7 @@
 Changelog
 =========
 
-1.0.6 (unreleased)
+1.0.6 (2011-10-20)
 ------------------
 
 - add styles for zeam collection widget
