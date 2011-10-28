@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import os
  
-version = '1.0'
+version = '2.0'
 
 setup(name='silva.core.contentlayout',
       version=version,
@@ -27,10 +27,5 @@ setup(name='silva.core.contentlayout',
           'silva.core.services',
           'silva.core.conf',
           'silva.core.cache',
-          'bethel.core.zopecache'
-      ],
-      entry_points="""
-      [zodbupdate]
-      renames = silva.core.contentlayout:CLASS_CHANGES
-      """
+      ]
       )
