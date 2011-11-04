@@ -1,0 +1,46 @@
+
+.edit-slot {
+  outline: 1px solid black;
+  position: relative;
+}
+.edit-slot .slot-action {
+  position: absolute;
+  right: 0;
+  display: none;
+}
+.edit-slot .slot-action .add-block {
+  background: url(add.png);
+  display: block;
+  height: 24px;
+  width: 38px;
+}
+
+.edit-block {
+  position: relative;
+  display: block;
+  min-height: 32px;
+}
+.edit-block .block-action {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: none;
+}
+.edit-block .block-action a {
+  display: block;
+  float: left;
+  height: 32px;
+  width: 32px;
+}
+.edit-slot .block-action .edit-block {
+  background: url(edit.png);
+}
+.edit-slot .block-action .move-block {
+  background: url(move.png);
+}
+.edit-slot .block-action .remove-block {
+  background: url(remove.png);
+}
+.edit-slot .edit-block-template {
+  display: none;
+}

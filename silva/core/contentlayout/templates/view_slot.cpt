@@ -1,0 +1,5 @@
+<div class="${slot.slot_class}">
+  <div tal:repeat="block slot.blocks()">
+    <span tal:content="block" />
+  </div>
+</div>

@@ -2,23 +2,14 @@
    xmlns="http://namespaces.zope.org/zope"
    xmlns:five="http://namespaces.zope.org/five"
    xmlns:grok="http://namespaces.zope.org/grok">
-   >
-
-
-  <include package="Products.Silva" />
-  <include package="silva.core.conf" />
 
   <five:registerPackage package="." />
-  <grok:grok package="." exclude=".browser" />
 
-  <include package=".browser" />
-  
-  <!-- adapter/view to render the tinymce field -->
-  <adapter
-    for="silva.core.contentlayout.interfaces.ITinyMCEWidget"
-    provides="silva.core.contentlayout.interfaces.IFormulatorWidgetView"
-    factory="silva.core.contentlayout.tinymce_field.TinyMCEWidgetView"
-    permission="zope.Public"
-  />
-  
+  <include package="silva.core.conf" />
+  <include package="silva.core.views" />
+  <include package="silva.core.references" />
+
+  <grok:grok package=".templates.martiansupport" />
+  <grok:grok package="." exclude="martiansupport" />
+
 </configure>

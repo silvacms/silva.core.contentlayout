@@ -27,5 +27,10 @@ setup(name='silva.core.contentlayout',
           'silva.core.services',
           'silva.core.conf',
           'silva.core.cache',
-      ]
+      ],
+      entry_points="""
+      [silva.ui.resources]
+      editor = silva.core.contentlayout.interfaces:IEditorResources
+      """,
+
       )

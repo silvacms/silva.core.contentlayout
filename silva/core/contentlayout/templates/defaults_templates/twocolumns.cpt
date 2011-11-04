@@ -1,0 +1,5 @@
+<tal:page>
+  <h1 class="title" tal:content="content.get_title()">Title</h1>
+  <tal:slot tal:content="structure slot:one" />
+  <tal:slot tal:content="structure slot:two" />
+</tal:page>

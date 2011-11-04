@@ -1,0 +1,12 @@
+
+div.one {
+  width: 46%;
+  margin: 2%;
+  float: left;
+}
+
+div.two {
+  width: 46%;
+  margin: 2%;
+  float: right;
+}

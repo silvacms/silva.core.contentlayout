@@ -1,0 +1,32 @@
+<div class="edit-slot ${slot.slot_class}"
+     i18n:domain="silva">
+  <div class="edit-blocks">
+    <div class="edit-block" tal:repeat="block slot.blocks()">
+      <span tal:content="block" />
+      <div class="block-action">
+        <a class="edit-block" title="Edit block"
+           i18n:attributes="title"></a>
+        <a class="move-block" title="Move block"
+           i18n:attributes="title"></a>
+        <a class="remove-block" title="Remove block"
+           i18n:attributes="title"></a>
+      </div>
+    </div>
+  </div>
+  <div class="edit-block edit-block-template">
+    <span></span>
+      <div class="block-action">
+        <a class="edit-block" title="Edit block"
+           i18n:attributes="title"></a>
+        <a class="move-block" title="Move block"
+           i18n:attributes="title"></a>
+        <a class="remove-block" title="Remove block"
+           i18n:attributes="title"></a>
+      </div>
+  </div>
+  &nbsp;
+  <div class="slot-action">
+    <a class="add-block" title="Add a new block to this slot"
+       i18n:attributes="title"></a>
+  </div>
+</div>

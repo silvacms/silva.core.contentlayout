@@ -1,0 +1,6 @@
+<tal:cfg>
+  contentlayout: {
+     add_url: "${view.root_url}/{path}/++rest++silva.core.contentlayout.add",
+     url: "${view.root_url}/{path}/++rest++silva.core.contentlayout.edit",
+  },
+</tal:cfg>
