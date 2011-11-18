@@ -9,7 +9,7 @@
   <include package="silva.core.views" />
   <include package="silva.core.references" />
 
-  <grok:grok package=".templates.martiansupport" />
+  <grok:grok package=".martiansupport" />
   <grok:grok package="." exclude="martiansupport" />
 
 </configure>

@@ -5,7 +5,7 @@ from five import grok
 from chameleon.core import types
 from chameleon.zpt import expressions
 
-from silva.core.contentlayout.templates.templates import BoundSlot
+from silva.core.contentlayout.templates.templates import SlotView
 from silva.core.contentlayout.templates.interfaces import ITemplate
 from silva.core.contentlayout.templates.interfaces import (
     InvalidModel, InvalidSlot)
@@ -16,7 +16,7 @@ def slot_traverser(context, request, model, name):
         raise InvalidModel(model)
     if name not in model.slots:
         raise InvalidSlot(name)
-    return BoundSlot(model.slots[name], name, context, request)()
+    return SlotView(model.slots[name], name, context, request)()
 
 
 class SlotTranslator(expressions.ExpressionTranslator):

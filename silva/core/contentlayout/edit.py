@@ -8,13 +8,16 @@ from zope import schema
 from Products.SilvaExternalSources.ExternalSource import availableSources
 from Products.SilvaExternalSources.interfaces import IExternalSource
 
-from silva.core.contentlayout.interfaces import IEditionMode, IPage, IPageBlock
+from silva.core.contentlayout.blocks import ReferenceParameters
+from silva.core.contentlayout.interfaces import IBlockInstances
+from silva.core.contentlayout.interfaces import IEditionMode, IPage, IBlockable
 from silva.core.references.reference import Reference
 from silva.core.views import views as silvaviews
 from silva.translations import translate as _
 from silva.ui.rest.exceptions import RESTRedirectHandler
 from silva.ui.smi import SMIConfiguration
 from zeam.form import silva as silvaforms
+from zeam.form.silva.interfaces import IRESTExtraPayloadProvider, IRESTCloseOnSuccessAction
 
 
 class EditPage(silvaviews.Page):
@@ -130,9 +133,35 @@ class AddSourceParameters(silvaforms.RESTPopupForm):
 
 class IAddExternalSchema(Interface):
     block = Reference(
-        IPageBlock,
+        IBlockable,
         title=_(u"Block to include"),
         required=True)
+
+
+
+class AddExternalBlockAction(silvaforms.Action):
+    grok.implements(IRESTExtraPayloadProvider, IRESTCloseOnSuccessAction)
+    title = _('Add')
+
+    bound = None
+
+    def get_extra_payload(self, form):
+        if self.bound is None:
+            return {}
+        return {'block': self.bound.render()}
+
+    def __call__(self, form):
+        data, errors = form.extractData()
+        if errors:
+            return silvaforms.FAILURE
+        version = form.context.get_editable()
+        manager = IBlockInstances(version)
+        block_id = manager.new(
+            form.request.form['slot_id'],
+            ReferenceParameters())
+        self.bound = manager.bind(block_id, version, form.request)
+        self.bound.update(data['block'])
+        return silvaforms.SUCCESS
 
 
 class AddExternalBlock(silvaforms.RESTPopupForm):
@@ -141,11 +170,7 @@ class AddExternalBlock(silvaforms.RESTPopupForm):
 
     label = _(u"Add an external block ")
     fields = silvaforms.Fields(IAddExternalSchema)
-    actions = silvaforms.Actions(silvaforms.CancelAction())
+    actions = silvaforms.Actions(
+        AddExternalBlockAction(),
+        silvaforms.CancelAction())
 
-    @silvaforms.action(_('Add'))
-    def add(self):
-        data, errors = self.extractData()
-        if errors:
-            return silvaforms.FAILURE
-        return silvaforms.SUCCESS

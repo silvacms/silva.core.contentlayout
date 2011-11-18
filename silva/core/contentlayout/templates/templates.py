@@ -1,10 +1,11 @@
 
 from five import grok
+from megrok.chameleon.components import ChameleonPageTemplate
+from zope.interface import Interface
+
 from silva.core.contentlayout.templates.interfaces import ITemplate, ISlot
 from silva.core.contentlayout.interfaces import IEditionMode
-from megrok.chameleon.components import ChameleonPageTemplate
-
-from zope.interface import Interface
+from silva.core.contentlayout.interfaces import IBlockInstances
 
 
 class Slot(object):
@@ -14,12 +15,13 @@ class Slot(object):
         self.fill_in = fill_in
 
 
-class BoundSlot(object):
+class SlotView(object):
     edit_template = ChameleonPageTemplate(filename='edit_slot.cpt')
     view_template = ChameleonPageTemplate(filename='view_slot.cpt')
 
     def __init__(self, slot, name, content, request):
         self.slot = slot
+        self.slot_id = name
         self.slot_class = " ".join((name, 'slot-' + slot.fill_in))
         self.content = content
         self.request = request
@@ -33,7 +35,8 @@ class BoundSlot(object):
         return {}
 
     def blocks(self):
-        return ['block 1', 'block 2']
+        return IBlockInstances(self.content).render(
+            self.slot_id, self.content, self.request)
 
     def __call__(self):
         template = self.view_template

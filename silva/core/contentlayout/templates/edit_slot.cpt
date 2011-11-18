@@ -1,8 +1,9 @@
 <div class="edit-slot ${slot.slot_class}"
+     data-slot-id="${slot.slot_id}"
      i18n:domain="silva">
   <div class="edit-blocks">
     <div class="edit-block" tal:repeat="block slot.blocks()">
-      <span tal:content="block" />
+      <span tal:content="structure block" />
       <div class="block-action">
         <a class="edit-block" title="Edit block"
            i18n:attributes="title"></a>

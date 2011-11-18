@@ -15,10 +15,13 @@
     };
 
     $(document).bind('load-smiplugins', function(event, smi) {
-        var add_url_template = new jsontemplate.Template(smi.options.contentlayout.add_url, {});
+        var add_url_template = new jsontemplate.Template(
+            smi.options.contentlayout.add_url, {});
 
         var AddDialog = function($slot) {
-            $slot.SMIFormPopup({url: add_url_template.expand({path: smi.opened.path})});
+            $slot.SMIFormPopup({
+                url: add_url_template.expand({path: smi.opened.path}),
+                payload: [{name: 'slot_id', value: $slot.data('slot-id')}]});
         };
 
         infrae.views.view({

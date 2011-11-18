@@ -1,6 +1,6 @@
 
 from five import grok
-from zope import schema
+from zope import schema, interface
 from zope.schema.vocabulary import SimpleVocabulary, SimpleTerm
 from zope.schema.interfaces import IContextSourceBinder
 from zope.publisher.interfaces.browser import IDefaultBrowserLayer
@@ -8,13 +8,13 @@ from zope.publisher.interfaces.browser import IDefaultBrowserLayer
 from silva.core import conf as silvaconf
 from silva.core import interfaces
 from silva.core.conf.interfaces import ITitledContent
-from silva.core.contentlayout.templates.registry import registry
 from silva.translations import translate as _
 from silva.ui.interfaces import ISilvaUIDependencies
 
 
 @grok.provider(IContextSourceBinder)
 def template_source(context):
+    from silva.core.contentlayout.templates.registry import registry
 
     def make_term(template):
         return SimpleTerm(value=template,
@@ -37,9 +37,8 @@ class IPage(interfaces.IViewableObject):
     """Define a page.
     """
 
-
-class IPageBlock(interfaces.IViewableObject):
-    """Define a block that can be used in a page.
+class IBlockInstances(interface.Interface):
+    """Manage blocks.
     """
 
 
@@ -55,3 +54,23 @@ class IEditorResources(ISilvaUIDependencies):
    """SMI plugin content-layout
    """
    silvaconf.resource('editor.js')
+
+
+
+
+
+
+
+class IBlockable(interfaces.IViewableObject):
+    """Define a block that can be used in a page.
+    """
+
+
+class IReferenceParameters(interface.Interface):
+    """Data stored for a reference block.
+    """
+
+
+class IBlockView(interface.Interface):
+    """Render a given content for a block.
+    """
