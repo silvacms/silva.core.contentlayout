@@ -54,6 +54,23 @@ class StickyServiceButton(smi.SMIMiddleGroundButton):
     help = _(u"manage the sticky content applied to this container")
 
 
+class StickyServiceViewHelper(grok.View):
+    """Since the SMI edit screen is still in the old SilvaViews, we need
+       a helper view to get at protected thinkgs from the old views
+    """
+    
+    grok.context(IContainer)
+    grok.require('silva.ManageSilvaContentSettings')
+    
+    def is_localsite(self):
+        """Test if the container is already a localsite
+        """
+        return ISiteManager(self.context).isSite()
+    
+    def render(self):
+        """pass"""
+
+
 class StickyContentService(SilvaService, Folder):
     meta_type = "Silva Sticky Content Service"
     grok.implements(IStickyContentService)
