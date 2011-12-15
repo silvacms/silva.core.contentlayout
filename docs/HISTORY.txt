@@ -2,7 +2,7 @@ Changelog
 =========
 
 
-1.0.7 (unreleased)
+1.0.7 (2011-12-15)
 ------------------
 
 - add a view helper for the SMI sticky content service
