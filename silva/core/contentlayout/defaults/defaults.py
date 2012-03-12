@@ -1,10 +1,10 @@
 
 from five import grok
 
-from silva.core.contentlayout.templates import Template, Slot
-from silva.translations import translate as _
 from silva.core import conf as silvaconf
+from silva.core.contentlayout import Template, Slot
 from silva.fanstatic import need
+from silva.translations import translate as _
 
 from zope.publisher.interfaces.browser import IDefaultBrowserLayer
 

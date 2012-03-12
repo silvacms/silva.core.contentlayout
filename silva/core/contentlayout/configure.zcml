@@ -9,6 +9,10 @@
   <include package="silva.core.views" />
   <include package="silva.core.references" />
 
+  <!-- Those templates are directly looked by the component itself. -->
+  <grok:ignoreTemplates pattern="\.upt" />
+
+  <!-- Grok package -->
   <grok:grok package=".martiansupport" />
   <grok:grok package="." exclude="martiansupport" />
 
