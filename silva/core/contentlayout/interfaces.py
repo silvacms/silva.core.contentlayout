@@ -61,7 +61,11 @@ class IPage(interfaces.IViewableObject):
     """Define a page.
     """
 
-class IBlockInstances(interface.Interface):
+class IBlock(interface.Interface):
+   """Provide a block.
+   """
+
+class IBlockManager(interface.Interface):
     """Manage blocks.
     """
 
@@ -81,20 +85,16 @@ class IEditorResources(ISilvaUIDependencies):
 
 
 
-
-
-
-
 class IBlockable(interfaces.IViewableObject):
     """Define a block that can be used in a page.
     """
 
 
-class IReferenceParameters(interface.Interface):
+class IReferenceBlock(IBlock):
     """Data stored for a reference block.
     """
 
 
 class IBlockView(interface.Interface):
-    """Render a given content for a block.
+    """Render a given content for a IReferenceBlock.
     """

@@ -2,11 +2,14 @@
 .edit-slot {
   outline: 1px solid black;
   position: relative;
+  overflow: hidden;
 }
 .edit-slot .slot-action {
   position: absolute;
   right: 0;
+  bottom: 0px;
   display: none;
+  z-index: 1000;
 }
 .edit-slot .slot-action .add-block {
   background: url(add.png);

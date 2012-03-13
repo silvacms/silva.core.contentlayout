@@ -1,23 +1,21 @@
 
+import urllib
+
 from five import grok
-from zope.interface import alsoProvides, Interface
+from zope.interface import alsoProvides, Interface, implementedBy
 from zope.schema.vocabulary import SimpleVocabulary, SimpleTerm
 from zope.schema.interfaces import IContextSourceBinder
 from zope import schema
 
-from Products.SilvaExternalSources.ExternalSource import availableSources
-from Products.SilvaExternalSources.interfaces import IExternalSource
+from infrae.rest import queryRESTComponent
 
-from silva.core.contentlayout.blocks import ReferenceParameters
-from silva.core.contentlayout.interfaces import IBlockInstances
-from silva.core.contentlayout.interfaces import IEditionMode, IPage, IBlockable
-from silva.core.references.reference import Reference
+from silva.core.contentlayout.blocks.registry import registry
+from silva.core.contentlayout.interfaces import IEditionMode, IPage
 from silva.core.views import views as silvaviews
 from silva.translations import translate as _
 from silva.ui.rest.exceptions import RESTRedirectHandler
 from silva.ui.smi import SMIConfiguration
 from zeam.form import silva as silvaforms
-from zeam.form.silva.interfaces import IRESTExtraPayloadProvider, IRESTCloseOnSuccessAction
 
 
 class EditPage(silvaviews.Page):
@@ -25,11 +23,12 @@ class EditPage(silvaviews.Page):
     grok.name('edit')
 
     def update(self):
+        self.version = self.context.get_editable()
         alsoProvides(self.request, IEditionMode)
+        assert self.version is not None, u"No editable version is available."
 
     def render(self):
-        content = self.context.get_editable()
-        template = content.template(content, self.request)
+        template = self.version.template(self.version, self.request)
         return template()
 
 
@@ -38,15 +37,15 @@ class EditorSMIConfiguration(silvaviews.Viewlet):
 
 
 
-block_source = SimpleVocabulary([
-        SimpleTerm(
-            value='silva.core.contentlayout.add/source',
-            token='source',
-            title=_(u"Code source")),
-        SimpleTerm(
-            value='silva.core.contentlayout.add/external',
-            token='external',
-            title=_(u"Site content"))])
+@grok.provider(IContextSourceBinder)
+def block_source(context):
+    result = []
+    for name, block in registry.all():
+        result.append(SimpleTerm(
+                value='silva.core.contentlayout.add/' + urllib.quote(name),
+                token=name,
+                title=grok.title.bind().get(block)))
+    return SimpleVocabulary(result)
 
 
 class IAddSchema(Interface):
@@ -65,6 +64,18 @@ class AddBlock(silvaforms.RESTPopupForm):
     fields['category'].mode = 'radio'
     actions = silvaforms.Actions(silvaforms.CancelAction())
 
+    def publishTraverse(self, request, name):
+        block = registry.lookup(urllib.unquote(name))
+        if block is not None:
+            adder = queryRESTComponent(
+                (implementedBy(block), self.context),
+                (self.context, request),
+                name=name,
+                parent=self)
+            if adder is not None:
+                return adder
+        return super(AddBlock, self).publishTraverse(request, name)
+
     @silvaforms.action(_('Next'))
     def add(self):
         data, errors = self.extractData()
@@ -73,104 +84,4 @@ class AddBlock(silvaforms.RESTPopupForm):
         raise RESTRedirectHandler(data['category'])
 
 
-@grok.provider(IContextSourceBinder)
-def source_source(context):
-
-    def make_term(identifier, source):
-        return SimpleTerm(value=source,
-                          token=identifier,
-                          title=unicode(source.title))
-
-    return SimpleVocabulary([make_term(*t) for t in availableSources(context)])
-
-
-class IAddSourceSchema(Interface):
-    source = schema.Choice(
-        title=_(u"Select a source"),
-        source=source_source,
-        required=True)
-
-
-class AddSourceBlock(silvaforms.RESTPopupForm):
-    grok.adapts(AddBlock, IPage)
-    grok.name('source')
-
-    label = _(u"Add a source in a new block")
-    fields = silvaforms.Fields(IAddSourceSchema)
-    actions = silvaforms.Actions(silvaforms.CancelAction())
-
-    @silvaforms.action(_('Add'))
-    def add(self):
-        data, errors = self.extractData()
-        if errors:
-            return silvaforms.FAILURE
-        raise RESTRedirectHandler(
-            'silva.core.contentlayout.add/source/parameters/' + data['source'].getId())
-
-
-class AddSourceParameters(silvaforms.RESTPopupForm):
-    grok.adapts(AddSourceBlock, IPage)
-    grok.name('parameters')
-
-    source = None
-    description = u'Dead end.'
-    actions = silvaforms.Actions(silvaforms.CancelAction())
-
-    @property
-    def label(self):
-        return _(u"Parameters for source ${title} in a new block",
-                 mapping={'title': self.source.title})
-
-    def publishTraverse(self, request, name):
-        candidate = getattr(self.context, name, None)
-        if candidate is not None:
-            if IExternalSource.providedBy(candidate):
-                self.source = candidate
-                self.__name__ = '/'.join((self.__name__, name))
-                return self
-        return super(AddSourceParameters, self).publishTraverse(request, name)
-
-
-class IAddExternalSchema(Interface):
-    block = Reference(
-        IBlockable,
-        title=_(u"Block to include"),
-        required=True)
-
-
-
-class AddExternalBlockAction(silvaforms.Action):
-    grok.implements(IRESTExtraPayloadProvider, IRESTCloseOnSuccessAction)
-    title = _('Add')
-
-    bound = None
-
-    def get_extra_payload(self, form):
-        if self.bound is None:
-            return {}
-        return {'block': self.bound.render()}
-
-    def __call__(self, form):
-        data, errors = form.extractData()
-        if errors:
-            return silvaforms.FAILURE
-        version = form.context.get_editable()
-        manager = IBlockInstances(version)
-        block_id = manager.new(
-            form.request.form['slot_id'],
-            ReferenceParameters())
-        self.bound = manager.bind(block_id, version, form.request)
-        self.bound.update(data['block'])
-        return silvaforms.SUCCESS
-
-
-class AddExternalBlock(silvaforms.RESTPopupForm):
-    grok.adapts(AddBlock, IPage)
-    grok.name('external')
-
-    label = _(u"Add an external block ")
-    fields = silvaforms.Fields(IAddExternalSchema)
-    actions = silvaforms.Actions(
-        AddExternalBlockAction(),
-        silvaforms.CancelAction())
 

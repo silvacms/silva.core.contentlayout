@@ -4,7 +4,7 @@ from grokcore.chameleon.components import ChameleonPageTemplate
 
 from silva.core.contentlayout.interfaces import ISlot
 from silva.core.contentlayout.interfaces import IEditionMode
-from silva.core.contentlayout.interfaces import IBlockInstances
+from silva.core.contentlayout.interfaces import IBlockManager
 
 
 class Slot(object):
@@ -34,7 +34,7 @@ class SlotView(object):
         return {}
 
     def blocks(self):
-        return IBlockInstances(self.content).render(
+        return IBlockManager(self.content).render(
             self.slot_id, self.content, self.request)
 
     def __call__(self):

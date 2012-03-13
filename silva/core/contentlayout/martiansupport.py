@@ -4,17 +4,23 @@ from martian.error import GrokError
 from martian.scan import module_info_from_dotted_name
 import os
 
-import grokcore.component
-import grokcore.view
+from five import grok
 from grokcore.view.meta.views import TemplateGrokker
 from grokcore.view.templatereg import file_template_registry
 from zope.component import provideAdapter
 from zope.publisher.interfaces.browser import IDefaultBrowserLayer
 
 from silva.core.contentlayout.interfaces import IBlockView
-from silva.core.contentlayout.blocks import BlockView
+from silva.core.contentlayout.blocks import BlockView, Block
+from silva.core.contentlayout.blocks.registry import \
+    registry as block_registry
 from silva.core.contentlayout.templates.templates import Template, TemplateFile
-from silva.core.contentlayout.templates.registry import registry
+from silva.core.contentlayout.templates.registry import \
+    registry as template_registry
+
+
+def default_name(component, module=None, **data):
+    return component.__name__.lower()
 
 
 class RegisterTemplateGrokker(martian.ClassGrokker):
@@ -31,12 +37,12 @@ class RegisterTemplateGrokker(martian.ClassGrokker):
         if factory.template is None:
             self.associate_template(factory)
 
-        registry.register(factory)
+        template_registry.register(factory)
         return True
 
     def associate_template(self, factory):
         component_name = factory.__name__.lower()
-        module_name, template_name = grokcore.view.template.bind(
+        module_name, template_name = grok.template.bind(
             default=(None, None)).get(factory)
         if module_name is None:
             module_info = factory.module_info
@@ -55,9 +61,9 @@ class RegisterTemplateGrokker(martian.ClassGrokker):
 
 class RegisterBlockViewGrokker(martian.ClassGrokker):
     martian.component(BlockView)
-    martian.directive(grokcore.component.context)
-    martian.directive(grokcore.view.layer, default=IDefaultBrowserLayer)
-    martian.directive(grokcore.component.provides, default=IBlockView)
+    martian.directive(grok.context)
+    martian.directive(grok.layer, default=IDefaultBrowserLayer)
+    martian.directive(grok.provides, default=IBlockView)
 
     def execute(self, factory, config, context, layer, provides, **kw):
         adapts = (context, layer)
@@ -66,6 +72,15 @@ class RegisterBlockViewGrokker(martian.ClassGrokker):
             discriminator=('adapter', adapts, provides),
             callable=provideAdapter,
             args=(factory, adapts, provides))
+        return True
+
+
+class RegistryBlockGrokker(martian.ClassGrokker):
+    martian.component(Block)
+    martian.directive(grok.name, get_default=default_name)
+
+    def execute(self, factory, name, **kw):
+        block_registry.register(name, factory)
         return True
 
 

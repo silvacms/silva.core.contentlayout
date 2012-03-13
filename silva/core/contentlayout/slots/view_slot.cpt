@@ -1,5 +1,5 @@
 <div class="${slot.slot_class}">
   <div tal:repeat="block slot.blocks()">
-    <span tal:content="structure block" />
+    <span tal:content="structure block.html" />
   </div>
 </div>

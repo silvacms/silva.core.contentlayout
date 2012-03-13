@@ -5,15 +5,19 @@ from five import grok
 from zope.component import queryMultiAdapter
 
 from silva.core.interfaces import IDataManager, IVersion
-from silva.core.contentlayout.interfaces import IBlockInstances
-
+from silva.core.contentlayout.interfaces import IBlockManager
 
 _marker = object()
 
+
+class Block(object):
+    grok.baseclass()
+
+
 class BlockManager(grok.Annotation):
     grok.context(IVersion)
-    grok.implements(IBlockInstances)
-    grok.provides(IBlockInstances)
+    grok.implements(IBlockManager)
+    grok.provides(IBlockManager)
 
     def __init__(self):
         super(BlockManager, self).__init__()
@@ -57,5 +61,5 @@ class BlockManager(grok.Annotation):
         for block_id in self._slot_to_block.get(slot_id, []):
             bound = self.bind(block_id, content, request)
             if bound is not None:
-                yield bound.render()
+                yield {"block_id": block_id, "html": bound.render()}
 
