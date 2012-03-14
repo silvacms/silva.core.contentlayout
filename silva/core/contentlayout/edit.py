@@ -11,8 +11,10 @@ from infrae.rest import queryRESTComponent
 
 from silva.core.contentlayout.blocks.registry import registry
 from silva.core.contentlayout.interfaces import IEditionMode, IPage
+from silva.core.contentlayout.interfaces import IBlockManager
 from silva.core.views import views as silvaviews
 from silva.translations import translate as _
+from silva.ui.rest import REST
 from silva.ui.rest.exceptions import RESTRedirectHandler
 from silva.ui.smi import SMIConfiguration
 from zeam.form import silva as silvaforms
@@ -23,12 +25,10 @@ class EditPage(silvaviews.Page):
     grok.name('edit')
 
     def update(self):
-        self.version = self.context.get_editable()
         alsoProvides(self.request, IEditionMode)
-        assert self.version is not None, u"No editable version is available."
 
     def render(self):
-        template = self.version.template(self.version, self.request)
+        template = self.context.template(self.context, self.request)
         return template()
 
 
@@ -70,8 +70,9 @@ class AddBlock(silvaforms.RESTPopupForm):
             adder = queryRESTComponent(
                 (implementedBy(block), self.context),
                 (self.context, request),
-                name=name,
-                parent=self)
+                name='add',
+                parent=self,
+                id=name)
             if adder is not None:
                 return adder
         return super(AddBlock, self).publishTraverse(request, name)
@@ -83,5 +84,23 @@ class AddBlock(silvaforms.RESTPopupForm):
             return silvaforms.FAILURE
         raise RESTRedirectHandler(data['category'])
 
+
+class EditBlock(REST):
+    grok.context(IPage)
+    grok.name('silva.core.contentlayout.edit')
+
+    def publishTraverse(self, request, name):
+        manager = IBlockManager(self.context)
+        block = manager.get(urllib.unquote(name))
+        if block is not None:
+            editer = queryRESTComponent(
+                (block, self.context),
+                (block, self.context, request),
+                name='edit',
+                parent=self,
+                id=name)
+            if editer is not None:
+                return editer
+        return super(EditBlock, self).publishTraverse(request, name)
 
 

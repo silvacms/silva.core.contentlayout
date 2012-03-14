@@ -1,7 +1,8 @@
 <tal:cfg>
   contentlayout: {
+     url:  "${view.root_url}/{path}/edit",
      add_url: "${view.root_url}/{path}/++rest++silva.core.contentlayout.add",
      edit_url: "${view.root_url}/{path}/++rest++silva.core.contentlayout.edit/{id}",
-     delete_url: "${view.root_url}/{path}/++rest++silva.core.contentlayout.delete/{id}",
+     delete_url: "${view.root_url}/{path}/++rest++silva.core.contentlayout.delete/{id}"
   },
 </tal:cfg>

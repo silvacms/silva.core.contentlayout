@@ -1,13 +1,15 @@
 
 import uuid
+import logging
 
 from five import grok
-from zope.component import queryMultiAdapter
+from zope.component import getMultiAdapter
 
 from silva.core.interfaces import IDataManager, IVersion
 from silva.core.contentlayout.interfaces import IBlockManager
 
 _marker = object()
+logger = logging.getLogger('silva.core.contentlayout')
 
 
 class Block(object):
@@ -39,9 +41,10 @@ class BlockManager(grok.Annotation):
         pass
 
     def remove(self, block_id, content, request):
-        bound = self.bind(block_id, content, request)
-        if bound is None:
+        block = self.get(block_id)
+        if block is None:
             return False
+        bound = getMultiAdapter((block, content, request), IDataManager)
         bound.clear()
         slot_id = self._block_to_slot.get(block_id, _marker)
         if slot_id is not _marker:
@@ -51,15 +54,14 @@ class BlockManager(grok.Annotation):
         self._p_changed = True
         return True
 
-    def bind(self, block_id, content, request):
-        block = self._blocks.get(block_id, _marker)
-        if block is _marker:
-            return None
-        return queryMultiAdapter((block, content, request), IDataManager)
+    def get(self, block_id):
+        return self._blocks.get(block_id)
 
     def render(self, slot_id, content, request):
         for block_id in self._slot_to_block.get(slot_id, []):
-            bound = self.bind(block_id, content, request)
-            if bound is not None:
+            block = self.get(block_id)
+            if block is not None:
+                bound = getMultiAdapter((block, content, request), IDataManager)
                 yield {"block_id": block_id, "html": bound.render()}
-
+            else:
+                logger.error(u'Missing block %s in document.' % block_id)

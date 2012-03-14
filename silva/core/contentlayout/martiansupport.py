@@ -14,7 +14,7 @@ from silva.core.contentlayout.interfaces import IBlockView
 from silva.core.contentlayout.blocks import BlockView, Block
 from silva.core.contentlayout.blocks.registry import \
     registry as block_registry
-from silva.core.contentlayout.templates.templates import Template, TemplateFile
+from silva.core.contentlayout.templates.template import Template, TemplateFile
 from silva.core.contentlayout.templates.registry import \
     registry as template_registry
 

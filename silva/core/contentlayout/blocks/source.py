@@ -42,7 +42,7 @@ class IAddSourceSchema(Interface):
 
 class AddSourceBlock(silvaforms.RESTPopupForm):
     grok.adapts(SourceBlock, IPage)
-    grok.name('source')
+    grok.name('add')
 
     label = _(u"Add a source in a new block")
     fields = silvaforms.Fields(IAddSourceSchema)

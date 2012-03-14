@@ -4,6 +4,7 @@ from zope import schema, interface
 from zope.schema.vocabulary import SimpleVocabulary, SimpleTerm
 from zope.schema.interfaces import IContextSourceBinder
 from zope.publisher.interfaces.browser import IDefaultBrowserLayer
+from zope.annotation import IAttributeAnnotatable
 
 from silva.core import conf as silvaconf
 from silva.core import interfaces
@@ -57,9 +58,13 @@ class ITitledPage(ITitledContent):
         source=template_source)
 
 
-class IPage(interfaces.IViewableObject):
-    """Define a page.
+class IPageAware(interfaces.IViewableObject):
+    """Define an interface that a content using a page should implement.
     """
+
+class IPage(IAttributeAnnotatable):
+   """Where the page is stored (that would be a version).
+   """
 
 class IBlock(interface.Interface):
    """Provide a block.
