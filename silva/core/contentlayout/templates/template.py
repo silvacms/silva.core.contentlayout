@@ -40,6 +40,10 @@ class Template(object):
     template = None
     __template_path__ = 'inline'
 
+    @classmethod
+    def get_identifier(cls):
+        return cls.module + '.' + cls.__name__
+
     def __init__(self, content, request):
         self.content = content
         self.request = request

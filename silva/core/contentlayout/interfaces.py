@@ -12,6 +12,8 @@ from silva.core.conf.interfaces import ITitledContent
 from silva.translations import translate as _
 from silva.ui.interfaces import ISilvaUIDependencies
 
+from Products.Silva import roleinfo
+
 
 class ISlot(interface.Interface):
    fill_in = interface.Attribute(u"fill-in stragegy")
@@ -103,3 +105,72 @@ class IReferenceBlock(IBlock):
 class IBlockView(interface.Interface):
     """Render a given content for a IReferenceBlock.
     """
+
+
+class ITemplateLookup(interface.Interface):
+    """ Defines how to lookup a template
+    """
+    def lookup(context):
+      """ lookup and return a list of available template
+      """
+
+
+class ITemplateService(interfaces.ISilvaService, ITemplateLookup):
+    """ Template Service for Silva
+    """
+
+
+@apply
+def silva_role_source():
+    roles = []
+    for role in roleinfo.ASSIGNABLE_ROLES:
+        roles.append(SimpleTerm(value=role, token=role, title=role))
+    return SimpleVocabulary(roles)
+
+@grok.provider(IContextSourceBinder)
+def content_type_source(context):
+   addables = interfaces.IAddableContents(
+      context.get_root()).get_all_addables(require=IPageAware)
+   return SimpleVocabulary([SimpleTerm(value=addable,
+                              token=addable,
+                              title=addable)
+                            for addable in addables])
+
+
+class ITemplateContentRule(interface.Interface):
+   """Rules bind together a template and a content
+   """
+   template = schema.Choice(title=_(u"Template"),
+                            source=template_source)
+   content_type = schema.Choice(title=_(u"Content type"),
+                                source=content_type_source)
+
+
+class ITemplateAccessRule(ITemplateContentRule):
+    """A template access rule limit the use of a template and a content type
+    to a minimal role.
+    """
+    role = schema.Choice(title=_(u"Role"),
+                         source=silva_role_source)
+
+
+class IDefaultTemplateRule(ITemplateContentRule):
+   """Default template per content type
+   """
+
+
+class ITemplateAccessRules(interface.Interface):
+
+   rules = schema.Set(
+      title=_(u"Access rules"),
+      value_type=schema.Object(schema=ITemplateAccessRule),
+      required=True)
+
+
+class IContentDefaultTemplates(interface.Interface):
+
+   default_templates = schema.Set(
+      title=_(u"Default templates"),
+      value_type=schema.Object(schema=IDefaultTemplateRule),
+      required=True)
+

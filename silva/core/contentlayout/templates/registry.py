@@ -3,10 +3,13 @@ from five import grok
 from grokcore.component.util import sort_components
 from zope.testing import cleanup
 
+from silva.core.contentlayout.interfaces import ITemplateLookup
+
 
 class TemplateRegistry(object):
     """Register templates
     """
+    grok.implements(ITemplateLookup)
 
     def __init__(self):
         self._templates = {}
