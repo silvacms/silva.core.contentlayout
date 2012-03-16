@@ -38,34 +38,39 @@ class TemplateService(SilvaService):
         {'label': 'Settings', 'action': 'manage_settings'},
         ) + SilvaService.manage_options
 
-    _rules_index = {}
+    _restrictions_index = {}
     _default_templates_index = {}
 
+
+    security.declareProtected(
+        'View Management Screens', 'lookup')
     def lookup(self, context):
         candidates = registry.lookup(context)
         return filter(lambda t: self._template_allowed_in_context(t, context),
                       candidates)
 
     @property
-    def _rules(self):
-        return set(chain.from_iterable(self._rules_index.itervalues()))
+    def _restrictions(self):
+        return set(chain.from_iterable(self._restrictions_index.itervalues()))
 
     @property
     def _default_templates(self):
         return set(self._default_templates_index.itervalues())
 
-    # TODO: security.declarePrivate()
-    def update_rules(self, rules):
+    security.declareProtected(
+        'View Management Screens', 'update_restrictions')
+    def update_restrictions(self, rules):
         for rule in rules:
             rule.validate()
-        self._rules_index = {}
+        self._restrictions_index = {}
         for rule in rules:
             identifier = rule.template.get_identifier()
-            if identifier not in self._rules_index:
-                self._rules_index[identifier] = set()
-            self._rules_index[identifier].add(rule)
+            if identifier not in self._restrictions_index:
+                self._restrictions_index[identifier] = set()
+            self._restrictions_index[identifier].add(rule)
 
-    # TODO: security.declarePrivate()
+    security.declareProtected(
+        'View Management Screens', 'update_default_templates')
     def update_default_templates(self, rules):
         for rule in rules:
             rule.validate()
@@ -74,14 +79,10 @@ class TemplateService(SilvaService):
             self._default_templates_index[rule.content_type] = rule
 
     def _template_allowed_in_context(self, template, context):
-        # XXX: move this to registry
-        # permission = grok.require.bind().get(context)
-        # if not getSecurityManager().checkPermission(permission, context):
-        #     return template
-        rules = self._rules_index[template.get_identifier()]
+        rules = self._restrictions_index[template.get_identifier()]
         user_role = IAuthorizationManager(context).get_user_role()
         for rule in rules:
-            # XXX: check if context match
+            # XXX: check if context matches
             if roleinfo.isEqualToOrGreaterThan(user_role, rule.role):
                 continue
             return False
@@ -98,7 +99,7 @@ class TemplateServiceManageSettings(silvaforms.ZMIComposedForm):
     grok.context(TemplateService)
 
     label = _(u"Template Service configuration")
-    description = _(u"Configure rules of access and defaults"
+    description = _(u"Configure restrictions and defaults"
                     u" for content layout tempates")
 
 
@@ -139,31 +140,31 @@ class TemplateContentRule(object):
                               self.content_type))
 
 
-class TemplateAccessRule(TemplateContentRule):
+class TemplateRestriction(TemplateContentRule):
     """ Require a minimal role to set a template on a content.
     """
 
     def __init__(self, template, content_type, role):
-        super(TemplateAccessRule, self).__init__(template, content_type)
+        super(TemplateRestriction, self).__init__(template, content_type)
         self.role = role
 
 
 grok.global_utility(
-    TemplateAccessRule,
+    TemplateRestriction,
     provides=IFactory,
-    name=interfaces.ITemplateAccessRule.__identifier__,
+    name=interfaces.ITemplateRestriction.__identifier__,
     direct=True)
 
 
-class TemplateAccessRulesSettings(silvaforms.ZMISubForm):
-    """Configure templates access rules.
+class TemplateRestrictionsSettings(silvaforms.ZMISubForm):
+    """Configure templates access restrictions.
     """
     grok.context(TemplateService)
     grok.view(TemplateServiceManageSettings)
     grok.order(10)
 
-    label = _(u"Define templates access rules")
-    fields = silvaforms.Fields(interfaces.ITemplateAccessRules)
+    label = _(u"Define templates access restrictions")
+    fields = silvaforms.Fields(interfaces.ITemplateRestrictions)
     ignoreContent = False
     ignoreRequest = True
 
@@ -173,7 +174,7 @@ class TemplateAccessRulesSettings(silvaforms.ZMISubForm):
         if errors:
             return silvaforms.FAILURE
         try:
-            self.context.update_rules(data['_rules'])
+            self.context.update_restrictions(data['_restrictions'])
             self.status = _(u"Changes saved.")
         except ValueError as e:
             self.status = e.args[0]

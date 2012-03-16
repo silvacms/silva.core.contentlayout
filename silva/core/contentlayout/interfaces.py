@@ -152,7 +152,7 @@ class ITemplateContentRule(interface.Interface):
                                 source=content_type_source)
 
 
-class ITemplateAccessRule(ITemplateContentRule):
+class ITemplateRestriction(ITemplateContentRule):
     """A template access rule limit the use of a template and a content type
     to a minimal role.
     """
@@ -163,18 +163,18 @@ class ITemplateAccessRule(ITemplateContentRule):
 class IDefaultTemplateRule(ITemplateContentRule):
    """Default template per content type
    """
-   # fields in reverse order
+   # same fields as parent class but in reverse order
    content_type = schema.Choice(title=_(u"Content type"),
                                 source=content_type_source)
    template = schema.Choice(title=_(u"Template"),
                             source=template_source)
 
 
-class ITemplateAccessRules(interface.Interface):
+class ITemplateRestrictions(interface.Interface):
 
-   _rules = schema.Set(
-      title=_(u"Access rules"),
-      value_type=schema.Object(schema=ITemplateAccessRule),
+   _restrictions = schema.Set(
+      title=_(u"Restrictions"),
+      value_type=schema.Object(schema=ITemplateRestriction),
       required=True)
 
 
