@@ -121,20 +121,26 @@ class ITemplateService(interfaces.ISilvaService, ITemplateLookup):
 
 
 @apply
-def silva_role_source():
-    roles = []
-    for role in roleinfo.ASSIGNABLE_ROLES:
+def editor_roles_source():
+    roles = [SimpleTerm(value=None,
+                        token='',
+                        title=_(u"-- Choose a role --"))]
+    for role in roleinfo.EDITOR_ROLES:
         roles.append(SimpleTerm(value=role, token=role, title=role))
     return SimpleVocabulary(roles)
 
 @grok.provider(IContextSourceBinder)
 def content_type_source(context):
+   terms = [SimpleTerm(value=None,
+                       token='',
+                       title=_(u"-- Choose a content type --"))]
    addables = interfaces.IAddableContents(
       context.get_root()).get_all_addables(require=IPageAware)
-   return SimpleVocabulary([SimpleTerm(value=addable,
+   for addable in addables:
+      terms.append(SimpleTerm(value=addable,
                               token=addable,
-                              title=addable)
-                            for addable in addables])
+                              title=addable))
+   return SimpleVocabulary(terms)
 
 
 class ITemplateContentRule(interface.Interface):
@@ -151,17 +157,22 @@ class ITemplateAccessRule(ITemplateContentRule):
     to a minimal role.
     """
     role = schema.Choice(title=_(u"Role"),
-                         source=silva_role_source)
+                         source=editor_roles_source)
 
 
 class IDefaultTemplateRule(ITemplateContentRule):
    """Default template per content type
    """
+   # fields in reverse order
+   content_type = schema.Choice(title=_(u"Content type"),
+                                source=content_type_source)
+   template = schema.Choice(title=_(u"Template"),
+                            source=template_source)
 
 
 class ITemplateAccessRules(interface.Interface):
 
-   rules = schema.Set(
+   _rules = schema.Set(
       title=_(u"Access rules"),
       value_type=schema.Object(schema=ITemplateAccessRule),
       required=True)
@@ -169,7 +180,7 @@ class ITemplateAccessRules(interface.Interface):
 
 class IContentDefaultTemplates(interface.Interface):
 
-   default_templates = schema.Set(
+   _default_templates = schema.Set(
       title=_(u"Default templates"),
       value_type=schema.Object(schema=IDefaultTemplateRule),
       required=True)

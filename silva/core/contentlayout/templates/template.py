@@ -42,7 +42,7 @@ class Template(object):
 
     @classmethod
     def get_identifier(cls):
-        return cls.module + '.' + cls.__name__
+        return cls.__module__ + '.' + cls.__name__
 
     def __init__(self, content, request):
         self.content = content

@@ -52,22 +52,26 @@ class TemplateService(SilvaService):
 
     @property
     def _default_templates(self):
-        return set(chain.from_iterable(
-                self._default_templates_index.itervalues()))
+        return set(self._default_templates_index.itervalues())
 
     # TODO: security.declarePrivate()
     def update_rules(self, rules):
         for rule in rules:
             rule.validate()
-        self._rules_index = {rule.template.get_indentifier(): rule
-                             for r in rules()}
+        self._rules_index = {}
+        for rule in rules:
+            identifier = rule.template.get_identifier()
+            if identifier not in self._rules_index:
+                self._rules_index[identifier] = set()
+            self._rules_index[identifier].add(rule)
 
     # TODO: security.declarePrivate()
     def update_default_templates(self, rules):
         for rule in rules:
             rule.validate()
-        self._default_templates_index = {rule.content_type: rule
-                             for r in rules()}
+        self._default_templates_index = {}
+        for rule in rules:
+            self._default_templates_index[rule.content_type] = rule
 
     def _template_allowed_in_context(self, template, context):
         # XXX: move this to registry
@@ -111,24 +115,11 @@ class TemplateContentRule(object):
         return hash((self.content_type, self.template.get_identifier()))
 
     def __eq__(self, other):
-        if not interfaces.IDefaultTemplate.providedBy(other):
+        if not isinstance(other, self.__class__):
             return False
         return (self.template.get_identifier(), self.content_type) == \
             (other.template.get_identifier(), other.content_type)
         return (self.content_type, self.template.get_identifier())
-
-    def validate(self):
-        raise NotImplementedError('validate method should be implemented by '
-                                  'subclasses')
-
-
-class TemplateAccessRule(TemplateContentRule):
-    """ Require a minimal role to set a template on a content.
-    """
-
-    def __init__(self, template, content_type, role):
-        super(TemplateAccessRule, self).__init__(template, content_type)
-        self.role = role
 
     def validate(self):
         template_context_restriction = grok.context.bind().get(self.template)
@@ -148,6 +139,15 @@ class TemplateAccessRule(TemplateContentRule):
                               self.content_type))
 
 
+class TemplateAccessRule(TemplateContentRule):
+    """ Require a minimal role to set a template on a content.
+    """
+
+    def __init__(self, template, content_type, role):
+        super(TemplateAccessRule, self).__init__(template, content_type)
+        self.role = role
+
+
 grok.global_utility(
     TemplateAccessRule,
     provides=IFactory,
@@ -165,6 +165,7 @@ class TemplateAccessRulesSettings(silvaforms.ZMISubForm):
     label = _(u"Define templates access rules")
     fields = silvaforms.Fields(interfaces.ITemplateAccessRules)
     ignoreContent = False
+    ignoreRequest = True
 
     @silvaforms.action(_(u"Apply"))
     def save(self):
@@ -172,8 +173,8 @@ class TemplateAccessRulesSettings(silvaforms.ZMISubForm):
         if errors:
             return silvaforms.FAILURE
         try:
-            self.context.update_rules(data['rules'])
-            print self.context._rules
+            self.context.update_rules(data['_rules'])
+            self.status = _(u"Changes saved.")
         except ValueError as e:
             self.status = e.args[0]
             return silvaforms.FAILURE
@@ -203,6 +204,7 @@ class ContentDefaultTemplateSettings(silvaforms.ZMISubForm):
     label = _(u"Define default template for content types")
     fields = silvaforms.Fields(interfaces.IContentDefaultTemplates)
     ignoreContent = False
+    ignoreRequest = True
 
     @silvaforms.action(_(u"Apply"))
     def save(self):
@@ -210,8 +212,8 @@ class ContentDefaultTemplateSettings(silvaforms.ZMISubForm):
         if errors:
             return silvaforms.FAILURE
         try:
-            self.context.update_default_templates(data['rules'])
-            print self.context._rules
+            self.context.update_default_templates(data['_default_templates'])
+            self.status = _(u"Changes saved.")
         except ValueError as e:
             self.status = e.args[0]
             return silvaforms.FAILURE
