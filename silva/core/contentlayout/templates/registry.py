@@ -8,7 +8,7 @@ from AccessControl.security import checkPermission
 from silva.core.contentlayout.interfaces import ITemplateLookup
 
 
-class TemplateRegistry(grok.GlobalUtility):
+class TemplateRegistry(object):
     """Register templates
     """
     grok.implements(ITemplateLookup)
@@ -28,6 +28,9 @@ class TemplateRegistry(grok.GlobalUtility):
                                if self._is_allowed(factory, context)])
         return sort_components(candidates)
 
+    def lookup_by_content_type(self, content_type, parent):
+        return self.lookup(parent)
+
     def _is_allowed(self, template, context):
         permission = grok.require.bind().get(template)
         if permission:
@@ -41,7 +44,7 @@ class TemplateRegistry(grok.GlobalUtility):
 registry = TemplateRegistry()
 cleanup.addCleanUp(registry.clear)
 
-# grok.global_utility(
-#     registry,
-#     provides=ITemplateLookup,
-#     direct=True)
+grok.global_utility(
+    registry,
+    provides=ITemplateLookup,
+    direct=True)

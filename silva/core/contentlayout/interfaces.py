@@ -5,12 +5,14 @@ from zope.schema.vocabulary import SimpleVocabulary, SimpleTerm
 from zope.schema.interfaces import IContextSourceBinder
 from zope.publisher.interfaces.browser import IDefaultBrowserLayer
 from zope.annotation import IAttributeAnnotatable
+from zope.component import getUtility
 
 from silva.core import conf as silvaconf
 from silva.core import interfaces
 from silva.core.conf.interfaces import ITitledContent
 from silva.translations import translate as _
 from silva.ui.interfaces import ISilvaUIDependencies
+from zeam.form.ztk.interfaces import IFormSourceBinder
 
 from Products.Silva import roleinfo
 
@@ -40,7 +42,7 @@ class InvalidTemplate(ValueError):
 
 
 @grok.provider(IContextSourceBinder)
-def template_source(context):
+def registry_template_source(context):
     from silva.core.contentlayout.templates.registry import registry
 
     def make_term(template):
@@ -49,6 +51,21 @@ def template_source(context):
                           title=template.label)
 
     return SimpleVocabulary([make_term(t) for t in registry.lookup(context)])
+
+@grok.provider(IFormSourceBinder)
+def template_source(form):
+   from zeam.form.silva.form.smi import SMIAddForm
+   registry = getUtility(ITemplateLookup)
+   candidates = None
+   if isinstance(form, SMIAddForm):
+      candidates = registry.lookup_by_content_type(
+         form._content_type, form.context)
+   else:
+      candidates = registry.lookup(form.context)
+   return SimpleVocabulary([SimpleTerm(value=t,
+                                       token=t.__name__,
+                                       title=t.label)
+                            for t in candidates])
 
 
 class ITitledPage(ITitledContent):
@@ -108,10 +125,13 @@ class IBlockView(interface.Interface):
 
 
 class ITemplateLookup(interface.Interface):
-    """ Defines how to lookup a template
+    """Defines how to lookup a template
     """
     def lookup(context):
-      """ lookup and return a list of available template
+      """lookup and return a list of available template
+      """
+    def lookup_by_content_type(content_type, parent):
+      """Same as lookup but accept a silva content type as argument
       """
 
 
@@ -147,7 +167,7 @@ class ITemplateContentRule(interface.Interface):
    """Rules bind together a template and a content
    """
    template = schema.Choice(title=_(u"Template"),
-                            source=template_source)
+                            source=registry_template_source)
    content_type = schema.Choice(title=_(u"Content type"),
                                 source=content_type_source)
 
@@ -167,7 +187,7 @@ class IDefaultTemplateRule(ITemplateContentRule):
    content_type = schema.Choice(title=_(u"Content type"),
                                 source=content_type_source)
    template = schema.Choice(title=_(u"Template"),
-                            source=template_source)
+                            source=registry_template_source)
 
 
 class ITemplateRestrictions(interface.Interface):

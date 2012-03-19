@@ -55,8 +55,17 @@ class TemplateService(SilvaService):
         'View Management Screens', 'lookup')
     def lookup(self, context):
         candidates = registry.lookup(context)
-        return filter(lambda t: self._template_allowed_in_context(t, context),
-                      candidates)
+        return filter(
+            lambda t: self._template_allowed_in_context(t, context),
+            candidates)
+
+    def lookup_by_content_type(self, content_type, parent):
+        candidates = registry.lookup_by_content_type(content_type, parent)
+        object_class = get_content_class_from_content_type(content_type)
+        return filter(
+            lambda t: self._template_allowed_in_context(
+                t, parent, object_class=object_class),
+            candidates)
 
     @property
     def _restrictions(self):
@@ -87,11 +96,14 @@ class TemplateService(SilvaService):
         for rule in rules:
             self._default_templates_index[rule.content_type] = rule
 
-    def _template_allowed_in_context(self, template, context):
+    def _template_allowed_in_context(self, template, context,
+                                     object_class=None):
+        if object_class is None:
+            object_class = context.__class__
         rules = self._restrictions_index[template.get_identifier()]
         user_role = IAuthorizationManager(context).get_user_role()
         for rule in rules:
-            if context.content_type != rule.content_type:
+            if object_class.meta_type != rule.content_type:
                 continue
             if roleinfo.isEqualToOrGreaterThan(user_role, rule.role):
                 continue
@@ -135,12 +147,12 @@ class TemplateContentRule(object):
     def validate(self):
         template_context_restriction = grok.context.bind().get(self.template)
         object_type = get_content_class_from_content_type(self.content_type)
-        verify = lambda x: isinstance(x, object_type)
-        if isinstance(template_context_restriction, Interface):
+        verify = lambda x: issubclass(object_type, x)
+        if issubclass(template_context_restriction, Interface):
             verify = template_context_restriction.implementedBy
         if not verify(object_type):
             raise ValueError(_(u'Template %s restricts its usage to %s objects'
-                               u', However %s do comply') %
+                               u', However %s do not comply') %
                              (self.template.label,
                               template_context_restriction.__name__,
                               self.content_type))
