@@ -5,6 +5,7 @@
 from itertools import chain
 
 from zope.component import IFactory
+from zope.interface import Interface
 
 from five import grok
 from AccessControl import ClassSecurityInfo
@@ -21,6 +22,14 @@ from Products.Silva import roleinfo
 
 from silva.core.contentlayout import interfaces
 from silva.core.contentlayout.templates.registry import registry
+
+
+def get_content_class_from_content_type(content_type):
+    #XXX: is this the correct way
+    addable = extensionRegistry.get_addable(content_type)
+    if addable is None:
+        raise ValueError('Unknow content type %s' % content_type)
+    return addable['instance']
 
 
 class TemplateService(SilvaService):
@@ -82,7 +91,8 @@ class TemplateService(SilvaService):
         rules = self._restrictions_index[template.get_identifier()]
         user_role = IAuthorizationManager(context).get_user_role()
         for rule in rules:
-            # XXX: check if context matches
+            if context.content_type != rule.content_type:
+                continue
             if roleinfo.isEqualToOrGreaterThan(user_role, rule.role):
                 continue
             return False
@@ -124,19 +134,15 @@ class TemplateContentRule(object):
 
     def validate(self):
         template_context_restriction = grok.context.bind().get(self.template)
-        # XXX: is it the correct way to get a class corresponding
-        # to a content type ?
-        addable = extensionRegistry.get_addable(self.content_type)
-        if addable is None:
-            raise ValueError('Unknow content type %s' % self.content_type)
-        object_type = addable['instance']
-        # XXX: what if grok.context declares something else that an interface
-        # like a straight python class
-        if not template_context_restriction.implementedBy(object_type):
+        object_type = get_content_class_from_content_type(self.content_type)
+        verify = lambda x: isinstance(x, object_type)
+        if isinstance(template_context_restriction, Interface):
+            verify = template_context_restriction.implementedBy
+        if not verify(object_type):
             raise ValueError(_(u'Template %s restricts its usage to %s objects'
                                u', However %s do comply') %
                              (self.template.label,
-                              template_context_restriction,
+                              template_context_restriction.__name__,
                               self.content_type))
 
 
