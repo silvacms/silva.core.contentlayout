@@ -2,16 +2,62 @@
 from five import grok
 from zope.interface import classImplements
 
-import Products.Silva.Image
 from silva.core.contentlayout.interfaces import IBlockable
 from silva.core.contentlayout.blocks import BlockView
+from silva.translations import translate as _
 
+# Silva Image
 
-classImplements(Products.Silva.Image.Image, IBlockable)
+from Products.Silva.Image import Image
+
+classImplements(Image, IBlockable)
 
 
 class ImageBlock(BlockView):
-    grok.context(Products.Silva.Image.Image)
+    grok.context(Image)
 
     def render(self):
         return self.context.tag()
+
+
+# Source block
+
+from Products.SilvaExternalSources.interfaces import SourceError
+from Products.SilvaExternalSources.SourceAsset import SourceAsset
+
+classImplements(SourceAsset, IBlockable)
+
+
+class SourceBlock(BlockView):
+    grok.context(SourceAsset)
+
+    def update(self):
+        self.msg = None
+        self.controller = None
+        try:
+            self.controller = self.context.get_controller(self.request)
+        except SourceError, error:
+            self.msg = error.to_html()
+
+    def render(self):
+        if self.msg:
+            return self.msg
+        return self.controller.render()
+
+
+# Silva document
+
+from silva.app.document.document import Document
+from silva.core.editor.transform.interfaces import IDisplayFilter
+
+classImplements(Document, IBlockable)
+
+
+class DocumentBlock(BlockView):
+    grok.context(Document)
+
+    def render(self):
+        viewable = self.context.get_viewable()
+        if viewable is None:
+            return _(u"This document is not available.")
+        return viewable.body.render(viewable, self.request, IDisplayFilter)
