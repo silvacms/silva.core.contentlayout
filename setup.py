@@ -1,23 +1,26 @@
 from setuptools import setup, find_packages
 import os
- 
-version = '2.0'
+
+version = '2.0dev'
 
 setup(name='silva.core.contentlayout',
       version=version,
-      description="content layout base functionality",
+      description="Silva Content Layout base functionality",
       long_description=open("README.txt").read() + "\n" +
                        open(os.path.join("docs", "HISTORY.txt")).read(),
       # Get more strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
       classifiers=[
+        "Framework :: Zope2",
         "Programming Language :: Python",
+        "Topic :: Software Development :: Libraries :: Python Modules",
         ],
       keywords='',
       author='Andrew Altepeter',
       author_email='aaltepet@bethel.edu',
       url='',
       license='GPL',
-      packages=find_packages(),
+      package_dir={'': 'src'},
+      packages=find_packages('src'),
       namespace_packages=['silva', 'silva.core'],
       include_package_data=True,
       zip_safe=False,
