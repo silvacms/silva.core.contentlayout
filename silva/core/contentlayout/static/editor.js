@@ -85,6 +85,21 @@
                     );
                 };
 
+                var remove = function($block) {
+                    smi.ajax.query(
+                        delete_url_template.expand({
+                            path: path,
+                            id: $block.data('block-id')
+                        })
+                    ).pipe(
+                        function(data) {
+                            if (data.success) {
+                                $block.remove();
+                            };
+                        }
+                    );
+                };
+
                 return {
                     html_url: url_template.expand({path: path}),
                     iframe: true,
@@ -94,9 +109,7 @@
 
                         // Remove action
                         $body.delegate('div.edit-block a.remove-block', 'click', function() {
-                            var $block = $(this).closest('div.edit-block');
-
-                            $block.remove();
+                            remove($(this).closest('div.edit-block'));
                         });
                         // Edit action
                         $body.delegate('div.edit-block a.edit-block', 'click', function() {

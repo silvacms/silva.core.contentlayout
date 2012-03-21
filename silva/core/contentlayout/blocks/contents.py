@@ -8,10 +8,9 @@ from zope.component import getUtility, queryMultiAdapter
 from zope.component import getMultiAdapter
 
 from silva.core.contentlayout.blocks import Block
-from silva.core.contentlayout.interfaces import IBlockManager
+from silva.core.contentlayout.interfaces import IBlockManager, IBlockController
 from silva.core.contentlayout.interfaces import IBlockView, IBlockable
 from silva.core.contentlayout.interfaces import IReferenceBlock, IPage
-from silva.core.interfaces import IDataManager
 from silva.core.references.interfaces import IReferenceService
 from silva.core.references.reference import Reference
 from silva.translations import translate as _
@@ -31,7 +30,7 @@ class ReferenceBlock(Block):
 
 class BoundReferenceBlock(grok.MultiAdapter):
     grok.adapts(IReferenceBlock, Interface, IHTTPRequest)
-    grok.provides(IDataManager)
+    grok.provides(IBlockController)
 
     def __init__(self, reference, context, request):
         self._name = reference.identifier
@@ -39,23 +38,28 @@ class BoundReferenceBlock(grok.MultiAdapter):
         self.request = request
         self._service = getUtility(IReferenceService)
 
-    @property
-    def block(self):
-        reference = self._service.get_reference(self.context, name=self._name)
-        if reference is not None:
-            return reference.target
-        return None
+    @apply
+    def block():
 
-    def clear(self):
+        def getter(self):
+            reference = self._service.get_reference(
+                self.context, name=self._name)
+            if reference is not None:
+                return reference.target
+            return None
+
+        def setter(self, value):
+            reference = self._service.get_reference(
+                self.context, name=self._name, add=True)
+            if isinstance(value, int):
+                reference.set_target_id(value)
+            else:
+                reference.set_target(value)
+
+        return property(getter, setter)
+
+    def remove(self):
         self._service.delete_reference(self.context, name=self._name)
-
-    def update(self, parameters):
-        reference = self._service.get_reference(
-            self.context, name=self._name, add=True)
-        if isinstance(parameters, int):
-            reference.set_target_id(parameters)
-        else:
-            reference.set_target(parameters)
 
     def render(self):
         content = self.block
@@ -98,8 +102,8 @@ class AddExternalBlockAction(silvaforms.Action):
             form.request.form['slot_id'],
             block)
         self.block_manager = getMultiAdapter(
-            (block, form.context, form.request), IDataManager)
-        self.block_manager.update(data['block'])
+            (block, form.context, form.request), IBlockController)
+        self.block_manager.block = data['block']
         form.send_message(_(u"Added new block"))
         return silvaforms.SUCCESS
 
@@ -121,18 +125,17 @@ class EditExternalBlockAction(silvaforms.Action):
     title = _('Edit')
 
     def get_extra_payload(self, form):
-        manager = form.getContent()
         # This is kind of an hack, but the name of the form is the block id.
         return {
             'block_id': form.__name__,
-            'block_data': manager.render()}
+            'block_data': form.getContent().render()}
 
     def __call__(self, form):
         data, errors = form.extractData()
         if errors:
             return silvaforms.FAILURE
-        manager = form.getContent()
-        manager.update(data['block'])
+        manager = form.getContentData()
+        manager.set('block', data.getWithDefault('block'))
         form.send_message(_(u"Block modified"))
         return silvaforms.SUCCESS
 
@@ -153,9 +156,8 @@ class EditExternalBlock(silvaforms.RESTPopupForm):
         self.block = block
 
     def update(self):
-        manager = getMultiAdapter(
-            (self.block, self.context, self.request), IDataManager)
-        self.setContentData(manager)
+        self.setContentData(getMultiAdapter(
+                (self.block, self.context, self.request), IBlockController))
 
 
 class BlockView(object):

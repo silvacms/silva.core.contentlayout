@@ -86,11 +86,24 @@ class IPage(IAttributeAnnotatable):
    """
 
 class IBlock(interface.Interface):
-   """Provide a block.
+   """A block.
    """
 
+class IBlockController(interface.Interface):
+   """Update block
+   """
+
+   def remove():
+      """Remove associated data with the block.
+      """
+
+   def render():
+      """Render the block.
+      """
+
+
 class IBlockManager(interface.Interface):
-    """Manage blocks.
+    """Manage blocks for a content.
     """
 
 

@@ -8,21 +8,23 @@ from zope.schema.interfaces import IContextSourceBinder
 from zope import schema
 
 from infrae.rest import queryRESTComponent
-
 from silva.core.contentlayout.blocks.registry import registry
 from silva.core.contentlayout.interfaces import IEditionMode, IPage
 from silva.core.contentlayout.interfaces import IBlockManager
 from silva.core.views import views as silvaviews
 from silva.translations import translate as _
-from silva.ui.rest import REST
+from silva.ui.rest import REST, UIREST
 from silva.ui.rest.exceptions import RESTRedirectHandler
 from silva.ui.smi import SMIConfiguration
 from zeam.form import silva as silvaforms
+
+from zExceptions import BadRequest
 
 
 class EditPage(silvaviews.Page):
     grok.context(IPage)
     grok.name('edit')
+    grok.require('silva.ChangeSilvaContent')
 
     def update(self):
         alsoProvides(self.request, IEditionMode)
@@ -42,25 +44,26 @@ def block_source(context):
     result = []
     for name, block in registry.all():
         result.append(SimpleTerm(
-                value='silva.core.contentlayout.add/' + urllib.quote(name),
+                value=urllib.quote(name),
                 token=name,
                 title=grok.title.bind().get(block)))
     return SimpleVocabulary(result)
 
 
-class IAddSchema(Interface):
+class IChooseSchema(Interface):
     category = schema.Choice(
         title=_(u"Block"),
         description=_(u"Select a type of block to include in your document."),
         source=block_source)
 
 
-class AddBlock(silvaforms.RESTPopupForm):
+class ChooseBlock(silvaforms.RESTPopupForm):
     grok.context(IPage)
     grok.name('silva.core.contentlayout.add')
+    grok.require('silva.ChangeSilvaContent')
 
-    label = _(u"Add a new block to the slot")
-    fields = silvaforms.Fields(IAddSchema)
+    label = _(u"Choose a new block to add to the slot")
+    fields = silvaforms.Fields(IChooseSchema)
     fields['category'].mode = 'radio'
     actions = silvaforms.Actions(silvaforms.CancelAction())
 
@@ -75,19 +78,20 @@ class AddBlock(silvaforms.RESTPopupForm):
                 id=name)
             if adder is not None:
                 return adder
-        return super(AddBlock, self).publishTraverse(request, name)
+        return super(ChooseBlock, self).publishTraverse(request, name)
 
     @silvaforms.action(_('Next'))
-    def add(self):
+    def next(self):
         data, errors = self.extractData()
         if errors:
             return silvaforms.FAILURE
-        raise RESTRedirectHandler(data['category'])
+        raise RESTRedirectHandler(data['category'], relative=self, clear=True)
 
 
 class EditBlock(REST):
     grok.context(IPage)
     grok.name('silva.core.contentlayout.edit')
+    grok.require('silva.ChangeSilvaContent')
 
     def publishTraverse(self, request, name):
         manager = IBlockManager(self.context)
@@ -103,4 +107,27 @@ class EditBlock(REST):
                 return editer
         return super(EditBlock, self).publishTraverse(request, name)
 
+
+class RemoveBlock(UIREST):
+    grok.context(IPage)
+    grok.name('silva.core.contentlayout.delete')
+    grok.require('silva.ChangeSilvaContent')
+
+    block_id = None
+
+    def publishTraverse(self, request, name):
+        manager = IBlockManager(self.context)
+        block_id = urllib.unquote(name)
+        if manager.get(block_id) is not None:
+            self.block_id = block_id
+            self.__name__ = '/'.join((self.__name__, name))
+            return self
+        return super(RemoveBlock, self).publishTraverse(request, name)
+
+    def GET(self):
+        if self.block_id is None:
+            raise BadRequest()
+        manager = IBlockManager(self.context)
+        manager.remove(self.block_id, self.context, self.request)
+        return self.json_response({'content': {'success': True}})
 

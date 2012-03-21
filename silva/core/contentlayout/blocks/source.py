@@ -2,40 +2,44 @@
 from five import grok
 from zope import schema
 from zope.interface import Interface
-from zope.schema.interfaces import IContextSourceBinder
-from zope.schema.vocabulary import SimpleVocabulary, SimpleTerm
 
-from Products.SilvaExternalSources.ExternalSource import availableSources
-from Products.SilvaExternalSources.SourceInstance import SourceParameters
-from Products.SilvaExternalSources.interfaces import IExternalSource
+from Products.SilvaExternalSources.interfaces import IExternalSourceManager
+from Products.SilvaExternalSources.interfaces import SourceError, source_source
 
-from silva.ui.rest.exceptions import RESTRedirectHandler
 from silva.core.contentlayout.blocks import Block
+from silva.core.contentlayout.interfaces import IBlockManager, IBlockController
 from silva.core.contentlayout.interfaces import IPage, IBlock
 from silva.translations import translate as _
+from silva.ui.rest.exceptions import RESTRedirectHandler
+from zeam.component import getWrapper
 from zeam.form import silva as silvaforms
+from zeam.form.silva.interfaces import IRESTCloseOnSuccessAction
+from zeam.form.silva.interfaces import IRESTExtraPayloadProvider
 
 
-class SourceBlock(Block, SourceParameters):
+class SourceBlock(Block):
     grok.implements(IBlock)
     grok.name('source')
     grok.title(_(u"Code source"))
 
+    def __init__(self, identifier):
+        self.identifier = identifier
 
-@grok.provider(IContextSourceBinder)
-def source_source(context):
 
-    def make_term(identifier, source):
-        return SimpleTerm(value=source,
-                          token=identifier,
-                          title=unicode(source.title))
+def source_controller(block, context, request):
+    source = getWrapper(context, IExternalSourceManager)
+    return source(request, instance=block.identifier)
 
-    return SimpleVocabulary([make_term(*t) for t in availableSources(context)])
+
+grok.global_adapter(
+    source_controller,
+    (SourceBlock, Interface, Interface),
+    IBlockController)
 
 
 class IAddSourceSchema(Interface):
     source = schema.Choice(
-        title=_(u"Select a source"),
+        title=_(u"Select an external source"),
         source=source_source,
         required=True)
 
@@ -44,7 +48,7 @@ class AddSourceBlock(silvaforms.RESTPopupForm):
     grok.adapts(SourceBlock, IPage)
     grok.name('add')
 
-    label = _(u"Add a source in a new block")
+    label = _(u"Add a source block")
     fields = silvaforms.Fields(IAddSourceSchema)
     actions = silvaforms.Actions(silvaforms.CancelAction())
 
@@ -54,8 +58,36 @@ class AddSourceBlock(silvaforms.RESTPopupForm):
         if errors:
             return silvaforms.FAILURE
         raise RESTRedirectHandler(
-            'silva.core.contentlayout.add/source/parameters/' +
-            data['source'].getId())
+            'parameters/' + data['source'].getId(), clear=True, relative=self)
+
+
+class AddSourceBlockAction(silvaforms.Action):
+    grok.implements(IRESTExtraPayloadProvider, IRESTCloseOnSuccessAction)
+    title = _('Add')
+
+    block_id = None
+
+    def get_extra_payload(self, form):
+        if self.block_id is None:
+            return {}
+        try:
+            data = form.controller.render()
+        except SourceError, error:
+            data = error.to_html()
+        return {
+            'block_id': self.block_id,
+            'block_data': data}
+
+    def __call__(self, form):
+        status = form.controller.create()
+        if status is silvaforms.FAILURE:
+            return silvaforms.FAILURE
+        manager = IBlockManager(form.context)
+        self.block_id = manager.new(
+            form.request.form['slot_id'],
+            SourceBlock(form.controller.getId()))
+        form.send_message(_(u"Added new block"))
+        return silvaforms.SUCCESS
 
 
 class AddSourceParameters(silvaforms.RESTPopupForm):
@@ -63,21 +95,90 @@ class AddSourceParameters(silvaforms.RESTPopupForm):
     grok.name('parameters')
 
     source = None
-    description = u'Dead end.'
-    actions = silvaforms.Actions(silvaforms.CancelAction())
+    actions = silvaforms.Actions(
+        silvaforms.CancelAction(),
+        AddSourceBlockAction())
 
     @property
     def label(self):
-        return _(u"Parameters for source ${title} in a new block",
-                 mapping={'title': self.source.title})
+        if self.controller is not None:
+            return _(u"Parameters for new source ${title}",
+                     mapping={'title': self.controller.label})
+        return _(u"Add a source block")
+
+    @property
+    def description(self):
+        if self.controller is not None:
+            return self.controller.description
+
+    def updateWidgets(self):
+        super(AddSourceParameters, self).updateWidgets()
+        if self.controller is not None:
+            self.fieldWidgets.extend(self.controller.widgets())
 
     def publishTraverse(self, request, name):
-        candidate = getattr(self.context, name, None)
-        if candidate is not None:
-            if IExternalSource.providedBy(candidate):
-                self.source = candidate
-                self.__name__ = '/'.join((self.__name__, name))
-                return self
-        return super(AddSourceParameters, self).publishTraverse(request, name)
+        manager = getWrapper(self.context, IExternalSourceManager)
+        try:
+            self.controller = manager(self.request, name=name)
+        except SourceError:
+            parent = super(AddSourceParameters, self)
+            return parent.publishTraverse(request, name)
+        self.__name__ = '/'.join((self.__name__, name))
+        return self
 
 
+class EditSourceBlockAction(silvaforms.Action):
+    grok.implements(IRESTExtraPayloadProvider, IRESTCloseOnSuccessAction)
+    title = _('Edit')
+
+    def get_extra_payload(self, form):
+        if form.controller is None:
+            return {}
+        return {
+            'block_id': form.__name__,
+            'block_data': form.controller.render()}
+
+    def __call__(self, form):
+        if form.controller is None:
+            return silvaforms.FAILURE
+        status = form.controller.save()
+        if status is silvaforms.SUCCESS:
+            form.send_message(_(u"Block modified"))
+        return status
+
+
+class EditSourceBlock(silvaforms.RESTPopupForm):
+    grok.adapts(SourceBlock, IPage)
+    grok.name('edit')
+
+    label = _(u"Edit an external block ")
+    fields = silvaforms.Fields()
+    actions = silvaforms.Actions(
+        silvaforms.CancelAction(),
+        EditSourceBlockAction())
+
+    def __init__(self, block, context, request):
+        super(EditSourceBlock, self).__init__(context, request)
+        self.block = block
+        manager = getWrapper(context, IExternalSourceManager)
+        try:
+            self.controller = manager(request, instance=block.identifier)
+        except SourceError:
+            self.controller = None
+
+    @property
+    def label(self):
+        if self.controller is not None:
+            return _(u"Parameters for existing source ${title}",
+                     mapping={'title': self.controller.label})
+        return _(u"Edit a source block")
+
+    @property
+    def description(self):
+        if self.controller is not None:
+            return self.controller.description
+
+    def updateWidgets(self):
+        super(EditSourceBlock, self).updateWidgets()
+        if self.controller is not None:
+            self.fieldWidgets.extend(self.controller.widgets())
