@@ -13,8 +13,6 @@ from silva.translations import translate as _
 from silva.ui.rest.exceptions import RESTRedirectHandler
 from zeam.component import getWrapper
 from zeam.form import silva as silvaforms
-from zeam.form.silva.interfaces import IRESTCloseOnSuccessAction
-from zeam.form.silva.interfaces import IRESTExtraPayloadProvider
 
 
 class SourceBlock(Block):
@@ -62,7 +60,10 @@ class AddSourceBlock(silvaforms.RESTPopupForm):
 
 
 class AddSourceBlockAction(silvaforms.Action):
-    grok.implements(IRESTExtraPayloadProvider, IRESTCloseOnSuccessAction)
+    grok.implements(
+        silvaforms.IDefaultAction,
+        silvaforms.IRESTExtraPayloadProvider,
+        silvaforms.IRESTCloseOnSuccessAction)
     title = _('Add')
 
     block_id = None
@@ -128,7 +129,10 @@ class AddSourceParameters(silvaforms.RESTPopupForm):
 
 
 class EditSourceBlockAction(silvaforms.Action):
-    grok.implements(IRESTExtraPayloadProvider, IRESTCloseOnSuccessAction)
+    grok.implements(
+        silvaforms.IDefaultAction,
+        silvaforms.IRESTExtraPayloadProvider,
+        silvaforms.IRESTCloseOnSuccessAction)
     title = _('Edit')
 
     def get_extra_payload(self, form):

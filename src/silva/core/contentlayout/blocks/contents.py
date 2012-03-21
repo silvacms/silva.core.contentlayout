@@ -15,8 +15,6 @@ from silva.core.references.interfaces import IReferenceService
 from silva.core.references.reference import Reference
 from silva.translations import translate as _
 from zeam.form import silva as silvaforms
-from zeam.form.silva.interfaces import IRESTCloseOnSuccessAction
-from zeam.form.silva.interfaces import IRESTExtraPayloadProvider
 
 
 class ReferenceBlock(Block):
@@ -79,7 +77,10 @@ class IExternalBlockFields(Interface):
 
 
 class AddExternalBlockAction(silvaforms.Action):
-    grok.implements(IRESTExtraPayloadProvider, IRESTCloseOnSuccessAction)
+    grok.implements(
+        silvaforms.IDefaultAction,
+        silvaforms.IRESTExtraPayloadProvider,
+        silvaforms.IRESTCloseOnSuccessAction)
     title = _('Add')
 
     block_id = None
@@ -104,7 +105,7 @@ class AddExternalBlockAction(silvaforms.Action):
         self.block_manager = getMultiAdapter(
             (block, form.context, form.request), IBlockController)
         self.block_manager.block = data['block']
-        form.send_message(_(u"Added new block"))
+        form.send_message(_(u"New external block added."))
         return silvaforms.SUCCESS
 
 
@@ -121,7 +122,10 @@ class AddExternalBlock(silvaforms.RESTPopupForm):
 
 
 class EditExternalBlockAction(silvaforms.Action):
-    grok.implements(IRESTExtraPayloadProvider, IRESTCloseOnSuccessAction)
+    grok.implements(
+        silvaforms.IDefaultAction,
+        silvaforms.IRESTExtraPayloadProvider,
+        silvaforms.IRESTCloseOnSuccessAction)
     title = _('Edit')
 
     def get_extra_payload(self, form):
@@ -136,7 +140,7 @@ class EditExternalBlockAction(silvaforms.Action):
             return silvaforms.FAILURE
         manager = form.getContentData()
         manager.set('block', data.getWithDefault('block'))
-        form.send_message(_(u"Block modified"))
+        form.send_message(_(u"External block modified."))
         return silvaforms.SUCCESS
 
 
