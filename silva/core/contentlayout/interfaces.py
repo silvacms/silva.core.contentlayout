@@ -8,7 +8,8 @@ from zope.annotation import IAttributeAnnotatable
 from zope.component import getUtility
 
 from silva.core import conf as silvaconf
-from silva.core import interfaces
+from silva.core.interfaces import IViewableObject, ISilvaLocalService
+from silva.core.interfaces import IAddableContents
 from silva.core.conf.interfaces import ITitledContent
 from silva.translations import translate as _
 from silva.ui.interfaces import ISilvaUIDependencies
@@ -77,7 +78,7 @@ class ITitledPage(ITitledContent):
         source=template_source)
 
 
-class IPageAware(interfaces.IViewableObject):
+class IPageAware(IViewableObject):
     """Define an interface that a content using a page should implement.
     """
 
@@ -122,7 +123,7 @@ class IEditorResources(ISilvaUIDependencies):
 
 
 
-class IBlockable(interfaces.IViewableObject):
+class IBlockable(IViewableObject):
     """Define a block that can be used in a page.
     """
 
@@ -148,8 +149,8 @@ class ITemplateLookup(interface.Interface):
       """
 
 
-class ITemplateService(interfaces.ISilvaService, ITemplateLookup):
-    """ Template Service for Silva
+class IContentLayoutService(ISilvaLocalService, ITemplateLookup):
+    """ContentLayout Service for Silva
     """
 
 
@@ -158,8 +159,8 @@ def editor_roles_source():
     roles = [SimpleTerm(value=None,
                         token='',
                         title=_(u"-- Choose a role --"))]
-    for role in roleinfo.EDITOR_ROLES:
-        roles.append(SimpleTerm(value=role, token=role, title=role))
+    for role in roleinfo.AUTHOR_ROLES:
+        roles.append(SimpleTerm(value=role, token=role, title=_(role)))
     return SimpleVocabulary(roles)
 
 @grok.provider(IContextSourceBinder)
@@ -167,7 +168,7 @@ def content_type_source(context):
    terms = [SimpleTerm(value=None,
                        token='',
                        title=_(u"-- Choose a content type --"))]
-   addables = interfaces.IAddableContents(
+   addables = IAddableContents(
       context.get_root()).get_all_addables(require=IPageAware)
    for addable in addables:
       terms.append(SimpleTerm(value=addable,

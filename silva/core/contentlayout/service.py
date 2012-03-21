@@ -11,11 +11,11 @@ from five import grok
 from AccessControl import ClassSecurityInfo
 from App.class_init import InitializeClass
 
-from zeam.form import silva as silvaforms
-from silva.core.services.base import SilvaService
+from silva.core import conf as silvaconf
 from silva.core.interfaces import IAuthorizationManager
+from silva.core.services.base import SilvaService
 from silva.translations import translate as _
-import silva.core.conf as silvaconf
+from zeam.form import silva as silvaforms
 
 from Products.Silva.ExtensionRegistry import extensionRegistry
 from Products.Silva import roleinfo
@@ -32,14 +32,13 @@ def get_content_class_from_content_type(content_type):
     return addable['instance']
 
 
-class TemplateService(SilvaService):
+class ContentLayoutService(SilvaService):
     """Template service provides security and other settings for content
     layout templates
     """
-    grok.implements(interfaces.ITemplateService)
-    grok.name('service_template')
-    silvaconf.default_service()
-
+    grok.implements(interfaces.IContentLayoutService)
+    grok.name('service_content_layout')
+    silvaconf.icon('service.png')
     meta_type = 'Silva Template Service'
 
     security = ClassSecurityInfo()
@@ -111,14 +110,14 @@ class TemplateService(SilvaService):
         return True
 
 
-InitializeClass(TemplateService)
+InitializeClass(ContentLayoutService)
 
 
-class TemplateServiceManageSettings(silvaforms.ZMIComposedForm):
+class ContentLayoutServiceManageSettings(silvaforms.ZMIComposedForm):
     """ Template Service configuration.
     """
     grok.name('manage_settings')
-    grok.context(TemplateService)
+    grok.context(ContentLayoutService)
 
     label = _(u"Template Service configuration")
     description = _(u"Configure restrictions and defaults"
@@ -177,8 +176,8 @@ grok.global_utility(
 class TemplateRestrictionsSettings(silvaforms.ZMISubForm):
     """Configure templates access restrictions.
     """
-    grok.context(TemplateService)
-    grok.view(TemplateServiceManageSettings)
+    grok.context(ContentLayoutService)
+    grok.view(ContentLayoutServiceManageSettings)
     grok.order(10)
 
     label = _(u"Define templates access restrictions")
@@ -216,8 +215,8 @@ grok.global_utility(
 class ContentDefaultTemplateSettings(silvaforms.ZMISubForm):
     """Configure default template for content types
     """
-    grok.context(TemplateService)
-    grok.view(TemplateServiceManageSettings)
+    grok.context(ContentLayoutService)
+    grok.view(ContentLayoutServiceManageSettings)
     grok.order(10)
 
     label = _(u"Define default template for content types")
