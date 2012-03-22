@@ -49,7 +49,7 @@ def registry_template_source(context):
 
     def make_term(template):
         return SimpleTerm(value=template,
-                          token=template.__name__,
+                          token=template.get_identifier(),
                           title=template.label)
 
     return SimpleVocabulary([make_term(t) for t in registry.lookup(context)])
@@ -65,7 +65,7 @@ def template_source(form):
    else:
       candidates = registry.lookup(form.context)
    return SimpleVocabulary([SimpleTerm(value=t,
-                                       token=t.__name__,
+                                       token=t.get_identifier(),
                                        title=t.label)
                             for t in candidates])
 
@@ -79,9 +79,22 @@ class ITitledPage(ITitledContent):
         source=template_source)
 
 
+def default_templates(form):
+   from zeam.form.silva.form.smi import SMIAddForm
+   registry = getUtility(ITemplateLookup)
+   template = None
+   if isinstance(form, SMIAddForm):
+      template = registry.default_template_by_content_type(
+         form._content_type, form.context)
+   else:
+      template = registry.default_template(form.context)
+
+   if template is not None:
+      return template
+   return silvaforms.NO_VALUE
+
 PageFields = silvaforms.Fields(ITitledPage)
-# XXX Fill in here.
-PageFields['template'].defaultValue = lambda form: None
+PageFields['template'].defaultValue = default_templates
 
 
 class IPageAware(IViewableObject):
@@ -148,11 +161,17 @@ class ITemplateLookup(interface.Interface):
     """Defines how to lookup a template
     """
     def lookup(context):
-      """lookup and return a list of available template
+      """Lookup and return a list of available template.
       """
     def lookup_by_content_type(content_type, parent):
-      """Same as lookup but accept a silva content type as argument
+      """Same as lookup but accept a silva content type as argument.
       """
+    def default_template(context):
+       """Try to find a default template for this context or None.
+       """
+    def default_template_by_content_type(content_type, parent):
+       """Same as default_template but accept a silva content type as argument.
+       """
 
 
 class IContentLayoutService(ISilvaLocalService, ITemplateLookup):
@@ -215,7 +234,7 @@ class ITemplateRestrictions(interface.Interface):
    _restrictions = schema.Set(
       title=_(u"Restrictions"),
       value_type=schema.Object(schema=ITemplateRestriction),
-      required=True)
+      required=False)
 
 
 class IContentDefaultTemplates(interface.Interface):
@@ -223,5 +242,5 @@ class IContentDefaultTemplates(interface.Interface):
    _default_templates = schema.Set(
       title=_(u"Default templates"),
       value_type=schema.Object(schema=IDefaultTemplateRule),
-      required=True)
+      required=False)
 

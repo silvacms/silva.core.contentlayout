@@ -50,6 +50,14 @@ class ContentLayoutService(SilvaService):
     _default_templates_index = {}
 
 
+    @property
+    def _restrictions(self):
+        return set(chain.from_iterable(self._restrictions_index.itervalues()))
+
+    @property
+    def _default_templates(self):
+        return set(self._default_templates_index.itervalues())
+
     security.declareProtected(
         'View Management Screens', 'lookup')
     def lookup(self, context):
@@ -58,6 +66,8 @@ class ContentLayoutService(SilvaService):
             lambda t: self._template_allowed_in_context(t, context),
             candidates)
 
+    security.declareProtected(
+        'View Management Screens', 'lookup_by_content_type')
     def lookup_by_content_type(self, content_type, parent):
         candidates = registry.lookup_by_content_type(content_type, parent)
         object_class = get_content_class_from_content_type(content_type)
@@ -66,13 +76,24 @@ class ContentLayoutService(SilvaService):
                 t, parent, object_class=object_class),
             candidates)
 
-    @property
-    def _restrictions(self):
-        return set(chain.from_iterable(self._restrictions_index.itervalues()))
+    security.declareProtected(
+        'View Management Screens', 'default_template')
+    def default_template(self, context):
+        rule = self._default_templates_index.get(context.meta_type)
+        if rule is not None and \
+                self._template_allowed_in_context(rule.template, context):
+            return rule.template
+        return None
 
-    @property
-    def _default_templates(self):
-        return set(self._default_templates_index.itervalues())
+    security.declareProtected(
+        'View Management Screens', 'default_template_by_content_type')
+    def default_template_by_content_type(self, content_type, parent):
+        rule = self._default_templates_index.get(content_type)
+        content_class = get_content_class_from_content_type(content_type)
+        if rule is not None and self._template_allowed_in_context(
+                rule.template, parent, object_class=content_class):
+            return rule.template
+        return None
 
     security.declareProtected(
         'View Management Screens', 'update_restrictions')
@@ -99,7 +120,9 @@ class ContentLayoutService(SilvaService):
                                      object_class=None):
         if object_class is None:
             object_class = context.__class__
-        rules = self._restrictions_index[template.get_identifier()]
+        rules = self._restrictions_index.get(template.get_identifier())
+        if rules is None:
+            return True
         user_role = IAuthorizationManager(context).get_user_role()
         for rule in rules:
             if object_class.meta_type != rule.content_type:
