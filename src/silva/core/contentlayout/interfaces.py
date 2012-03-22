@@ -13,6 +13,7 @@ from silva.core.interfaces import IAddableContents
 from silva.core.conf.interfaces import ITitledContent
 from silva.translations import translate as _
 from silva.ui.interfaces import ISilvaUIDependencies
+from zeam.form import silva as silvaforms
 from zeam.form.ztk.interfaces import IFormSourceBinder
 
 from Products.Silva import roleinfo
@@ -76,6 +77,11 @@ class ITitledPage(ITitledContent):
         title=_(u"Template"),
         description=_(u"Select a template for your document."),
         source=template_source)
+
+
+PageFields = silvaforms.Fields(ITitledPage)
+# XXX Fill in here.
+PageFields['template'].defaultValue = lambda form: None
 
 
 class IPageAware(IViewableObject):

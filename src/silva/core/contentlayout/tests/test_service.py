@@ -14,9 +14,11 @@ class ServiceTestCase(unittest.TestCase):
         self.root = self.layer.get_application()
 
     def test_service(self):
+        # Service is not installed by default
         service = queryUtility(IContentLayoutService)
         self.assertEqual(service, None)
 
+        # Add one
         factory = self.root.manage_addProduct['silva.core.contentlayout']
         factory.manage_addContentLayoutService()
 
