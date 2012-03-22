@@ -3,6 +3,10 @@ import os
 
 version = '2.0dev'
 
+tests_require = [
+    'Products.Silva [test]',
+    ]
+
 setup(name='silva.core.contentlayout',
       version=version,
       description="Silva Content Layout base functionality",
@@ -31,6 +35,8 @@ setup(name='silva.core.contentlayout',
           'silva.core.conf',
           'silva.core.cache',
       ],
+      tests_require = tests_require,
+      extras_require = {'test': tests_require},
       entry_points="""
       [silva.ui.resources]
       editor = silva.core.contentlayout.interfaces:IEditorResources

@@ -1,0 +1,31 @@
+
+import unittest
+from zope.component import queryUtility
+from zope.interface.verify import verifyObject
+
+from silva.core.contentlayout.interfaces import IContentLayoutService
+from silva.core.contentlayout.testing import FunctionalLayer
+
+
+class ServiceTestCase(unittest.TestCase):
+    layer = FunctionalLayer
+
+    def setUp(self):
+        self.root = self.layer.get_application()
+
+    def test_service(self):
+        service = queryUtility(IContentLayoutService)
+        self.assertEqual(service, None)
+
+        factory = self.root.manage_addProduct['silva.core.contentlayout']
+        factory.manage_addContentLayoutService()
+
+        service = queryUtility(IContentLayoutService)
+        self.assertNotEqual(service, None)
+        self.assertTrue(verifyObject(IContentLayoutService, service))
+
+
+def test_suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(ServiceTestCase))
+    return suite

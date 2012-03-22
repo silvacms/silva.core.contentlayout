@@ -37,7 +37,7 @@ class ContentLayoutService(SilvaService):
     layout templates
     """
     grok.implements(interfaces.IContentLayoutService)
-    grok.name('service_content_layout')
+    grok.name('service_contentlayout')
     silvaconf.icon('service.png')
     meta_type = 'Silva Template Service'
 
