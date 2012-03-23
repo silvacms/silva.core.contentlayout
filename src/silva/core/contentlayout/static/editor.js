@@ -31,7 +31,7 @@
 
                             // Refresh the move
                             $slot.append($result);
-                            //$slot.blockable('refresh');
+                            $slot.blockable('refresh');
                         };
                         return data;
                     }
@@ -74,16 +74,21 @@
         var $selected = $([]);
         var $candidate = $([]);
         var timer = null;
+        var disabled = false;
 
-        var update = function() {
+        var update_layer = function() {
             var offset, width, height;
             if ($candidate.length) {
                 offset = $candidate.offset();
                 width = $candidate.width();
                 height = $candidate.height();
-                $layer.find('#contentlayout-block-actions').toggle($candidate.hasClass('edit-block'));
+                $layer.find('#contentlayout-block-actions').toggle(
+                    $candidate.hasClass('edit-block'));
                 if (!$selected.length) {
                     $layer.appendTo($body);
+                };
+                if (height < 34) {
+                    height = 34;
                 };
                 $layer.offset(offset);
                 $layer.width(width);
@@ -95,29 +100,39 @@
             $candidate = $([]);
         };
 
-        var schedule_update = function() {
-            if (timer !== null) {
-                clearTimeout(timer);
+        var select_layer = function($element) {
+            if (!disabled) {
+                $candidate = $element;
+                if (timer !== null) {
+                    clearTimeout(timer);
+                };
+                timer = setTimeout(update_layer, 200);
             };
-            timer = setTimeout(update, 200);
         };
-        var clear = function() {
-            if (timer !== null) {
-                clearTimeout(timer);
-                timer = null;
+
+        var clear_layer = function(disable) {
+            if (!disabled) {
+                if (timer !== null) {
+                    clearTimeout(timer);
+                    timer = null;
+                };
+                if ($selected.length) {
+                    $candidate = $([]);
+                    update_layer();
+                };
             };
-            $candidate = $([]);
-            update();
+            if (disable !== undefined) {
+                disabled = disable;
+            }
         };
 
         $body.delegate('.edit-block, .edit-slot', 'mouseenter', function(event) {
-            $candidate = $(this);
-            schedule_update();
+            select_layer($(this));
             event.stopPropagation();
         });
         $layer.bind('mouseleave', function(event) {
             if (!$candidate.length) {
-                schedule_update();
+                clear_layer();
             };
             event.stopPropagation();
         });
@@ -133,11 +148,25 @@
                 api.edit($block);
             };
         });
+        $layer.delegate('#contentlayout-move-block', 'click', function(event) {
+            var $block = $selected.closest('div.edit-block');
+            var $slot = $selected.closest('div.edit-slot');
+            if ($block.length) {
+                $slot.blockable('capture', event, $block);
+                event.preventDefault();
+            };
+        });
+        $body.bind('blockstart', function(event) {
+            clear_layer(true);
+        });
+        $body.bind('blockstop', function(event) {
+            clear_layer(false);
+        });
         $layer.delegate('#contentlayout-remove-block', 'click', function() {
             var $block = $selected.closest('div.edit-block');
             if ($block.length) {
                 api.remove($block).pipe(function(data) {
-                    clear();
+                    clear_layer();
                     return data;
                 });
             };
@@ -172,20 +201,20 @@
                             });
 
                             // Move action
-                            // $slots.each(function () {
-                            //     $(this).blockable({
-                            //         handle: 'a.move-block',
-                            //         placeholder: 'block-placeholder',
-                            //         forcePlaceholderSize: true,
-                            //         connectWith: $slots,
-                            //         tolerance: "pointer",
-                            //         base: $document,
-                            //         helper: function(event, $element) {
-                            //             return $element.clone().addClass('block-moving').appendTo($body);
-                            //         }
+                            $slots.each(function () {
+                                $(this).blockable({
+                                    placeholder: 'contentlayout-block-placeholder',
+                                    forcePlaceholderSize: true,
+                                    connectWith: $slots,
+                                    tolerance: "pointer",
+                                    mouseSource: $document,
+                                    mouseCapture: false,
+                                    helper: function(event, $element) {
+                                        return $element.clone().addClass('block-moving').appendTo($body);
+                                    }
 
-                            //     });
-                            // });
+                                });
+                            });
 
                             // Disable links and selection
                             $body.delegate('a', 'click', function (event) {

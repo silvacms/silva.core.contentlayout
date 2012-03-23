@@ -7,6 +7,10 @@
 
 /* Contentlayout layer CSS */
 
+.contentlayout-block-placeholder {
+  background: rgba(20, 200, 20, 0.5);
+}
+
 #contentlayout-edit-layer {
   background: rgba(200, 200, 200, 0.5);
   zIndex: 25000;

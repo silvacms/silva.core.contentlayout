@@ -15,10 +15,11 @@
 var mouseHandled = false;
 
 $.widget("infrae.blockable", {
-    widgetEventPrefix: "yeahbaby",
+    widgetEventPrefix: "block",
 	ready: false,
 	options: {
-        base: $(document),
+        mouseSource: $(document),
+        mouseCapture: true,
 		appendTo: "parent",
 		axis: false,
 		connectWith: false,
@@ -71,21 +72,34 @@ $.widget("infrae.blockable", {
 
 	_mouseDown: function(event) {
 		// don't let more than one widget handle mouseStart
-		if( mouseHandled ) { return };
+		if( mouseHandled ) { return; };
 
 		// we may have missed mouseup (out of window)
 		(this._mouseStarted && this._mouseUp(event));
 
 		this._mouseDownEvent = event;
 
-		var self = this,
-			btnIsLeft = (event.which == 1),
+		var btnIsLeft = (event.which == 1),
 			// event.target.nodeName works around a bug in IE 8 with
 			// disabled inputs (#7620)
 			elIsCancel = (typeof this.options.cancel == "string" && event.target.nodeName ? $(event.target).closest(this.options.cancel).length : false);
 		if (!btnIsLeft || elIsCancel || !this._mouseCapture(event)) {
 			return true;
 		}
+
+        this._mouseStartMoving(event, event.target);
+
+		event.preventDefault();
+
+		return true;
+	},
+
+    _mouseStartMoving: function(event, element) {
+        var self = this;
+
+        if( mouseHandled ) { return; };
+
+        this._mouseDownEvent = event;
 
 		this.mouseDelayMet = !this.options.delay;
 		if (!this.mouseDelayMet) {
@@ -97,14 +111,13 @@ $.widget("infrae.blockable", {
 		if (this._mouseDistanceMet(event) && this._mouseDelayMet(event)) {
 			this._mouseStarted = (this._mouseStart(event) !== false);
 			if (!this._mouseStarted) {
-				event.preventDefault();
-				return true;
+                return;
 			}
 		}
 
 		// Click event may never have fired (Gecko & Opera)
-		if (true === $.data(event.target, this.widgetName + '.preventClickEvent')) {
-			$.removeData(event.target, this.widgetName + '.preventClickEvent');
+		if (true === $.data(element, this.widgetName + '.preventClickEvent')) {
+			$.removeData(element, this.widgetName + '.preventClickEvent');
 		}
 
 		// these delegates are required to keep context
@@ -115,15 +128,12 @@ $.widget("infrae.blockable", {
 			return self._mouseUp(event);
 		};
 
-		this.options.base
+		this.options.mouseSource
 			.bind('mousemove.'+this.widgetName, this._mouseMoveDelegate)
 			.bind('mouseup.'+this.widgetName, this._mouseUpDelegate);
 
-		event.preventDefault();
-
 		mouseHandled = true;
-		return true;
-	},
+    },
 
 	_mouseMove: function(event) {
 		// IE mouseup check - mouseup happened when mouse was out of window
@@ -146,7 +156,7 @@ $.widget("infrae.blockable", {
 	},
 
 	_mouseUp: function(event) {
-		this.options.base
+		this.options.mouseSource
 			.unbind('mousemove.'+this.widgetName, this._mouseMoveDelegate)
 			.unbind('mouseup.'+this.widgetName, this._mouseUpDelegate);
 
@@ -190,7 +200,7 @@ $.widget("infrae.blockable", {
 		//Let's determine the parent's offset
 		this.offset = this.element.offset();
 
-        o.base.mouseup( function( e ) {
+        o.mouseSource.mouseup( function( e ) {
 	        mouseHandled = false;
         });
 
@@ -226,6 +236,14 @@ $.widget("infrae.blockable", {
 		}
 	},
 
+    capture: function(event, element) {
+        // Alternate start point
+        this._refreshItems(event);
+		this.currentItem = element;
+		this._removeCurrentsFromItems();
+        this._mouseStartMoving(event, element);
+    },
+
 	_mouseCapture: function(event, overrideHandle) {
 		var that = this;
 
@@ -233,7 +251,7 @@ $.widget("infrae.blockable", {
 			return false;
 		}
 
-		if(this.options.disabled || this.options.type == 'static') return false;
+		if(this.options.disabled || this.options.type == 'static' || !this.options.mouseCapture) return false;
 
 		//We have to refresh the items data once first
 		this._refreshItems(event);
@@ -543,34 +561,6 @@ $.widget("infrae.blockable", {
 
 	},
 
-	serialize: function(o) {
-
-		var items = this._getItemsAsjQuery(o && o.connected);
-		var str = []; o = o || {};
-
-		$(items).each(function() {
-			var res = ($(o.item || this).attr(o.attribute || 'id') || '').match(o.expression || (/(.+)[-=_](.+)/));
-			if(res) str.push((o.key || res[1]+'[]')+'='+(o.key && o.expression ? res[1] : res[2]));
-		});
-
-		if(!str.length && o.key) {
-			str.push(o.key + '=');
-		}
-
-		return str.join('&');
-
-	},
-
-	toArray: function(o) {
-
-		var items = this._getItemsAsjQuery(o && o.connected);
-		var ret = []; o = o || {};
-
-		items.each(function() { ret.push($(o.item || this).attr(o.attribute || 'id') || ''); });
-		return ret;
-
-	},
-
 	/* Be careful with the following core functions */
 	_intersectsWith: function(item) {
 
@@ -647,7 +637,6 @@ $.widget("infrae.blockable", {
 	},
 
 	refresh: function(event) {
-        console.log('refresh', this.element);
 		this._refreshItems(event);
 		this.refreshPositions();
 		return this;
@@ -658,37 +647,6 @@ $.widget("infrae.blockable", {
 		return options.connectWith.constructor == String
 			? [options.connectWith]
 			: options.connectWith;
-	},
-
-	_getItemsAsjQuery: function(connected) {
-
-		var self = this;
-		var items = [];
-		var queries = [];
-		var connectWith = this._connectWith();
-
-		if(connectWith && connected) {
-			for (var i = connectWith.length - 1; i >= 0; i--){
-				var cur = $(connectWith[i]);
-				for (var j = cur.length - 1; j >= 0; j--){
-					var inst = $.data(cur[j], this.widgetName);
-					if(inst && inst != this && !inst.options.disabled) {
-						queries.push([$.isFunction(inst.options.items) ? inst.options.items.call(inst.element) : $(inst.options.items, inst.element).not(".ui-sortable-helper").not('.ui-sortable-placeholder'), inst]);
-					}
-				};
-			};
-		}
-
-		queries.push([$.isFunction(this.options.items) ? this.options.items.call(this.element, null, { options: this.options, item: this.currentItem }) : $(this.options.items, this.element).not(".ui-sortable-helper").not('.ui-sortable-placeholder'), this]);
-
-		for (var i = queries.length - 1; i >= 0; i--){
-			queries[i][0].each(function() {
-				items.push(this);
-			});
-		};
-
-		return $(items);
-
 	},
 
 	_removeCurrentsFromItems: function() {
@@ -707,7 +665,6 @@ $.widget("infrae.blockable", {
 	},
 
 	_refreshItems: function(event) {
-
 		this.items = [];
 		this.containers = [this];
 		var items = this.items;
@@ -715,14 +672,11 @@ $.widget("infrae.blockable", {
 		var queries = [[$.isFunction(this.options.items) ? this.options.items.call(this.element[0], event, { item: this.currentItem }) : $(this.options.items, this.element), this]];
 		var connectWith = this._connectWith();
 
-        console.log('check connected', connectWith, this.ready);
 		if(connectWith && this.ready) { //Shouldn't be run the first time through due to massive slow-down
 			for (var i = connectWith.length - 1; i >= 0; i--){
 				var cur = $(connectWith[i]);
-                console.log('connected', connectWith[i], cur);
 				for (var j = cur.length - 1; j >= 0; j--){
 					var inst = $.data(cur[j], this.widgetName);
-                    console.log('Link', cur[j]);
 					if(inst && inst != this && !inst.options.disabled) {
 						queries.push([$.isFunction(inst.options.items) ? inst.options.items.call(inst.element[0], event, { item: this.currentItem }) : $(inst.options.items, inst.element), inst]);
 						this.containers.push(inst);
@@ -872,7 +826,6 @@ $.widget("infrae.blockable", {
 			this.containers[innermostIndex]._trigger("over", event, this._uiHash(this));
 			this.containers[innermostIndex].containerCache.over = 1;
 		} else if(this.currentContainer != this.containers[innermostIndex]) {
-            console.log('new container');
 			//When entering a new container, we will find the item with the least distance and append our item near it
 			var dist = 10000; var itemWithLeastDistance = null; var base = this.positionAbs[this.containers[innermostIndex].floating ? 'left' : 'top'];
 			for (var j = this.items.length - 1; j >= 0; j--) {
