@@ -69,32 +69,86 @@
         };
     };
 
+    var Layer = function($origin) {
+        var layer = {
+            contained: $([]),
+            init: function($origin) {
+                var offset = $origin.offset();
+
+                this.top = offset.top;
+                this.left = offset.left;
+                this.height = $origin.height();
+                this.width = $origin.width();
+                this.update();
+                return this;
+            },
+            update: function() {
+                this.bottom = this.top + this.height;
+                this.right = this.left + this.width;
+            },
+            add: function($other) {
+                var min_height = $other.outerHeight();
+                var min_width = $other.outerWidth();
+
+                if (this.height < min_height) {
+                    this.height = min_height;
+                };
+                if (this.width < min_width) {
+                    this.width = min_width;
+                };
+                this.contained = $other;
+                this.update();
+            },
+            move: function(event) {
+                var x = event.pageX, y = event.pageY;
+
+                if (y < this.top || x < this.left || y > this.bottom || x > this.right) {
+                    return;
+                };
+                var height = this.contained.outerHeight();
+                var width = this.contained.outerWidth();
+                var top = y, left = x;
+                if (this.bottom - top < height) {
+                    top = this.bottom - height;
+                };
+                if (this.right - left < width) {
+                    left = this.right - width;
+                };
+                this.contained.offset({top: top, left:left});
+            },
+            cover: function($other) {
+                // Conver $origin with $other, being sure contained are here too.
+                $other.offset(this);
+                $other.width(this.width);
+                $other.height(this.height);
+                this.contained.offset(this);
+            }
+        };
+        return layer.init($origin);
+    };
+
     var LayerView = function($body, layer, api) {
         var $layer = $(layer);
+        var position = null;
+        var $actions = $layer.find('#contentlayout-actions');
         var $selected = $([]);
         var $candidate = $([]);
         var timer = null;
         var disabled = false;
 
         var update_layer = function() {
-            var offset, width, height;
             if ($candidate.length) {
-                offset = $candidate.offset();
-                width = $candidate.width();
-                height = $candidate.height();
+                position = Layer($candidate);
                 $layer.find('#contentlayout-block-actions').toggle(
                     $candidate.hasClass('edit-block'));
                 if (!$selected.length) {
                     $layer.appendTo($body);
                 };
-                if (height < 34) {
-                    height = 34;
-                };
-                $layer.offset(offset);
-                $layer.width(width);
-                $layer.height(height);
+                position.add($actions);
+                position.cover($layer);
             } else {
                 $layer.detach();
+                position = null;
             };
             $selected = $candidate;
             $candidate = $([]);
@@ -136,25 +190,30 @@
             };
             event.stopPropagation();
         });
-        $layer.delegate('#contentlayout-add-block', 'click', function() {
+        $layer.delegate('#contentlayout-add-block', 'click', function(event) {
             var $slot = $selected.closest('div.edit-slot');
             if ($slot.length) {
                 api.add($slot);
             };
+            event.stopPropagation();
+            event.preventDefault();
         });
-        $layer.delegate('#contentlayout-edit-block', 'click', function() {
+        $layer.delegate('#contentlayout-edit-block', 'click', function(event) {
             var $block = $selected.closest('div.edit-block');
             if ($block.length) {
                 api.edit($block);
             };
+            event.stopPropagation();
+            event.preventDefault();
         });
         $layer.delegate('#contentlayout-move-block', 'click', function(event) {
             var $block = $selected.closest('div.edit-block');
             var $slot = $selected.closest('div.edit-slot');
             if ($block.length) {
                 $slot.blockable('capture', event, $block);
-                event.preventDefault();
             };
+            event.stopPropagation();
+            event.preventDefault();
         });
         $body.bind('blockstart', function(event) {
             clear_layer(true);
@@ -162,13 +221,20 @@
         $body.bind('blockstop', function(event) {
             clear_layer(false);
         });
-        $layer.delegate('#contentlayout-remove-block', 'click', function() {
+        $layer.delegate('#contentlayout-remove-block', 'click', function(event) {
             var $block = $selected.closest('div.edit-block');
             if ($block.length) {
                 api.remove($block).pipe(function(data) {
                     clear_layer();
                     return data;
                 });
+            };
+            event.stopPropagation();
+            event.preventDefault();
+        });
+        $layer.bind('click', function(event) {
+            if (position !== null) {
+                position.move(event);
             };
         });
     };

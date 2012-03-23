@@ -1,15 +1,18 @@
 <div id="contentlayout-edit-layer"
      i18n:domain="silva">
-  <div id="contentlayout-slot-actions">
-    <a id="contentlayout-add-block" title="Add a new block to this slot"
-       i18n:attributes="title"></a>
-  </div>
-  <div id="contentlayout-block-actions">
-    <a id="contentlayout-edit-block" title="Edit block"
-       i18n:attributes="title"></a>
-    <a id="contentlayout-move-block" title="Move block"
-       i18n:attributes="title"></a>
-    <a id="contentlayout-remove-block" title="Remove block"
-       i18n:attributes="title"></a>
+  <div id="contentlayout-actions">
+    <div id="contentlayout-slot-actions">
+      <a id="contentlayout-add-block" title="Add a new block to this slot"
+         i18n:attributes="title"></a>
+    </div>
+    <div id="contentlayout-block-actions">
+      <a id="contentlayout-edit-block" title="Edit block"
+         i18n:attributes="title"></a>
+      <a id="contentlayout-move-block" title="Move block"
+         i18n:attributes="title"></a>
+      <a id="contentlayout-remove-block" title="Remove block"
+         i18n:attributes="title"></a>
+    </div>
+    <div style="clear:both"></div>
   </div>
 </div>
