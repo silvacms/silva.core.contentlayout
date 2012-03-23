@@ -1,49 +1,33 @@
 
 .edit-slot {
   outline: 1px solid black;
-  position: relative;
+  min-height: 32px;
   overflow: hidden;
 }
-.edit-slot .slot-action {
-  position: absolute;
-  right: 0;
-  bottom: 0px;
-  display: none;
-  z-index: 1000;
-}
-.edit-slot .slot-action .add-block {
-  background: url(add.png);
-  display: block;
-  height: 24px;
-  width: 38px;
+
+/* Contentlayout layer CSS */
+
+#contentlayout-edit-layer {
+  background: rgba(200, 200, 200, 0.5);
+  zIndex: 25000;
 }
 
-.edit-block {
-  position: relative;
-  display: block;
-  min-height: 32px;
-}
-.edit-block .block-action {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  display: none;
-}
-.edit-block .block-action a {
+#contentlayout-edit-layer a {
   display: block;
   float: left;
   height: 32px;
   width: 32px;
+  margin: 2px 4px;
 }
-.edit-slot .block-action .edit-block {
+#contentlayout-add-block {
+  background: url(add.png);
+}
+#contentlayout-edit-block {
   background: url(edit.png);
 }
-.edit-slot .block-action .move-block {
+#contentlayout-move-block {
   background: url(move.png);
 }
-.edit-slot .block-action .remove-block {
+#contentlayout-remove-block {
   background: url(remove.png);
-}
-.edit-slot .edit-block-template {
-  display: none;
 }

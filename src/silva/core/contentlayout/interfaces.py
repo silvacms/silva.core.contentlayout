@@ -138,6 +138,7 @@ class IEditionMode(IDefaultBrowserLayer):
 class IEditorResources(ISilvaUIDependencies):
    """SMI plugin content-layout
    """
+   silvaconf.resource('move.js')
    silvaconf.resource('editor.js')
 
 

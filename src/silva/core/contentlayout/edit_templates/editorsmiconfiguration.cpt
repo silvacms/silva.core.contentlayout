@@ -1,8 +1,13 @@
 <tal:cfg>
-  contentlayout: {
-     url:  "${view.root_url}/{path}/edit",
-     add_url: "${view.root_url}/{path}/++rest++silva.core.contentlayout.add",
-     edit_url: "${view.root_url}/{path}/++rest++silva.core.contentlayout.edit/{id}",
-     delete_url: "${view.root_url}/{path}/++rest++silva.core.contentlayout.delete/{id}"
-  },
+contentlayout: {
+  layer: "${view.root_url}/++rest++silva.core.contentlayout.layer",
+  url:  "${view.root_url}/{path}/edit",
+  actions : {
+    add: "${view.root_url}/{path}/++rest++silva.core.contentlayout.add",
+    edit: "${view.root_url}/{path}/++rest++silva.core.contentlayout.edit/{id}",
+    move: "${view.root_url}/{path}/++rest++silva.core.contentlayout.move/{id}",
+    remove: "${view.root_url}/{path}/++rest++silva.core.contentlayout.delete/{id}",
+    validate: "${view.root_url}/{path}/++rest++silva.core.contentlayout.validate/{id}"
+  }
+},
 </tal:cfg>

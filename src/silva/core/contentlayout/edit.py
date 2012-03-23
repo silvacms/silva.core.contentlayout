@@ -7,7 +7,8 @@ from zope.schema.vocabulary import SimpleVocabulary, SimpleTerm
 from zope.schema.interfaces import IContextSourceBinder
 from zope import schema
 
-from infrae.rest import queryRESTComponent
+from infrae.rest import queryRESTComponent, RESTWithTemplate
+from silva.core.interfaces import ISilvaObject
 from silva.core.contentlayout.blocks.registry import registry
 from silva.core.contentlayout.interfaces import IEditionMode, IPage
 from silva.core.contentlayout.interfaces import IBlockManager
@@ -37,6 +38,15 @@ class EditPage(silvaviews.Page):
 class EditorSMIConfiguration(silvaviews.Viewlet):
     grok.viewletmanager(SMIConfiguration)
 
+
+class EditContentLayoutLayer(RESTWithTemplate):
+    """Template for the reference widget.
+    """
+    grok.context(ISilvaObject)
+    grok.name('silva.core.contentlayout.layer')
+
+    def GET(self):
+        return self.template.render(self)
 
 
 @grok.provider(IContextSourceBinder)
