@@ -13,6 +13,7 @@ logger = logging.getLogger('silva.core.contentlayout')
 
 
 class Block(object):
+    grok.context(Interface)
     grok.baseclass()
 
 

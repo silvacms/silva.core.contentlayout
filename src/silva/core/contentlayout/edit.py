@@ -8,7 +8,7 @@ from zope.schema.interfaces import IContextSourceBinder
 from zope import schema
 
 from infrae.rest import queryRESTComponent, RESTWithTemplate
-from silva.core.interfaces import ISilvaObject
+from silva.core.interfaces import ISilvaObject, IVersion
 from silva.core.contentlayout.blocks.registry import registry
 from silva.core.contentlayout.interfaces import IEditionMode, IPage
 from silva.core.contentlayout.interfaces import IBlockManager
@@ -52,7 +52,9 @@ class EditContentLayoutLayer(RESTWithTemplate):
 @grok.provider(IContextSourceBinder)
 def block_source(context):
     result = []
-    for name, block in registry.all():
+    if IVersion.providedBy(context):
+        context = context.get_content()
+    for name, block in registry.all(context):
         result.append(SimpleTerm(
                 value=urllib.quote(name),
                 token=name,
@@ -123,6 +125,8 @@ class BlockUIREST(UIREST):
     """
     grok.baseclass()
 
+    block_id = None
+
     def publishTraverse(self, request, name):
         manager = IBlockManager(self.context)
         block_id = urllib.unquote(name)
@@ -137,8 +141,6 @@ class MoveBlock(BlockUIREST):
     grok.context(IPage)
     grok.name('silva.core.contentlayout.move')
     grok.require('silva.ChangeSilvaContent')
-
-    block_id = None
 
     def _validate_parameters(self, slot_id, index):
         if self.block_id is None:
