@@ -1,4 +1,0 @@
-<tal:page>
-  <h1 class="title" tal:content="content.get_title()">Title</h1>
-  <tal:slot tal:replace="structure slot:main"/>
-</tal:page>
