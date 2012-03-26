@@ -1,4 +1,5 @@
-<div class="edit-slot ${slot.slot_class}"
+<div id="${slot.css_id}"
+     class="edit-slot ${slot.css_class}"
      data-slot-id="${slot.slot_id}"
      i18n:domain="silva">
   <div class="edit-block"

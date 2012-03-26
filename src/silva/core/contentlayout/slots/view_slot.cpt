@@ -1,4 +1,4 @@
-<div class="${slot.slot_class}">
+<div id="${slot.css_id}" class="${slot.css_class}">
   <div tal:repeat="block slot.blocks()"
        tal:content="structure block.html">
   </div>

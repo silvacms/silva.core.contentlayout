@@ -77,8 +77,8 @@
 
                 this.top = offset.top;
                 this.left = offset.left;
-                this.height = $origin.height();
-                this.width = $origin.width();
+                this.height = $origin.outerHeight();
+                this.width = $origin.outerWidth();
                 this.update();
                 return this;
             },

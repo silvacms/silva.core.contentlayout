@@ -10,8 +10,8 @@ from silva.core.contentlayout.interfaces import IBlockManager
 class Slot(object):
     grok.implements(ISlot)
 
-    def __init__(self, fill_in="vertical"):
-        self.fill_in = fill_in
+    def __init__(self, css_class=None):
+        self.css_class = css_class
 
 
 class SlotView(object):
@@ -21,7 +21,8 @@ class SlotView(object):
     def __init__(self, slot, name, content, request):
         self.slot = slot
         self.slot_id = name
-        self.slot_class = " ".join((name, 'slot-' + slot.fill_in))
+        self.css_id = 'slot-' + name
+        self.css_class = slot.css_class
         self.content = content
         self.request = request
 
