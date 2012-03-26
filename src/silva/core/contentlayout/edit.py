@@ -118,12 +118,10 @@ class EditBlock(REST):
         return super(EditBlock, self).publishTraverse(request, name)
 
 
-class RemoveBlock(UIREST):
-    grok.context(IPage)
-    grok.name('silva.core.contentlayout.delete')
-    grok.require('silva.ChangeSilvaContent')
-
-    block_id = None
+class BlockUIREST(UIREST):
+    """ Traverse to a block on a page.
+    """
+    grok.baseclass()
 
     def publishTraverse(self, request, name):
         manager = IBlockManager(self.context)
@@ -132,7 +130,57 @@ class RemoveBlock(UIREST):
             self.block_id = block_id
             self.__name__ = '/'.join((self.__name__, name))
             return self
-        return super(RemoveBlock, self).publishTraverse(request, name)
+        return super(BlockUIREST, self).publishTraverse(request, name)
+
+
+class MoveBlock(BlockUIREST):
+    grok.context(IPage)
+    grok.name('silva.core.contentlayout.move')
+    grok.require('silva.ChangeSilvaContent')
+
+    block_id = None
+
+    def _validate_parameters(self, slot_id, index):
+        if self.block_id is None:
+            raise BadRequest("invalid block id")
+        if slot_id is None:
+            raise BadRequest("invalid slot id")
+        if index is None:
+            raise BadRequest("invalid index")
+
+    def POST(self, slot_id=None, index=None):
+        """Move the block to the slot and index
+        """
+        self._validate_parameters(slot_id, index)
+        manager = IBlockManager(self.context)
+        try:
+            manager.move(self.block_id,
+                         slot_id=slot_id,
+                         index=int(index))
+            return self.json_response({'content': {'success': True}})
+        except ValueError as e:
+            raise BadRequest(str(e))
+
+    def GET(self, slot_id=None, index=None):
+        """Validate that you can move that block to this slot and index.
+        """
+        self._validate_parameters(slot_id, index)
+        manager = IBlockManager(self.context)
+        try:
+            can = manager.can_move(self.block_id,
+                                   slot_id=slot_id,
+                                   index=int(index))
+            return self.json_response({'content': {'success': can}})
+        except ValueError as e:
+            raise BadRequest(str(e))
+
+
+class RemoveBlock(BlockUIREST):
+    grok.context(IPage)
+    grok.name('silva.core.contentlayout.delete')
+    grok.require('silva.ChangeSilvaContent')
+
+    block_id = None
 
     def GET(self):
         if self.block_id is None:

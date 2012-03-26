@@ -37,8 +37,19 @@ class BlockManager(grok.Annotation):
         self._p_changed = True
         return block_id
 
+    def can_move(self, block_id, slot_id=None, index=None):
+        return True
+
     def move(self, block_id, slot_id=None, index=None):
-        pass
+        block = self._blocks.get(block_id)
+        if block is None or slot_id is None or index is None:
+            raise ValueError("couldn't find block with id `%s`" % block_id)
+        previous_slot_id = self._block_to_slot[block_id]
+        self._block_to_slot[block_id] = slot_id
+        self._slot_to_block[previous_slot_id].remove(block_id)
+        self._slot_to_block[slot_id].insert(index or -1, block_id)
+        self._p_changed = True
+        return previous_slot_id
 
     def remove(self, block_id, content, request):
         block = self.get(block_id)
