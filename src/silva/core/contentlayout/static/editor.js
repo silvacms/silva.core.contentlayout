@@ -221,6 +221,12 @@
         $body.bind('blockstop', function(event) {
             clear_layer(false);
         });
+        $body.bind('blockorder', function(event, data) {
+            //console.log('Block final order', data);
+        });
+        $body.bind('blockreorder', function(event, data) {
+            //console.log('Block reorder', data);
+        });
         $layer.delegate('#contentlayout-remove-block', 'click', function(event) {
             var $block = $selected.closest('div.edit-block');
             if ($block.length) {
@@ -275,6 +281,8 @@
                                     tolerance: "pointer",
                                     mouseSource: $document,
                                     mouseCapture: false,
+                                    cursorAt: {left: -10, top: -10},
+                                    opacity: 0.8,
                                     helper: function(event, $element) {
                                         return $element.clone().addClass('block-moving').appendTo($body);
                                     }

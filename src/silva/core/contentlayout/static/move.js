@@ -12,7 +12,11 @@
  */
 (function( $, undefined ) {
 
-var mouseHandled = false;
+    var mouseHandled = false;
+
+    var css_size = function(element, property) {
+        return parseInt(element.css(property), 10) || 0;
+    };
 
 $.widget("infrae.blockable", {
     widgetEventPrefix: "block",
@@ -47,13 +51,17 @@ $.widget("infrae.blockable", {
 		delay: 0
 	},
 	_mouseInit: function() {
-		var self = this, o = this.options;
+		var self = this;
+
+        this.options.mouseSource.mouseup(function(event) {
+	        mouseHandled = false;
+        });
 
 		this.element
-			.bind('mousedown.'+this.widgetName, function(event) {
+			.bind('mousedown.' + this.widgetName, function(event) {
 				return self._mouseDown(event);
 			})
-			.bind('click.'+this.widgetName, function(event) {
+			.bind('click.' + this.widgetName, function(event) {
 				if (true === $.data(event.target, self.widgetName + '.preventClickEvent')) {
 				    $.removeData(event.target, self.widgetName + '.preventClickEvent');
 					event.stopImmediatePropagation();
@@ -67,12 +75,14 @@ $.widget("infrae.blockable", {
 	// TODO: make sure destroying one instance of mouse doesn't mess with
 	// other instances of mouse
 	_mouseDestroy: function() {
-		this.element.unbind('.'+this.widgetName);
+		this.element.unbind('.' + this.widgetName);
 	},
 
 	_mouseDown: function(event) {
 		// don't let more than one widget handle mouseStart
-		if( mouseHandled ) { return; };
+		if(mouseHandled) {
+            return;
+        };
 
 		// we may have missed mouseup (out of window)
 		(this._mouseStarted && this._mouseUp(event));
@@ -97,7 +107,9 @@ $.widget("infrae.blockable", {
     _mouseStartMoving: function(event, element) {
         var self = this;
 
-        if( mouseHandled ) { return; };
+        if(mouseHandled) {
+            return;
+        };
 
         this._mouseDownEvent = event;
 
@@ -129,8 +141,8 @@ $.widget("infrae.blockable", {
 		};
 
 		this.options.mouseSource
-			.bind('mousemove.'+this.widgetName, this._mouseMoveDelegate)
-			.bind('mouseup.'+this.widgetName, this._mouseUpDelegate);
+			.bind('mousemove.' + this.widgetName, this._mouseMoveDelegate)
+			.bind('mouseup.' + this.widgetName, this._mouseUpDelegate);
 
 		mouseHandled = true;
     },
@@ -157,18 +169,18 @@ $.widget("infrae.blockable", {
 
 	_mouseUp: function(event) {
 		this.options.mouseSource
-			.unbind('mousemove.'+this.widgetName, this._mouseMoveDelegate)
-			.unbind('mouseup.'+this.widgetName, this._mouseUpDelegate);
+			.unbind('mousemove.' + this.widgetName, this._mouseMoveDelegate)
+			.unbind('mouseup.' + this.widgetName, this._mouseUpDelegate);
 
 		if (this._mouseStarted) {
 			this._mouseStarted = false;
 
 			if (event.target == this._mouseDownEvent.target) {
 			    $.data(event.target, this.widgetName + '.preventClickEvent', true);
-			}
+			};
 
 			this._mouseStop(event);
-		}
+		};
 
 		return false;
 	},
@@ -186,23 +198,15 @@ $.widget("infrae.blockable", {
 	},
 
 	_create: function() {
-
 		var o = this.options;
+        this.currentItem = undefined;
+        this.currentContainer = undefined;
 		this.containerCache = {};
 		this.element.addClass("ui-sortable");
-
-		//Get the items
-		this.refresh();
-
-		//Let's determine if the items are being displayed horizontally
-		this.floating = this.items.length ? o.axis === 'x' || (/left|right/).test(this.items[0].item.css('float')) || (/inline|table-cell/).test(this.items[0].item.css('display')) : false;
+        this.floating = this.options.axis === 'x';  // Define if matching should be horizontal or vertical.
 
 		//Let's determine the parent's offset
 		this.offset = this.element.offset();
-
-        o.mouseSource.mouseup( function( e ) {
-	        mouseHandled = false;
-        });
 
 		//Initialize mouse events for interaction
 		this._mouseInit();
@@ -213,14 +217,10 @@ $.widget("infrae.blockable", {
 	},
 
 	destroy: function() {
-		$.Widget.prototype.destroy.call( this );
+		$.Widget.prototype.destroy.call(this);
 		this.element
 			.removeClass("ui-sortable ui-sortable-disabled");
 		this._mouseDestroy();
-
-		for ( var i = this.items.length - 1; i >= 0; i-- )
-			this.items[i].item.removeData(this.widgetName + "-item");
-
 		return this;
 	},
 
@@ -237,55 +237,60 @@ $.widget("infrae.blockable", {
 	},
 
     capture: function(event, element) {
-        // Alternate start point
-        this._refreshItems(event);
-		this.currentItem = element;
-		this._removeCurrentsFromItems();
+        // Alternate start point.
+        // Find current items and other containers.
+        this.findAll(event);
+        this._setCurrentItem(element[0]);
         this._mouseStartMoving(event, element);
     },
 
 	_mouseCapture: function(event, overrideHandle) {
 		var that = this;
 
-		if (this.reverting) {
-			return false;
-		}
+		if (this.options.disabled || this.options.type == 'static' || !this.options.mouseCapture) {
+            return false;
+        };
 
-		if(this.options.disabled || this.options.type == 'static' || !this.options.mouseCapture) return false;
+        // Find current items and other containers.
+        this.findAll(event);
 
-		//We have to refresh the items data once first
-		this._refreshItems(event);
-
+        // XXX This is broken, we have to update to use the :data hack here.
 		//Find out if the clicked node (or one of its parents) is a actual item in this.items
-		var currentItem = null, self = this, nodes = $(event.target).parents().each(function() {
-			if($.data(this, that.widgetName + '-item') == self) {
+		var currentItem = null, nodes = $(event.target).parents().each(function() {
+			if($.data(this, that.widgetName + '-item') == that) {
 				currentItem = $(this);
 				return false;
 			}
 		});
-		if($.data(event.target, that.widgetName + '-item') == self) currentItem = $(event.target);
+		if($.data(event.target, that.widgetName + '-item') == that) {
+            currentItem = event.target;
+        }
 
-		if(!currentItem) return false;
+		if(!currentItem) {
+            return false;
+        }
 		if(this.options.handle && !overrideHandle) {
 			var validHandle = false;
 
-			$(this.options.handle, currentItem).find("*").andSelf().each(function() { if(this == event.target) validHandle = true; });
-			if(!validHandle) return false;
+			$(this.options.handle, currentItem).find("*").andSelf().each(function() {
+                if(this == event.target)
+                    validHandle = true;
+            });
+			if(!validHandle)
+                return false;
 		}
 
-		this.currentItem = currentItem;
-		this._removeCurrentsFromItems();
+        this._setCurrentItem(currentItem);
 		return true;
 
 	},
 
 	_mouseStart: function(event, overrideHandle, noActivation) {
-
 		var o = this.options, self = this;
 		this.currentContainer = this;
 
-		//We only need to call refreshPositions, because the refreshItems call has been moved to mouseCapture
-		this.refreshPositions();
+		// We only need to refresh all blocks positions.
+		this.refreshAllPositions(true);
 
 		//Create and append the visible helper
 		this.helper = this._createHelper(event);
@@ -363,29 +368,16 @@ $.widget("infrae.blockable", {
 			this.helper.css("zIndex", o.zIndex);
 		}
 
-		//Prepare scrolling
+		// Prepare scrolling
 		if(this.scrollParent[0] != document && this.scrollParent[0].tagName != 'HTML')
 			this.overflowOffset = this.scrollParent.offset();
 
-		//Call callbacks
-		this._trigger("start", event, this._uiHash());
+		// Call callbacks
+		this._trigger("start", event, this._eventInfo());
 
-		//Recache the helper size
+		// Recache the helper size
 		if(!this._preserveHelperProportions)
 			this._cacheHelperProportions();
-
-
-		//Post 'activate' events to possible containers
-		if(!noActivation) {
-			 for (var i = this.containers.length - 1; i >= 0; i--) { this.containers[i]._trigger("activate", event, self._uiHash(this)); }
-		}
-
-		//Prepare possible droppables
-		if($.ui.ddmanager)
-			$.ui.ddmanager.current = this;
-
-		if ($.ui.ddmanager && !o.dropBehaviour)
-			$.ui.ddmanager.prepareOffsets(this, event);
 
 		this.dragging = true;
 
@@ -396,8 +388,7 @@ $.widget("infrae.blockable", {
 	},
 
 	_mouseDrag: function(event) {
-
-		//Compute the helpers position
+		// Compute the helpers position
 		this.position = this._generatePosition(event);
 		this.positionAbs = this._convertPositionTo("absolute");
 
@@ -405,7 +396,7 @@ $.widget("infrae.blockable", {
 			this.lastPositionAbs = this.positionAbs;
 		}
 
-		//Do scrolling
+		// Do scrolling
 		if(this.options.scroll) {
 			var o = this.options, scrolled = false;
 			if(this.scrollParent[0] != document && this.scrollParent[0].tagName != 'HTML') {
@@ -433,66 +424,28 @@ $.widget("infrae.blockable", {
 					scrolled = $(document).scrollLeft($(document).scrollLeft() + o.scrollSpeed);
 
 			}
-
-			if(scrolled !== false && $.ui.ddmanager && !o.dropBehaviour)
-				$.ui.ddmanager.prepareOffsets(this, event);
 		}
 
-		//Regenerate the absolute position used for position checks
+		// Regenerate the absolute position used for position checks
 		this.positionAbs = this._convertPositionTo("absolute");
 
-		//Set the helper position
-		if(!this.options.axis || this.options.axis != "y") this.helper[0].style.left = this.position.left+'px';
-		if(!this.options.axis || this.options.axis != "x") this.helper[0].style.top = this.position.top+'px';
+		// Set the helper position
+		if(!this.options.axis || this.options.axis != "y")
+            this.helper[0].style.left = this.position.left+'px';
+		if(!this.options.axis || this.options.axis != "x")
+            this.helper[0].style.top = this.position.top+'px';
 
-		//Rearrange
-		for (var i = this.items.length - 1; i >= 0; i--) {
-
-			//Cache variables and intersection, continue if no intersection
-			var item = this.items[i], itemElement = item.item[0], intersection = this._intersectsWithPointer(item);
-			if (!intersection) continue;
-
-			if(itemElement != this.currentItem[0] //cannot intersect with itself
-				&&	this.placeholder[intersection == 1 ? "next" : "prev"]()[0] != itemElement //no useless actions that have been done before
-				&&	!$.ui.contains(this.placeholder[0], itemElement) //no action if the item moved is the parent of the item checked
-				&& (this.options.type == 'semi-dynamic' ? !$.ui.contains(this.element[0], itemElement) : true)
-				//&& itemElement.parentNode == this.placeholder[0].parentNode // only rearrange items within the same container
-			) {
-
-				this.direction = intersection == 1 ? "down" : "up";
-
-				if (this.options.tolerance == "pointer" || this._intersectsWithSides(item)) {
-					this._rearrange(event, item);
-				} else {
-					break;
-				}
-
-				this._trigger("change", event, this._uiHash());
-				break;
-			}
-		}
-
-		//Post events to containers
-		this._contactContainers(event);
-
-		//Interconnect with droppables
-		if($.ui.ddmanager) $.ui.ddmanager.drag(this, event);
-
-		//Call callbacks
-		this._trigger('sort', event, this._uiHash());
+		// Update the new order.
+		this._updateItemOrder(event);
 
 		this.lastPositionAbs = this.positionAbs;
 		return false;
 
 	},
 
-	_mouseStop: function(event, noPropagation) {
-
-		if(!event) return;
-
-		//If we are using droppables, inform the manager about the drop
-		if ($.ui.ddmanager && !this.options.dropBehaviour)
-			$.ui.ddmanager.drop(this, event);
+	_mouseStop: function(event) {
+		if(!event)
+            return;
 
 		if(this.options.revert) {
 			var self = this;
@@ -507,41 +460,32 @@ $.widget("infrae.blockable", {
 				self._clear(event);
 			});
 		} else {
-			this._clear(event, noPropagation);
-		}
+            // We are done.
+            this._finish(event);
+			this._clear(event);
+		};
 
 		return false;
 
 	},
 
 	cancel: function() {
-
 		var self = this;
 
 		if(this.dragging) {
-
-			this._mouseUp({ target: null });
+			this._mouseUp({target: null});
 
 			if(this.options.helper == "original")
 				this.currentItem.css(this._storedCSS).removeClass("ui-sortable-helper");
 			else
 				this.currentItem.show();
-
-			//Post deactivating events to containers
-			for (var i = this.containers.length - 1; i >= 0; i--){
-				this.containers[i]._trigger("deactivate", null, self._uiHash(this));
-				if(this.containers[i].containerCache.over) {
-					this.containers[i]._trigger("out", null, self._uiHash(this));
-					this.containers[i].containerCache.over = 0;
-				}
-			}
-
-		}
+		};
 
 		if (this.placeholder) {
-			//$(this.placeholder[0]).remove(); would have been the jQuery way - unfortunately, it unbinds ALL events from the original node!
-			if(this.placeholder[0].parentNode) this.placeholder[0].parentNode.removeChild(this.placeholder[0]);
-			if(this.options.helper != "original" && this.helper && this.helper[0].parentNode) this.helper.remove();
+			if(this.placeholder[0].parentNode)
+                this.placeholder[0].parentNode.removeChild(this.placeholder[0]);
+			if(this.options.helper != "original" && this.helper && this.helper[0].parentNode)
+                this.helper.remove();
 
 			$.extend(this, {
 				helper: null,
@@ -595,7 +539,6 @@ $.widget("infrae.blockable", {
 	},
 
 	_intersectsWithPointer: function(item) {
-
 		var isOverElementHeight = $.ui.isOverAxis(this.positionAbs.top + this.offset.click.top, item.top, item.height),
 			isOverElementWidth = $.ui.isOverAxis(this.positionAbs.left + this.offset.click.left, item.left, item.width),
 			isOverElement = isOverElementHeight && isOverElementWidth,
@@ -636,118 +579,129 @@ $.widget("infrae.blockable", {
 		return delta != 0 && (delta > 0 ? "right" : "left");
 	},
 
-	refresh: function(event) {
-		this._refreshItems(event);
-		this.refreshPositions();
+    // find associated containers and items.
+
+	findAll: function(event) {
+		this.findItems(event);
+        this.findContainers(event);
 		return this;
 	},
 
-	_connectWith: function() {
-		var options = this.options;
-		return options.connectWith.constructor == String
-			? [options.connectWith]
-			: options.connectWith;
+	findContainers: function(event) {
+        this.containers = [this];
+
+        if (this.ready) {
+            var names = this.options.connectWith.constructor == String
+                    ? [this.options.connectWith]
+                    : this.options.connectWith;
+
+            for (var i = names.length - 1; i >= 0; i--) {
+			    var $element = $(names[i]);
+			    for (var j = $element.length - 1; j >= 0; j--) {
+				    var container = $.data($element[j], this.widgetName);
+                    if (container !== this && !container.options.disabled) {
+                        this.containers.push(container);
+                    };
+                };
+            };
+        };
 	},
 
-	_removeCurrentsFromItems: function() {
+	findItems: function(event) {
+        var raw_items = [];
+		var items = this.items = [];
 
-		var list = this.currentItem.find(":data(" + this.widgetName + "-item)");
+        if ($.isFunction(this.options.items)) {
+            raw_items = this.options.items.call(this.element[0], event, {item: this.currentItem});
+        } else {
+            raw_items = $(this.options.items, this.element);
+        };
 
-		for (var i=0; i < this.items.length; i++) {
+        raw_items.each(function () {
+            var $item = $(this);
+            items.push({
+				item: $item,
+				width: 0,
+                height: 0,
+				left: 0,
+                top: 0,
+                is: function(other) {
+                    if (other !== undefined) {
+                        return $item == other;
+                    };
+                    return false;
+                },
+                is_contained: function(other) {
+                    return $.ui.contains(other[0], $item[0]);
+                }
 
-			for (var j=0; j < list.length; j++) {
-				if(list[j] == this.items[i].item[0])
-					this.items.splice(i,1);
-			};
+			});
+        });
 
-		};
-
+        // Let's determine if the items are being displayed horizontally
+		this.floating = this.items.length
+            ? this.options.axis === 'x' || (/left|right/).test(this.items[0].item.css('float')) || (/inline|table-cell/).test(this.items[0].item.css('display'))
+            : false;
 	},
 
-	_refreshItems: function(event) {
-		this.items = [];
-		this.containers = [this];
-		var items = this.items;
-		var self = this;
-		var queries = [[$.isFunction(this.options.items) ? this.options.items.call(this.element[0], event, { item: this.currentItem }) : $(this.options.items, this.element), this]];
-		var connectWith = this._connectWith();
-
-		if(connectWith && this.ready) { //Shouldn't be run the first time through due to massive slow-down
-			for (var i = connectWith.length - 1; i >= 0; i--){
-				var cur = $(connectWith[i]);
-				for (var j = cur.length - 1; j >= 0; j--){
-					var inst = $.data(cur[j], this.widgetName);
-					if(inst && inst != this && !inst.options.disabled) {
-						queries.push([$.isFunction(inst.options.items) ? inst.options.items.call(inst.element[0], event, { item: this.currentItem }) : $(inst.options.items, inst.element), inst]);
-						this.containers.push(inst);
-					}
-				};
-			};
-		}
-
-		for (var i = queries.length - 1; i >= 0; i--) {
-			var targetData = queries[i][1];
-			var _queries = queries[i][0];
-
-			for (var j=0, queriesLength = _queries.length; j < queriesLength; j++) {
-				var item = $(_queries[j]);
-
-				item.data(this.widgetName + '-item', targetData); // Data for target checking (mouse manager)
-
-				items.push({
-					item: item,
-					instance: targetData,
-					width: 0, height: 0,
-					left: 0, top: 0
-				});
-			};
-		};
-
-	},
-
-	refreshPositions: function(fast) {
-
-		//This has to be redone because due to the item being moved out/into the offsetParent, the offsetParent's position will change
+    refreshAllPositions: function(hard_refresh) {
+		// This has to be redone because due to the item being moved
+		// out/into the offsetParent, the offsetParent's position will
+		// change
 		if(this.offsetParent && this.helper) {
 			this.offset.parent = this._getParentOffset();
-		}
+		};
+        for (var i=0; i < this.containers.length; i++) {
+            if (hard_refresh && this != this.containers[i]) {
+                this.containers[i].findItems();
+            };
+            this.containers[i].refreshPositions(hard_refresh);
+        };
+    },
 
-		for (var i = this.items.length - 1; i >= 0; i--){
+	refreshPositions: function(hard_refresh) {
+        for (var i = this.items.length - 1; i >= 0; i--){
 			var item = this.items[i];
 
-			//We ignore calculating positions of all connected containers when we're not over them
-			if(item.instance != this.currentContainer && this.currentContainer && item.item[0] != this.currentItem[0])
-				continue;
+			// We ignore calculating positions of all connected containers when we're not over them
+			if(item.is(this.currentItem)) {
+                continue;
+            }
 
-			var t = this.options.toleranceElement ? $(this.options.toleranceElement, item.item) : item.item;
+            var t = this.options.toleranceElement ? $(this.options.toleranceElement, item.item) : item.item;
+            var p = t.offset();
 
-			if (!fast) {
-				item.width = t.outerWidth();
-				item.height = t.outerHeight();
-			}
-
-			var p = t.offset();
 			item.left = p.left;
 			item.top = p.top;
+            if (hard_refresh) {
+                item.width = t.outerWidth();
+			    item.height = t.outerHeight();
+            };
 		};
 
-		if(this.options.custom && this.options.custom.refreshContainers) {
-			this.options.custom.refreshContainers.call(this);
-		} else {
-			for (var i = this.containers.length - 1; i >= 0; i--){
-				var p = this.containers[i].element.offset();
-				this.containers[i].containerCache.left = p.left;
-				this.containers[i].containerCache.top = p.top;
-				this.containers[i].containerCache.width	= this.containers[i].element.outerWidth();
-				this.containers[i].containerCache.height = this.containers[i].element.outerHeight();
-			};
-		}
-
+		var p = this.element.offset();
+		this.containerCache.left = p.left;
+		this.containerCache.top = p.top;
+		this.containerCache.width = this.element.outerWidth();
+		this.containerCache.height = this.element.outerHeight();
 		return this;
 	},
 
-	_createPlaceholder: function(that) {
+    // Set current item remove the item from the list of available ones.
+    _setCurrentItem: function(element) {
+        this.currentItem = null;
+		for (var i=0; i < this.items.length; i++) {
+			if(this.items[i].item[0] == element) {
+                this.currentItem = this.items[i].item;
+                this.items.splice(i,1);
+                break;
+			};
+		};
+	},
 
+    // End of refresh and find items/containers buisness.
+
+	_createPlaceholder: function(that) {
 		var self = that || this, o = self.options;
 
 		if(!o.placeholder || o.placeholder.constructor == String) {
@@ -766,13 +720,31 @@ $.widget("infrae.blockable", {
 				},
 				update: function(container, p) {
 
-					// 1. If a className is set as 'placeholder option, we don't force sizes - the class is responsible for that
-					// 2. The option 'forcePlaceholderSize can be enabled to force it even if a class name is specified
-					if(className && !o.forcePlaceholderSize) return;
+					// 1. If a className is set as 'placeholder
+					// option, we don't force sizes - the class is
+					// responsible for that
 
-					//If the element doesn't have a actual height by itself (without styles coming from a stylesheet), it receives the inline height from the dragged item
-					if(!p.height()) { p.height(self.currentItem.innerHeight() - parseInt(self.currentItem.css('paddingTop')||0, 10) - parseInt(self.currentItem.css('paddingBottom')||0, 10)); };
-					if(!p.width()) { p.width(self.currentItem.innerWidth() - parseInt(self.currentItem.css('paddingLeft')||0, 10) - parseInt(self.currentItem.css('paddingRight')||0, 10)); };
+					// 2. The option 'forcePlaceholderSize can be
+					// enabled to force it even if a class name is
+					// specified
+
+					if(className && !o.forcePlaceholderSize)
+                        return;
+					// If the element doesn't have a actual height by
+					// itself (without styles coming from a stylesheet),
+					// it receives the inline height from the dragged
+					// item
+
+					if(!p.height()) {
+                        p.height(self.currentItem.innerHeight() -
+                                 parseInt(self.currentItem.css('paddingTop')||0, 10) -
+                                 parseInt(self.currentItem.css('paddingBottom')||0, 10));
+                    };
+					if(!p.width()) {
+                        p.width(self.currentItem.innerWidth() -
+                                parseInt(self.currentItem.css('paddingLeft')||0, 10) -
+                                parseInt(self.currentItem.css('paddingRight')||0, 10));
+                    };
 				}
 			};
 		}
@@ -788,88 +760,126 @@ $.widget("infrae.blockable", {
 
 	},
 
-	_contactContainers: function(event) {
-		// get innermost container that intersects with item
-		var innermostContainer = null, innermostIndex = null;
+	_updateItemOrder: function(event) {
+        // Step one, find the current container.
+		var candidateContainer = null;
 
-
-		for (var i = this.containers.length - 1; i >= 0; i--){
-
-			// never consider a container that's located within the item itself
+		for (var i = this.containers.length - 1; i >= 0; i--) {
+			// Never consider a container that's located within the item itself
 			if($.ui.contains(this.currentItem[0], this.containers[i].element[0]))
 				continue;
 
 			if(this._intersectsWith(this.containers[i].containerCache)) {
-
-				// if we've already found a container and it's more "inner" than this, then continue
-				if(innermostContainer && $.ui.contains(this.containers[i].element[0], innermostContainer.element[0]))
+				// if we've already found a container and it's more
+				// "inner" than this, then continue
+				if(candidateContainer !== null &&
+                   $.ui.contains(this.containers[i].element[0], candidateContainer.element[0]))
 					continue;
 
-				innermostContainer = this.containers[i];
-				innermostIndex = i;
+				candidateContainer = this.containers[i];
+			};
+		};
 
-			} else {
-				// container doesn't intersect. trigger "out" event if necessary
-				if(this.containers[i].containerCache.over) {
-					this.containers[i]._trigger("out", event, this._uiHash(this));
-					this.containers[i].containerCache.over = 0;
-				}
-			}
+        if(candidateContainer === null) {
+            // If no current container are found we return.
+            return;
+        }
 
-		}
+        // Step two, find a new order.
+		for (var i = candidateContainer.items.length - 1; i >= 0; i--) {
+			// Cache variables and intersection, continue if no intersection
+			var item = candidateContainer.items[i];
+            var intersection = this._intersectsWithPointer(item);
 
-		// if no intersecting containers found, return
-		if(!innermostContainer) return;
+			if (!intersection)
+                continue;
 
-		// move the item into the container if it's not there already
-		if(this.containers.length === 1) {
-			this.containers[innermostIndex]._trigger("over", event, this._uiHash(this));
-			this.containers[innermostIndex].containerCache.over = 1;
-		} else if(this.currentContainer != this.containers[innermostIndex]) {
-			//When entering a new container, we will find the item with the least distance and append our item near it
-			var dist = 10000; var itemWithLeastDistance = null; var base = this.positionAbs[this.containers[innermostIndex].floating ? 'left' : 'top'];
-			for (var j = this.items.length - 1; j >= 0; j--) {
-				if(!$.ui.contains(this.containers[innermostIndex].element[0], this.items[j].item[0])) continue;
-				var cur = this.items[j][this.containers[innermostIndex].floating ? 'left' : 'top'];
-				if(Math.abs(cur - base) < dist) {
-					dist = Math.abs(cur - base); itemWithLeastDistance = this.items[j];
-				}
-			}
+            var itemElement = item.item[0];
+            if(itemElement != this.currentItem[0] //cannot intersect with itself
+			   &&	this.placeholder[intersection == 1 ? "next" : "prev"]()[0] != itemElement //no useless actions that have been done before
+				&&	!$.ui.contains(this.placeholder[0], itemElement) //no action if the item moved is the parent of the item checked
+			) {
+            //if ((!item.is(this.currentItem)) &&
+            //    (!item.is_contained(this.placeholder)) &&
+            //    (!item.is(this.placeholder[intersection == 1 ? "next" : "prev"]()))) {
+                this._reorderItem(event, candidateContainer, item, intersection == 1 ? "down" : "up");
+			};
+            return;
+		};
 
-			if(!itemWithLeastDistance && !this.options.dropOnEmpty) //Check if dropOnEmpty is enabled
-				return;
+        // Step three, handle empty containers.
+        if (this.currentContainer != candidateContainer && this.options.dropOnEmpty) {
+            this._reorderItem(event, candidateContainer);
+        };
+	},
 
-			this.currentContainer = this.containers[innermostIndex];
-			itemWithLeastDistance ? this._rearrange(event, itemWithLeastDistance, null, true) : this._rearrange(event, null, this.containers[innermostIndex].element, true);
-			this._trigger("change", event, this._uiHash());
-			this.containers[innermostIndex]._trigger("change", event, this._uiHash(this));
+    _reorderItem: function(event, container, item, direction) {
+        var refresh = [this.currentContainer];
+        var hard_refresh = false;
 
-			//Update the placeholder
-			this.options.placeholder.update(this.currentContainer, this.placeholder);
+        // Move the placeholder.
+        if (item !== undefined) {
+             item.item[0].parentNode.insertBefore(this.placeholder[0], (direction == "down" ? item.item[0] : item.item[0].nextSibling));
+            // if (direction) {
+            //     item.item.before(this.placeholder);
+            // } else {
+            //     item.item.after(this.placeholder);
+            // };
+        } else {
+            container.element.append(this.placeholder);
+        };
+        // Update the container if required.
+        if (container != this.currentContainer) {
+            refresh.push(container);
+            hard_refresh = true;
+            this.currentContainer = container;
+            this.options.placeholder.update(this.currentContainer, this.placeholder);
+        };
+        // Event
+        this._trigger("reorder", event, this._eventOrderInfo(item, direction));
 
-			this.containers[innermostIndex]._trigger("over", event, this._uiHash(this));
-			this.containers[innermostIndex].containerCache.over = 1;
-		}
+        // Refresh positions afterwards.
+		// 1. we create a setTimeout, that calls refreshPositions
+		// 2. on the instance, we have a counter variable, that get's higher after every append
+		// 3. on the local scope, we copy the counter variable, and check in the timeout, if it's still the same
+		// 4. this lets only the last addition to the timeout stack through
+		this.counter = this.counter ? ++this.counter : 1;
+		var self = this, counter = this.counter;
 
+		window.setTimeout(function() {
+			if(counter == self.counter) {
+                while (refresh.length) {
+                    refresh.pop().refreshPositions(hard_refresh);
+                };
+            };
+		},0);
 
 	},
 
-	_createHelper: function(event) {
 
+	_createHelper: function(event) {
 		var o = this.options;
 		var helper = $.isFunction(o.helper) ? $(o.helper.apply(this.element[0], [event, this.currentItem])) : (o.helper == 'clone' ? this.currentItem.clone() : this.currentItem);
 
 		if(!helper.parents('body').length) //Add the helper to the DOM if that didn't happen already
 			$(o.appendTo != 'parent' ? o.appendTo : this.currentItem[0].parentNode)[0].appendChild(helper[0]);
 
-		if(helper[0] == this.currentItem[0])
-			this._storedCSS = { width: this.currentItem[0].style.width, height: this.currentItem[0].style.height, position: this.currentItem.css("position"), top: this.currentItem.css("top"), left: this.currentItem.css("left") };
-
-		if(helper[0].style.width == '' || o.forceHelperSize) helper.width(this.currentItem.width());
-		if(helper[0].style.height == '' || o.forceHelperSize) helper.height(this.currentItem.height());
-
+		if(helper[0] == this.currentItem[0]) {
+			this._storedCSS = {
+                width: this.currentItem[0].style.width,
+                height: this.currentItem[0].style.height,
+                position: this.currentItem.css("position"),
+                top: this.currentItem.css("top"),
+                left: this.currentItem.css("left")
+            };
+        }
+		if(helper[0].style.width == '' || o.forceHelperSize) {
+            helper.width(this.currentItem.width());
+        }
+		if(helper[0].style.height == '' || o.forceHelperSize){
+            helper.height(this.currentItem.height());
+        }
 		return helper;
-
 	},
 
 	_adjustOffsetFromHelper: function(obj) {
@@ -894,8 +904,6 @@ $.widget("infrae.blockable", {
 	},
 
 	_getParentOffset: function() {
-
-
 		//Get the offsetParent and cache its position
 		this.offsetParent = this.helper.offsetParent();
 		var po = this.offsetParent.offset();
@@ -904,13 +912,16 @@ $.widget("infrae.blockable", {
 		// 1. The position of the helper is absolute, so it's position is calculated based on the next positioned parent
 		// 2. The actual offset parent is a child of the scroll parent, and the scroll parent isn't the document, which means that
 		//    the scroll is included in the initial calculation of the offset of the parent, and never recalculated upon drag
-		if(this.cssPosition == 'absolute' && this.scrollParent[0] != document && $.ui.contains(this.scrollParent[0], this.offsetParent[0])) {
+		if(this.cssPosition == 'absolute' &&
+           this.scrollParent[0] != document &&
+           $.ui.contains(this.scrollParent[0], this.offsetParent[0])) {
 			po.left += this.scrollParent.scrollLeft();
 			po.top += this.scrollParent.scrollTop();
 		}
 
-		if((this.offsetParent[0] == document.body) //This needs to be actually done for all browsers, since pageX/pageY includes this information
-		|| (this.offsetParent[0].tagName && this.offsetParent[0].tagName.toLowerCase() == 'html' && $.browser.msie)) //Ugly IE fix
+        //This needs to be actually done for all browsers, since pageX/pageY includes this information
+		if((this.offsetParent[0] == document.body)
+		   || (this.offsetParent[0].tagName && this.offsetParent[0].tagName.toLowerCase() == 'html' && $.browser.msie)) //Ugly IE fix
 			po = { top: 0, left: 0 };
 
 		return {
@@ -921,7 +932,6 @@ $.widget("infrae.blockable", {
 	},
 
 	_getRelativeOffset: function() {
-
 		if(this.cssPosition == "relative") {
 			var p = this.currentItem.position();
 			return {
@@ -929,9 +939,8 @@ $.widget("infrae.blockable", {
 				left: p.left - (parseInt(this.helper.css("left"),10) || 0) + this.scrollParent.scrollLeft()
 			};
 		} else {
-			return { top: 0, left: 0 };
+			return {top: 0, left: 0};
 		}
-
 	},
 
 	_cacheMargins: function() {
@@ -1020,10 +1029,14 @@ $.widget("infrae.blockable", {
 		if(this.originalPosition) { //If we are not dragging yet, we won't check for options
 
 			if(this.containment) {
-				if(event.pageX - this.offset.click.left < this.containment[0]) pageX = this.containment[0] + this.offset.click.left;
-				if(event.pageY - this.offset.click.top < this.containment[1]) pageY = this.containment[1] + this.offset.click.top;
-				if(event.pageX - this.offset.click.left > this.containment[2]) pageX = this.containment[2] + this.offset.click.left;
-				if(event.pageY - this.offset.click.top > this.containment[3]) pageY = this.containment[3] + this.offset.click.top;
+				if(event.pageX - this.offset.click.left < this.containment[0])
+                    pageX = this.containment[0] + this.offset.click.left;
+				if(event.pageY - this.offset.click.top < this.containment[1])
+                    pageY = this.containment[1] + this.offset.click.top;
+				if(event.pageX - this.offset.click.left > this.containment[2])
+                    pageX = this.containment[2] + this.offset.click.left;
+				if(event.pageY - this.offset.click.top > this.containment[3])
+                    pageY = this.containment[3] + this.offset.click.top;
 			}
 
 			if(o.grid) {
@@ -1055,94 +1068,52 @@ $.widget("infrae.blockable", {
 
 	},
 
-	_rearrange: function(event, i, a, hardRefresh) {
-
-		a ? a[0].appendChild(this.placeholder[0]) : i.item[0].parentNode.insertBefore(this.placeholder[0], (this.direction == 'down' ? i.item[0] : i.item[0].nextSibling));
-
-		//Various things done here to improve the performance:
-		// 1. we create a setTimeout, that calls refreshPositions
-		// 2. on the instance, we have a counter variable, that get's higher after every append
-		// 3. on the local scope, we copy the counter variable, and check in the timeout, if it's still the same
-		// 4. this lets only the last addition to the timeout stack through
-		this.counter = this.counter ? ++this.counter : 1;
-		var self = this, counter = this.counter;
-
-		window.setTimeout(function() {
-			if(counter == self.counter) self.refreshPositions(!hardRefresh); //Precompute after each DOM insertion, NOT on mousemove
-		},0);
-
-	},
-
-	_clear: function(event, noPropagation) {
-
-		this.reverting = false;
-		// We delay all events that have to be triggered to after the point where the placeholder has been removed and
-		// everything else normalized again
-		var delayedTriggers = [], self = this;
-
+    _finish: function(event) {
 		// We first have to update the dom position of the actual currentItem
 		// Note: don't do it if the current item is already removed (by a user), or it gets reappended (see #4088)
-		if(!this._noFinalSort && this.currentItem.parent().length) this.placeholder.before(this.currentItem);
-		this._noFinalSort = null;
+		if(!this.currentItem.parent().length) {
+            this.placeholder.before(this.currentItem);
+        };
+        this._trigger("order", event, this._eventOrderInfo());
+    },
 
-		if(this.helper[0] == this.currentItem[0]) {
-			for(var i in this._storedCSS) {
-				if(this._storedCSS[i] == 'auto' || this._storedCSS[i] == 'static') this._storedCSS[i] = '';
-			}
-			this.currentItem.css(this._storedCSS).removeClass("ui-sortable-helper");
-		} else {
-			this.currentItem.show();
-		}
-
-		if(this.fromOutside && !noPropagation) delayedTriggers.push(function(event) { this._trigger("receive", event, this._uiHash(this.fromOutside)); });
-		if((this.fromOutside || this.domPosition.prev != this.currentItem.prev().not(".ui-sortable-helper")[0] || this.domPosition.parent != this.currentItem.parent()[0]) && !noPropagation) delayedTriggers.push(function(event) { this._trigger("update", event, this._uiHash()); }); //Trigger update callback if the DOM position has changed
-		if(!$.ui.contains(this.element[0], this.currentItem[0])) { //Node was moved out of the current element
-			if(!noPropagation) delayedTriggers.push(function(event) { this._trigger("remove", event, this._uiHash()); });
-			for (var i = this.containers.length - 1; i >= 0; i--){
-				if($.ui.contains(this.containers[i].element[0], this.currentItem[0]) && !noPropagation) {
-					delayedTriggers.push((function(c) { return function(event) { c._trigger("receive", event, this._uiHash(this)); };  }).call(this, this.containers[i]));
-					delayedTriggers.push((function(c) { return function(event) { c._trigger("update", event, this._uiHash(this));  }; }).call(this, this.containers[i]));
-				}
-			};
-		};
-
-		//Post events to containers
-		for (var i = this.containers.length - 1; i >= 0; i--){
-			if(!noPropagation) delayedTriggers.push((function(c) { return function(event) { c._trigger("deactivate", event, this._uiHash(this)); };  }).call(this, this.containers[i]));
-			if(this.containers[i].containerCache.over) {
-				delayedTriggers.push((function(c) { return function(event) { c._trigger("out", event, this._uiHash(this)); };  }).call(this, this.containers[i]));
-				this.containers[i].containerCache.over = 0;
-			}
-		}
+	_clear: function(event, noPropagation) {
+		this.reverting = false;
 
 		//Do what was originally in plugins
-		if(this._storedCursor) $('body').css("cursor", this._storedCursor); //Reset cursor
-		if(this._storedOpacity) this.helper.css("opacity", this._storedOpacity); //Reset opacity
-		if(this._storedZIndex) this.helper.css("zIndex", this._storedZIndex == 'auto' ? '' : this._storedZIndex); //Reset z-index
+		if(this._storedCursor) {
+            $('body').css("cursor", this._storedCursor);
+        }
 
 		this.dragging = false;
-		if(this.cancelHelperRemoval) {
-			if(!noPropagation) {
-				this._trigger("beforeStop", event, this._uiHash());
-				for (var i=0; i < delayedTriggers.length; i++) { delayedTriggers[i].call(this, event); }; //Trigger all delayed events
-				this._trigger("stop", event, this._uiHash());
-			}
-			return false;
-		}
+        this._trigger("beforeStop", event, this._eventInfo());
 
-		if(!noPropagation) this._trigger("beforeStop", event, this._uiHash());
+        // Revert CSS and remove helper.
+        if(this.helper[0] == this.currentItem[0]) {
+            // Restore opacity, zIndex and other CSS.
+            if(this._storedOpacity) {
+                this.currentItem.css("opacity", this._storedOpacity);
+            };
+		    if(this._storedZIndex) {
+                this.currentItem.css("zIndex", this._storedZIndex == 'auto' ? '' : this._storedZIndex);
+            };
+			for(var i in this._storedCSS) {
+				if(this._storedCSS[i] == 'auto' || this._storedCSS[i] == 'static')
+                    this._storedCSS[i] = '';
+			};
+			this.currentItem.css(this._storedCSS).removeClass("ui-sortable-helper");
+		} else {
+            this.helper.remove();
+			this.currentItem.show();
+		};
+        this.helper = null;
 
-		//$(this.placeholder[0]).remove(); would have been the jQuery way - unfortunately, it unbinds ALL events from the original node!
+        // Remove placeholder
 		this.placeholder[0].parentNode.removeChild(this.placeholder[0]);
 
-		if(this.helper[0] != this.currentItem[0]) this.helper.remove(); this.helper = null;
-
-		if(!noPropagation) {
-			for (var i=0; i < delayedTriggers.length; i++) { delayedTriggers[i].call(this, event); }; //Trigger all delayed events
-			this._trigger("stop", event, this._uiHash());
-		}
-
-		this.fromOutside = false;
+		this._trigger("stop", event, this._eventInfo());
+        this.currentItem = null;
+        this.currentContainer = null;
 		return true;
 
 	},
@@ -1153,16 +1124,36 @@ $.widget("infrae.blockable", {
 		}
 	},
 
-	_uiHash: function(inst) {
-		var self = inst || this;
+    _eventOrderInfo: function(item, direction) {
+        var order = 0;
+        if (item !== null) {
+            var correctif = 0;
+            var items = this.currentContainer.items;
+            for (; order < items.length; order++) {
+                if (items[order] == item) {
+                    if (direction == 'up')
+                        correctif += 1;
+                    order += correctif;
+                    break;
+                };
+            };
+        } else {
+            order = null;
+        }
+        return {
+            placeholer: this.placeholder,
+            item: this.currentItem,
+            container: this.currentContainer.element,
+            order: order,
+            relative: item
+        };
+    },
+
+	_eventInfo: function() {
 		return {
-			helper: self.helper,
-			placeholder: self.placeholder || $([]),
-			position: self.position,
-			originalPosition: self.originalPosition,
-			offset: self.positionAbs,
-			item: self.currentItem,
-			sender: inst ? inst.element : null
+            placeholder: this.placehoder,
+            item: this.currentItem,
+            container: this.currentContainer.element
 		};
 	}
 
