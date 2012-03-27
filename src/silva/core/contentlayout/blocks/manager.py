@@ -38,7 +38,7 @@ class BlockManager(grok.Annotation):
         self._p_changed = True
         return block_id
 
-    def can_move(self, block_id, slot_id=None, index=None):
+    def can_move(self, block_id, slot_id=None):
         return True
 
     def move(self, block_id, slot_id=None, index=None):

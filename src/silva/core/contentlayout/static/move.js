@@ -203,6 +203,7 @@ $.widget("infrae.blockable", {
         this.currentContainer = undefined;
 		this.containerCache = {};
 		this.element.addClass("ui-sortable");
+        this.deferred = undefined;
         this.floating = this.options.axis === 'x';  // Define if matching should be horizontal or vertical.
 
 		//Let's determine the parent's offset
@@ -288,6 +289,7 @@ $.widget("infrae.blockable", {
 	_mouseStart: function(event, overrideHandle, noActivation) {
 		var o = this.options, self = this;
 		this.currentContainer = this;
+        this.deferred = null;
 
 		// We only need to refresh all blocks positions.
 		this.refreshAllPositions(true);
@@ -446,27 +448,17 @@ $.widget("infrae.blockable", {
 	_mouseStop: function(event) {
 		if(!event)
             return;
+        var promise = this.deferred ? this.deferred : $.Deferred().resolve();
+		var self = this;
 
-		if(this.options.revert) {
-			var self = this;
-			var cur = self.placeholder.offset();
-
-			self.reverting = true;
-
-			$(this.helper).animate({
-				left: cur.left - this.offset.parent.left - self.margins.left + (this.offsetParent[0] == document.body ? 0 : this.offsetParent[0].scrollLeft),
-				top: cur.top - this.offset.parent.top - self.margins.top + (this.offsetParent[0] == document.body ? 0 : this.offsetParent[0].scrollTop)
-			}, parseInt(this.options.revert, 10) || 500, function() {
-				self._clear(event);
-			});
-		} else {
-            // We are done.
-            this._finish(event);
-			this._clear(event);
-		};
-
+        promise.pipe(function() {
+            self._finish(event);
+        }, function() {
+            return {};
+        }).done(function() {
+           	self._clear(event);
+        });
 		return false;
-
 	},
 
 	cancel: function() {
@@ -1069,11 +1061,7 @@ $.widget("infrae.blockable", {
 	},
 
     _finish: function(event) {
-		// We first have to update the dom position of the actual currentItem
-		// Note: don't do it if the current item is already removed (by a user), or it gets reappended (see #4088)
-		if(!this.currentItem.parent().length) {
-            this.placeholder.before(this.currentItem);
-        };
+        this.placeholder.before(this.currentItem);
         this._trigger("order", event, this._eventOrderInfo());
     },
 
@@ -1118,6 +1106,10 @@ $.widget("infrae.blockable", {
 
 	},
 
+    validate: function(deferred){
+        this.deferred = deferred;
+    },
+
 	_trigger: function() {
 		if ($.Widget.prototype._trigger.apply(this, arguments) === false) {
 			this.cancel();
@@ -1139,9 +1131,11 @@ $.widget("infrae.blockable", {
             };
         } else {
             order = null;
-        }
+        };
+
         return {
-            placeholer: this.placeholder,
+            validate: $.proxy(this.validate, this),
+            placeholder: this.placeholder,
             item: this.currentItem,
             container: this.currentContainer.element,
             order: order,

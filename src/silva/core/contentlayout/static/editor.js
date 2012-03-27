@@ -16,10 +16,14 @@
     };
 
     var EditorController = function(smi, urls, path) {
+        var validation_cache = {};
         return {
             add: function($slot) {
                 return $slot.SMIFormPopup({
-                    url: urls.actions.add.expand({path: path, id: $slot.data('slot-id')})
+                    url: urls.actions.add.expand({
+                        path: path,
+                        id: $slot.data('slot-id')
+                    })
                 }).pipe(
                     function(data) {
                         if (data.extra !== undefined && data.extra.block_id) {
@@ -50,6 +54,46 @@
                         };
                     }
                 );
+            },
+            validate: function($slot, $block) {
+                var slot_id = $slot.data('slot-id');
+                var block_id = $block.data('block-id');
+
+                if (validation_cache[block_id] !== undefined) {
+                    if (validation_cache[block_id][slot_id] !== undefined) {
+                        return validation_cache[block_id][slot_id];
+                    };
+                } else {
+                    validation_cache[block_id] = {};
+                };
+                return validation_cache[block_id][slot_id] = smi.ajax.query(
+                    urls.actions.validate.expand({
+                        path: path,
+                        id: $block.data('block-id')
+                    }),
+                    [{name: 'slot_id', value: slot_id}]).pipe(function(data) {
+                        var deferred = $.Deferred();
+                        if (data.success !== true) {
+                            deferred.reject();
+                        } else {
+                            deferred.resolve();
+                        };
+                        return deferred.promise();
+                    }, function(request) {
+                        return $.Deferred().reject().promise();
+                    });
+            },
+            move: function($slot, $block, index) {
+                var slot_id = $slot.data('slot-id');
+                var block_id = $block.data('block-id');
+
+                return smi.ajax.query(
+                    urls.actions.move.expand({
+                        path: path,
+                        id: $block.data('block-id')
+                    }),
+                    [{name: 'slot_id', value: slot_id},
+                     {name: 'index', value: index}]);
             },
             remove: function($block) {
                 return smi.ajax.query(
@@ -175,8 +219,16 @@
                 };
             };
             if (disable !== undefined) {
-                disabled = disable;
-            }
+                if (disable == true) {
+                    disabled = true;
+                } else {
+                    disabled = false;
+                    if (disabled !== null) {
+                        $candidate = disable;
+                        update_layer();
+                    };
+                };
+            };
         };
 
         $body.delegate('.edit-block, .edit-slot', 'mouseenter', function(event) {
@@ -217,14 +269,29 @@
         $body.bind('blockstart', function(event) {
             clear_layer(true);
         });
-        $body.bind('blockstop', function(event) {
-            clear_layer(false);
+        $body.bind('blockstop', function(event, data) {
+            clear_layer(data.item);
         });
         $body.bind('blockorder', function(event, data) {
             //console.log('Block final order', data);
         });
         $body.bind('blockreorder', function(event, data) {
-            //console.log('Block reorder', data);
+            data.placeholder
+                .removeClass('contentlayout-block-valid-placeholder contentlayout-block-invalid-placeholder')
+                .addClass('contentlayout-block-placeholder');
+            data.validate(
+                api.validate(data.container, data.item).pipe(function() {
+                    data.placeholder
+                        .removeClass('contentlayout-block-placeholder')
+                        .addClass('contentlayout-block-valid-placeholder');
+                    return $.Deferred().resolve();
+                }, function() {
+                    data.placeholder
+                        .removeClass('contentlayout-block-placeholder')
+                        .addClass('contentlayout-block-invalid-placeholder');
+                    return $.Deferred().reject();
+                })
+            );
         });
         $layer.delegate('#contentlayout-remove-block', 'click', function(event) {
             var $block = $selected.closest('div.edit-block');
@@ -274,7 +341,7 @@
                             // Move action
                             $slots.each(function () {
                                 $(this).blockable({
-                                    placeholder: 'contentlayout-block-placeholder',
+                                    placeholder: 'contentlayout-block-valid-placeholder',
                                     forcePlaceholderSize: true,
                                     connectWith: $slots,
                                     tolerance: "pointer",
