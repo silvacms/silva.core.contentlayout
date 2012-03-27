@@ -3,7 +3,7 @@ contentlayout: {
   layer: "${view.root_url}/++rest++silva.core.contentlayout.layer",
   url:  "${view.root_url}/{path}/edit",
   actions : {
-    add: "${view.root_url}/{path}/++rest++silva.core.contentlayout.add",
+    add: "${view.root_url}/{path}/++rest++silva.core.contentlayout.add/{id}",
     edit: "${view.root_url}/{path}/++rest++silva.core.contentlayout.edit/{id}",
     move: "${view.root_url}/{path}/++rest++silva.core.contentlayout.move/{id}",
     remove: "${view.root_url}/{path}/++rest++silva.core.contentlayout.delete/{id}"

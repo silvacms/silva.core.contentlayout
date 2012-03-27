@@ -100,7 +100,7 @@ class AddExternalBlockAction(silvaforms.Action):
         manager = IBlockManager(form.context)
         block = ReferenceBlock()
         self.block_id = manager.new(
-            form.request.form['slot_id'],
+            form.__parent__.slot_id,
             block)
         self.block_manager = getMultiAdapter(
             (block, form.context, form.request), IBlockController)

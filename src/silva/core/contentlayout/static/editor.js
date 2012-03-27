@@ -19,8 +19,7 @@
         return {
             add: function($slot) {
                 return $slot.SMIFormPopup({
-                    url: urls.actions.add.expand({path: path}),
-                    payload: [{name: 'slot_id', value: $slot.data('slot-id')}]
+                    url: urls.actions.add.expand({path: path, id: $slot.data('slot-id')})
                 }).pipe(
                     function(data) {
                         if (data.extra !== undefined && data.extra.block_id) {

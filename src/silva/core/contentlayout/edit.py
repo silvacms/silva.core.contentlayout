@@ -78,8 +78,14 @@ class ChooseBlock(silvaforms.RESTPopupForm):
     fields = silvaforms.Fields(IChooseSchema)
     fields['category'].mode = 'radio'
     actions = silvaforms.Actions(silvaforms.CancelAction())
+    slot_id = None
 
     def publishTraverse(self, request, name):
+        if self.slot_id is None:
+            # XXX Need validation here.
+            self.slot_id = urllib.unquote(name)
+            self.__name__ = '/'.join((self.__name__, name))
+            return self
         block = registry.lookup(urllib.unquote(name))
         if block is not None:
             adder = queryRESTComponent(
