@@ -22,7 +22,7 @@
                 return $slot.SMIFormPopup({
                     url: urls.actions.add.expand({
                         path: path,
-                        id: $slot.data('slot-id')
+                        slot_id: $slot.data('slot-id')
                     })
                 }).pipe(
                     function(data) {
@@ -40,11 +40,12 @@
                     }
                 );
             },
-            edit: function($block) {
+            edit: function($slot, $block) {
                 return $block.SMIFormPopup({
                     url: urls.actions.edit.expand({
                         path: path,
-                        id: $block.data('block-id')
+                        slot_id: $slot.data('slot-id'),
+                        block_id: $block.data('block-id')
                     })
                 }).pipe(
                     function(data) {
@@ -66,21 +67,30 @@
                 };
                 slot_cache = block_cache[slot_id];
                 if (slot_cache !== undefined && !slot_cache.isRejected()) {
-                    return slot_cache;
+                    // We need a new deferred in order to update the index
+                    return slot_cache.pipe(function(result) {
+                        return {
+                            success: result.success,
+                            failed: result.failed,
+                            container: $slot,
+                            item: $block,
+                            index: index,
+                            fatal: false
+                        };
+                    });
                 };
 
                 return block_cache[slot_id] = smi.ajax.query(
-                    urls.actions.validate.expand({path: path, id: block_id}),
-                    [{name: 'slot_id', value: slot_id}]
+                    urls.actions.validate.expand({path: path, slot_id: slot_id, block_id: block_id})
                 ).pipe(function(data) {
-                    return $.Deferred().resolve({
+                    return {
                         success: data.success,
                         failed: !data.success,
                         container: $slot,
                         item: $block,
                         index: index,
                         fatal: false
-                    });
+                    };
                 }, function(request) {
                     return $.Deferred().reject({
                         failed: true,
@@ -94,9 +104,8 @@
                 var block_id = $block.data('block-id');
 
                 return smi.ajax.query(
-                    urls.actions.move.expand({path: path, id: block_id}),
-                    [{name: 'slot_id', value: slot_id},
-                     {name: 'index', value: index}]
+                    urls.actions.move.expand({path: path, slot_id: slot_id, block_id: block_id}),
+                    [{name: 'index', value: index}]
                 ).pipe(function(data) {
                     return $.Deferred().resolve({
                         success: data.success,
@@ -114,11 +123,12 @@
                     });
                 });
             },
-            remove: function($block) {
+            remove: function($slot, $block) {
                 return smi.ajax.query(
                     urls.actions.remove.expand({
                         path: path,
-                        id: $block.data('block-id')
+                        slot_id: $slot.data('slot-id'),
+                        block_id: $block.data('block-id')
                     })
                 ).pipe(
                     function(data) {
@@ -280,8 +290,9 @@
         });
         $layer.delegate('#contentlayout-edit-block', 'click', function(event) {
             var $block = $selected.closest('div.edit-block');
+            var $slot = $selected.closest('div.edit-slot');
             if ($block.length) {
-                api.edit($block);
+                api.edit($slot, $block);
             };
             event.stopPropagation();
             event.preventDefault();
@@ -333,8 +344,10 @@
         });
         $layer.delegate('#contentlayout-remove-block', 'click', function(event) {
             var $block = $selected.closest('div.edit-block');
+            var $slot = $selected.closest('div.edit-slot');
+
             if ($block.length) {
-                api.remove($block).pipe(function(data) {
+                api.remove($slot, $block).pipe(function(data) {
                     clear_layer();
                     return data;
                 });

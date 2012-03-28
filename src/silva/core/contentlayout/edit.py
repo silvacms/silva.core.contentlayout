@@ -4,6 +4,7 @@ import urllib
 from five import grok
 from zope.interface import alsoProvides, Interface, implementedBy
 from zope.schema.vocabulary import SimpleVocabulary, SimpleTerm
+from zope.cachedescriptors.property import CachedProperty
 from zope import schema
 from zeam.form.ztk.interfaces import IFormSourceBinder
 
@@ -13,14 +14,15 @@ from silva.core.contentlayout.interfaces import IEditionMode, IPage
 from silva.core.contentlayout.interfaces import IBlockManager
 from silva.core.views import views as silvaviews
 from silva.translations import translate as _
-from silva.ui.rest import REST, UIREST
+from silva.ui.rest import REST
 from silva.ui.rest.exceptions import RESTRedirectHandler
 from silva.ui.smi import SMIConfiguration
 from zeam.form import silva as silvaforms
 
 
-from zExceptions import BadRequest
+from zExceptions import BadRequest, NotFound
 
+_marker = object()
 
 class EditPage(silvaviews.Page):
     grok.context(IPage)
@@ -49,12 +51,15 @@ class EditContentLayoutLayer(RESTWithTemplate):
         return self.template.render(self)
 
 
+class PageAPI(REST):
+    grok.context(IPage)
+    grok.name('silva.contentlayout')
+
+
 @grok.provider(IFormSourceBinder)
 def block_source(form):
     result = []
-    template = form.context.template
-    slot = template.slots[form.slot_id]
-    for name, block in slot.available_block_types(form.context):
+    for name, block in form.slot.available_block_types(form.context):
         result.append(SimpleTerm(
                 value=urllib.quote(name),
                 token=name,
@@ -70,35 +75,39 @@ class IChooseSchema(Interface):
 
 
 class ChooseBlock(silvaforms.RESTPopupForm):
-    grok.context(IPage)
-    grok.name('silva.core.contentlayout.add')
+    grok.adapts(PageAPI, IPage)
+    grok.name('add')
     grok.require('silva.ChangeSilvaContent')
 
     label = _(u"Choose a new block to add to the slot")
     fields = silvaforms.Fields(IChooseSchema)
     fields['category'].mode = 'radio'
     actions = silvaforms.Actions(silvaforms.CancelAction())
+    slot = None
     slot_id = None
 
     def publishTraverse(self, request, name):
-        if self.slot_id is None:
-            # XXX Need validation here.
-            self.slot_id = urllib.unquote(name)
+        if self.slot is None:
+            slot_id = urllib.unquote(name)
+            # XXX Fix template acess
+            if slot_id not in self.context.template.slots:
+                raise NotFound()
+            self.slot = self.context.template.slots[slot_id]
+            self.slot_id = slot_id
             self.__name__ = '/'.join((self.__name__, name))
             return self
 
-        slot = self.context.template.slots[self.slot_id]
-        block, restriction = slot.get_block_factory(name)
-        if block is not None:
-            adder = queryRESTComponent(
-                (implementedBy(block), self.context),
-                (self.context, request),
-                name='add',
-                parent=self,
-                id=name)
-            if adder is not None:
-                adder.restriction = restriction
-                return adder
+        if self.slot is not None:
+            block, restriction = self.slot.get_block_factory(name)
+            if block is not None:
+                adder = queryRESTComponent(
+                    (implementedBy(block), self.context),
+                    (self.context, request, restriction),
+                    name='add',
+                    parent=self,
+                    id=name)
+                if adder is not None:
+                    return adder
         return super(ChooseBlock, self).publishTraverse(request, name)
 
     @silvaforms.action(_('Next'))
@@ -109,107 +118,111 @@ class ChooseBlock(silvaforms.RESTPopupForm):
         raise RESTRedirectHandler(data['category'], relative=self, clear=True)
 
 
-class EditBlock(REST):
-    grok.context(IPage)
-    grok.name('silva.core.contentlayout.edit')
-    grok.require('silva.ChangeSilvaContent')
-
-    def publishTraverse(self, request, name):
-        manager = IBlockManager(self.context)
-        block = manager.get(urllib.unquote(name))
-        if block is not None:
-            editer = queryRESTComponent(
-                (block, self.context),
-                (block, self.context, request),
-                name='edit',
-                parent=self,
-                id=name)
-            if editer is not None:
-                return editer
-        return super(EditBlock, self).publishTraverse(request, name)
-
-
-class BlockUIREST(UIREST):
+class BlockREST(REST):
     """ Traverse to a block on a page.
     """
     grok.baseclass()
+    grok.adapts(PageAPI, IPage)
+    grok.require('silva.ChangeSilvaContent')
 
+    slot = None
+    slot_id = None
+    block = None
     block_id = None
+
+    @CachedProperty
+    def manager(self):
+        return IBlockManager(self.context)
 
     def publishTraverse(self, request, name):
-        manager = IBlockManager(self.context)
-        block_id = urllib.unquote(name)
-        if manager.get(block_id) is not None:
-            self.block_id = block_id
+        if self.slot is None:
+            slot_id = urllib.unquote(name)
+            # XXX Fix template acess
+            if slot_id not in self.context.template.slots:
+                raise NotFound('Unknown slot %s' % name)
+            self.slot = self.context.template.slots[slot_id]
+            self.slot_id = slot_id
             self.__name__ = '/'.join((self.__name__, name))
             return self
-        return super(BlockUIREST, self).publishTraverse(request, name)
+
+        if self.slot is not None and self.block is None:
+            block_id = urllib.unquote(name)
+            block = self.manager.get(block_id)
+            if block is not None:
+                self.block = block
+                self.block_id = block_id
+                handler = self.publishBlock(name, request, block)
+                if handler is not None:
+                    return handler
+        return super(BlockREST, self).publishTraverse(request, name)
+
+    def publishBlock(self, name, request, block):
+        self.__name__ = '/'.join((self.__name__, name))
+        return self
 
 
-class MoveBlock(BlockUIREST):
-    grok.context(IPage)
-    grok.name('silva.core.contentlayout.move')
-    grok.require('silva.ChangeSilvaContent')
+class EditBlock(BlockREST):
+    grok.name('edit')
 
-    def _validate_parameters(self, slot_id, index):
+    def publishBlock(self, name, request, block):
+        return queryRESTComponent(
+            (block, self.context),
+            (block, self.context, request),
+            name='edit',
+            parent=self,
+            id=name)
+
+
+class MoveBlock(BlockREST):
+    grok.name('move')
+
+    def verify(self, index=_marker):
+        if self.slot_id is None:
+            raise BadRequest('missing slot identifier')
         if self.block_id is None:
-            raise BadRequest("invalid block id")
-        if slot_id is None:
-            raise BadRequest("invalid slot id")
+            raise BadRequest('missing block identifier')
         if index is None:
-            raise BadRequest("invalid index")
+            raise BadRequest('missing index parameter')
 
-    def POST(self, slot_id=None, index=None):
+    def POST(self, index=None):
         """Move the block to the slot and index
         """
-        self._validate_parameters(slot_id, index)
-        manager = IBlockManager(self.context)
+        self.verify(index)
+        msg = None
         try:
-            manager.move(self.block_id,
-                         self.context,
-                         slot_id,
-                         int(index))
+            self.manager.move(
+                self.block_id, self.context, self.slot_id, int(index))
+            success = True
         except ValueError as e:
-            raise BadRequest(str(e))
-        return self.json_response({'content': {'success': True}})
+            success = False
+            msg = str(e)
+        return self.json_response({
+                'content': {'success': success, 'message': msg}})
 
 
-class ValidateBlock(BlockUIREST):
-    grok.context(IPage)
-    grok.name('silva.core.contentlayout.validate')
-    grok.require('silva.ChangeSilvaContent')
+class ValidateBlock(REST):
+    grok.adapts(MoveBlock, IPage)
+    grok.name('validate')
 
-    def _validate_parameters(self, slot_id):
-        if self.block_id is None:
-            raise BadRequest("invalid block id")
-        if slot_id is None:
-            raise BadRequest("invalid slot id")
-
-    def POST(self, slot_id=None):
+    def GET(self):
         """Validate that you can move that block to this slot and index.
         """
-        self._validate_parameters(slot_id)
-        manager = IBlockManager(self.context)
+        move = self.__parent__
+        move.verify()
         try:
-            can = manager.can_move(self.block_id,
-                                   self.context,
-                                   slot_id)
-            return self.json_response({'content': {'success': can}})
-        except ValueError as e:
-            raise BadRequest(str(e))
+            success = move.manager.can_move(
+                move.block_id, move.context, move.slot_id)
+        except ValueError:
+            success = False
+        return self.json_response({'content': {'success': success}})
 
 
-class RemoveBlock(BlockUIREST):
-    grok.context(IPage)
-    grok.name('silva.core.contentlayout.delete')
-    grok.require('silva.ChangeSilvaContent')
-
-    block_id = None
+class RemoveBlock(BlockREST):
+    grok.name('delete')
 
     def GET(self):
         if self.block_id is None:
-            raise BadRequest()
-        manager = IBlockManager(self.context)
-        manager.remove(self.block_id, self.context, self.request)
+            raise BadRequest('missing block identifier')
+        self.manager.remove(self.block_id, self.context, self.request)
         return self.json_response({'content': {'success': True}})
 
