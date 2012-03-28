@@ -21,6 +21,7 @@ class SourceBlock(Block):
     grok.implements(IBlock)
     grok.name('source')
     grok.title(_(u"Code source"))
+    grok.order(5)
 
     def __init__(self, identifier):
         self.identifier = identifier
@@ -60,6 +61,10 @@ class AddSourceBlock(silvaforms.RESTPopupForm):
     label = _(u"Add a source block")
     fields = silvaforms.Fields(IAddSourceSchema)
     actions = silvaforms.Actions(silvaforms.CancelAction())
+
+    def __init__(self, context, request, restriction=None):
+        super(AddSourceBlock, self).__init__(context, request)
+        self.restriction = restriction
 
     @silvaforms.action(_('Add'))
     def add(self):

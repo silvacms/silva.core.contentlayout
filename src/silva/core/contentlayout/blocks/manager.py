@@ -6,14 +6,14 @@ from five import grok
 from zope.component import getMultiAdapter
 from zope.interface import Interface
 
-from silva.core.contentlayout.interfaces import IBlockManager, IBlockController
+from ..interfaces import IBlockManager, IBlockController, IBlock
 
 _marker = object()
 logger = logging.getLogger('silva.core.contentlayout')
 
 
 class Block(object):
-    grok.context(Interface)
+    grok.implements(IBlock)
     grok.baseclass()
 
 
@@ -44,7 +44,7 @@ class BlockManager(grok.Annotation):
         return slot.is_block_allowed(block, context)
 
     def move(self, block_id, context, slot_id, index):
-        if not self.can_move(block_id, context, slot_id, index):
+        if not self.can_move(block_id, context, slot_id):
             raise ValueError('Cannot move this block in this slot')
         block = self._blocks.get(block_id)
         if block is None or slot_id is None or index is None:

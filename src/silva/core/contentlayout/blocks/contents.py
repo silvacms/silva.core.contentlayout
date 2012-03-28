@@ -22,6 +22,7 @@ class ReferenceBlock(Block):
     grok.implements(IReferenceBlock)
     grok.name('external')
     grok.title(_(u"Site content"))
+    grok.order(15)
 
     def __init__(self):
         self.identifier = unicode(uuid.uuid1())
@@ -120,6 +121,10 @@ class AddExternalBlock(silvaforms.RESTPopupForm):
     actions = silvaforms.Actions(
         AddExternalBlockAction(),
         silvaforms.CancelAction())
+
+    def __init__(self, context, request, restriction=None):
+        super(AddExternalBlock, self).__init__(context, request)
+        self.restriction = restriction
 
     def update(self):
         if self.restriction is not None and \

@@ -3,11 +3,11 @@ contentlayout: {
   layer: "${view.root_url}/++rest++silva.core.contentlayout.layer",
   url:  "${view.root_url}/{path}/edit",
   actions : {
-    add: "${view.root_url}/{path}/++rest++silva.core.contentlayout.add/{id}",
-    edit: "${view.root_url}/{path}/++rest++silva.core.contentlayout.edit/{id}",
-    move: "${view.root_url}/{path}/++rest++silva.core.contentlayout.move/{id}",
-    validate: "${view.root_url}/{path}/++rest++silva.core.contentlayout.validate/{id}",
-    remove: "${view.root_url}/{path}/++rest++silva.core.contentlayout.delete/{id}"
+    add: "${view.root_url}/{path}/++rest++silva.contentlayout/add/{slot_id}",
+    edit: "${view.root_url}/{path}/++rest++silva.contentlayout/edit/{slot_id}/{block_id}",
+    move: "${view.root_url}/{path}/++rest++silva.contentlayout/move/{slot_id}/{block_id}",
+    validate: "${view.root_url}/{path}/++rest++silva.contentlayout/move/{slot_id}/{block_id}/validate",
+    remove: "${view.root_url}/{path}/++rest++silva.contentlayout/delete/{slot_id}/{block_id}"
   }
 },
 </tal:cfg>
