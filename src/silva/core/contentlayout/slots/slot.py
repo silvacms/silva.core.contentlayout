@@ -46,6 +46,12 @@ class Slot(object):
                 return restriction.allow_block(block, context, self)
         return True
 
+    def get_restriction(self, block):
+        for restriction in self._restrictions:
+            if restriction.apply_to(block.__class__):
+                return restriction
+        return None
+
 
 class SlotView(object):
     edit_template = ChameleonPageTemplate(filename='edit_slot.cpt')

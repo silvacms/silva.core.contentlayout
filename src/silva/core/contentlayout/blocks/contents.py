@@ -166,13 +166,17 @@ class EditExternalBlock(silvaforms.RESTPopupForm):
         silvaforms.CancelAction())
     ignoreContent = False
 
-    def __init__(self, block, context, request):
+    def __init__(self, block, context, request, restriction=None):
         super(EditExternalBlock, self).__init__(context, request)
         self.block = block
+        self.restriction = restriction
 
     def update(self):
         self.setContentData(getMultiAdapter(
                 (self.block, self.context, self.request), IBlockController))
+        if self.restriction is not None and \
+                IContentSlotRestriction.providedBy(self.restriction):
+            self.fields['block'].schema = self.restriction.interface
 
 
 class BlockView(object):

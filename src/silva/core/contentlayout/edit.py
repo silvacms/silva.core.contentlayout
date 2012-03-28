@@ -165,9 +165,10 @@ class EditBlock(BlockREST):
     grok.name('edit')
 
     def publishBlock(self, name, request, block):
+        restriction = self.slot.get_restriction(block)
         return queryRESTComponent(
             (block, self.context),
-            (block, self.context, request),
+            (block, self.context, request, restriction),
             name='edit',
             parent=self,
             id=name)
