@@ -66,21 +66,31 @@
                 };
                 slot_cache = block_cache[slot_id];
                 if (slot_cache !== undefined && !slot_cache.isRejected()) {
-                    return slot_cache;
+                    // We need a new deferred in order to update the index
+                    return slot_cache.pipe(function(result) {
+                        return {
+                            success: result.success,
+                            failed: result.failed,
+                            container: $slot,
+                            item: $block,
+                            index: index,
+                            fatal: false
+                        };
+                    });
                 };
 
                 return block_cache[slot_id] = smi.ajax.query(
                     urls.actions.validate.expand({path: path, id: block_id}),
                     [{name: 'slot_id', value: slot_id}]
                 ).pipe(function(data) {
-                    return $.Deferred().resolve({
+                    return {
                         success: data.success,
                         failed: !data.success,
                         container: $slot,
                         item: $block,
                         index: index,
                         fatal: false
-                    });
+                    };
                 }, function(request) {
                     return $.Deferred().reject({
                         failed: true,
