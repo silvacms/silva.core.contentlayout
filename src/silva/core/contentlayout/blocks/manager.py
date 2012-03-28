@@ -54,7 +54,7 @@ class BlockManager(grok.Annotation):
         previous_slot_id = self._block_to_slot[block_id]
         self._block_to_slot[block_id] = slot_id
         self._slot_to_block[previous_slot_id].remove(block_id)
-        self._slot_to_block[slot_id].insert(index or -1, block_id)
+        self._slot_to_block[slot_id].insert(index, block_id)
         self._p_changed = True
         return previous_slot_id
 
