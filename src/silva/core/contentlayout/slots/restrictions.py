@@ -60,10 +60,10 @@ class Content(SlotRestriction):
     grok.implements(interfaces.IContentSlotRestriction)
     grok.context(ReferenceBlock)
 
-    interface = None
+    schema = None
 
-    def __init__(self, interface):
-        self.interface = interface
+    def __init__(self, schema=interfaces.IBlockable):
+        self.schema = schema
 
     def allow_block(self, block, context, slot):
         if not super(Content, self).allow_block(block, context, slot):
@@ -71,8 +71,7 @@ class Content(SlotRestriction):
 
         service = getUtility(IReferenceService)
         reference = service.get_reference(context, name=block.identifier)
-        silva_content = reference.target
 
-        if self.interface.providedBy(silva_content):
+        if self.schema.providedBy(reference.target):
             return True
         return False

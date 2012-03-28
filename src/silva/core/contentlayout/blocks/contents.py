@@ -7,7 +7,7 @@ from zope.interface import Interface
 from zope.component import getUtility, queryMultiAdapter
 from zope.component import getMultiAdapter
 
-from silva.core.contentlayout.blocks import Block
+from silva.core.contentlayout.blocks import Block, BlockController
 from silva.core.contentlayout.interfaces import IBlockManager, IBlockController
 from silva.core.contentlayout.interfaces import IBlockView, IBlockable
 from silva.core.contentlayout.interfaces import IReferenceBlock, IPage
@@ -20,7 +20,7 @@ from zeam.form import silva as silvaforms
 
 class ReferenceBlock(Block):
     grok.implements(IReferenceBlock)
-    grok.name('external')
+    grok.name('site-content')
     grok.title(_(u"Site content"))
     grok.order(15)
 
@@ -28,18 +28,19 @@ class ReferenceBlock(Block):
         self.identifier = unicode(uuid.uuid1())
 
 
-class BoundReferenceBlock(grok.MultiAdapter):
+class ReferenceBlockController(BlockController):
     grok.adapts(IReferenceBlock, Interface, IHTTPRequest)
-    grok.provides(IBlockController)
 
-    def __init__(self, reference, context, request):
-        self._name = reference.identifier
-        self.context = context
-        self.request = request
+    def __init__(self, block, context, request):
+        super(ReferenceBlockController, self).__init__(block, context, request)
+        self._name = block.identifier
         self._service = getUtility(IReferenceService)
 
+    def editable(self):
+        return True
+
     @apply
-    def block():
+    def content():
 
         def getter(self):
             reference = self._service.get_reference(
@@ -62,7 +63,7 @@ class BoundReferenceBlock(grok.MultiAdapter):
         self._service.delete_reference(self.context, name=self._name)
 
     def render(self):
-        content = self.block
+        content = self.content
         if content is None:
             return u'<p>Reference is broken or missing</p>'
         view = queryMultiAdapter((content, self.request), IBlockView)
@@ -72,9 +73,9 @@ class BoundReferenceBlock(grok.MultiAdapter):
 
 
 class IExternalBlockFields(Interface):
-    block = Reference(
+    content = Reference(
         IBlockable,
-        title=_(u"Block to include"),
+        title=_(u"Content to include"),
         required=True)
 
 
@@ -86,28 +87,27 @@ class AddExternalBlockAction(silvaforms.Action):
     title = _('Add')
 
     block_id = None
-    block_manager = None
+    block_controller = None
 
     def get_extra_payload(self, form):
         if self.block_id is None:
             return {}
         return {
             'block_id': self.block_id,
-            'block_data': self.block_manager.render()}
+            'block_data': self.block_controller.render()}
 
     def __call__(self, form):
         data, errors = form.extractData()
         if errors:
             return silvaforms.FAILURE
-        manager = IBlockManager(form.context)
         block = ReferenceBlock()
-        self.block_id = manager.new(
+        self.block_id = IBlockManager(form.context).new(
             form.__parent__.slot_id,
             block)
-        self.block_manager = getMultiAdapter(
+        self.block_controller = getMultiAdapter(
             (block, form.context, form.request), IBlockController)
-        self.block_manager.block = data['block']
-        form.send_message(_(u"New external block added."))
+        self.block_controller.content = data['content']
+        form.send_message(_(u"New content block added."))
         return silvaforms.SUCCESS
 
 
@@ -116,8 +116,8 @@ class AddExternalBlock(silvaforms.RESTPopupForm):
     grok.adapts(ReferenceBlock, IPage)
     grok.name('add')
 
-    label = _(u"Add an external block ")
-    fields = silvaforms.Fields(IExternalBlockFields)
+    label = _(u"Add an content block ")
+    baseFields = silvaforms.Fields(IExternalBlockFields)
     actions = silvaforms.Actions(
         AddExternalBlockAction(),
         silvaforms.CancelAction())
@@ -127,9 +127,10 @@ class AddExternalBlock(silvaforms.RESTPopupForm):
         self.restriction = restriction
 
     def update(self):
-        if self.restriction is not None and \
-                IContentSlotRestriction.providedBy(self.restriction):
-            self.fields['block'].schema = self.restriction.interface
+        field = self.baseFields['content'].clone()
+        if IContentSlotRestriction.providedBy(self.restriction):
+            field.schema = self.restriction.schema
+        self.fields = silvaforms.Fields(field)
 
 
 class EditExternalBlockAction(silvaforms.Action):
@@ -150,33 +151,28 @@ class EditExternalBlockAction(silvaforms.Action):
         if errors:
             return silvaforms.FAILURE
         manager = form.getContentData()
-        manager.set('block', data.getWithDefault('block'))
-        form.send_message(_(u"External block modified."))
+        manager.set('content', data.getWithDefault('content'))
+        form.send_message(_(u"Content block modified."))
         return silvaforms.SUCCESS
 
 
-class EditExternalBlock(silvaforms.RESTPopupForm):
-    grok.adapts(ReferenceBlock, IPage)
+class EditExternalBlock(AddExternalBlock):
     grok.name('edit')
 
-    label = _(u"Edit an external block ")
-    fields = silvaforms.Fields(IExternalBlockFields)
+    label = _(u"Edit an content block")
     actions = silvaforms.Actions(
         EditExternalBlockAction(),
         silvaforms.CancelAction())
     ignoreContent = False
 
     def __init__(self, block, context, request, restriction=None):
-        super(EditExternalBlock, self).__init__(context, request)
+        super(EditExternalBlock, self).__init__(context, request, restriction)
         self.block = block
-        self.restriction = restriction
 
     def update(self):
         self.setContentData(getMultiAdapter(
                 (self.block, self.context, self.request), IBlockController))
-        if self.restriction is not None and \
-                IContentSlotRestriction.providedBy(self.restriction):
-            self.fields['block'].schema = self.restriction.interface
+        super(EditExternalBlock, self).update()
 
 
 class BlockView(object):
