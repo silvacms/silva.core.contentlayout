@@ -1,6 +1,8 @@
 
 from five import grok
-from zope.interface.interfaces import IInterface
+from grokcore.component.util import _sort_key
+from zope.interface import implementedBy
+from zope.interface.interfaces import ISpecification
 
 from silva.core.contentlayout.interfaces import IBlock
 from zope.testing import cleanup
@@ -24,21 +26,23 @@ class BlockRegistry(object):
         return self._blocks.get(name)
 
     def all(self, context=None):
-        return [(name, factory) for name, factory in self._blocks.iteritems()
-                if self._context_filter(context, factory)]
+        candidates = [
+            (name, factory) for name, factory in self._blocks.iteritems()
+            if self._check(factory, context)]
+        return sorted(candidates, key=lambda (n, f): _sort_key(f))
 
     def clear(self):
         self._blocks = {}
 
-    def _context_filter(self, context, factory):
+    def _check(self, factory, context):
         if context is None:
             return True
-        required_context = grok.context.bind().get(factory)
-        if required_context is None:
+        requires = grok.context.bind(default=None).get(factory)
+        if requires is None:
             return True
-        if IInterface.providedBy(required_context):
-            return required_context.providedBy(context)
-        return isinstance(context, required_context)
+        if not ISpecification.providedBy(requires):
+            requires = implementedBy(requires)
+        return requires.providedBy(context)
 
 
 registry = BlockRegistry()

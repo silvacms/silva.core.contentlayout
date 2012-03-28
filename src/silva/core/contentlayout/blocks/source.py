@@ -19,6 +19,7 @@ class SourceBlock(Block):
     grok.implements(IBlock)
     grok.name('source')
     grok.title(_(u"Code source"))
+    grok.order(5)
 
     def __init__(self, identifier):
         self.identifier = identifier

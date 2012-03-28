@@ -52,8 +52,6 @@ class EditContentLayoutLayer(RESTWithTemplate):
 @grok.provider(IContextSourceBinder)
 def block_source(context):
     result = []
-    if IVersion.providedBy(context):
-        context = context.get_content()
     for name, block in registry.all(context):
         result.append(SimpleTerm(
                 value=urllib.quote(name),

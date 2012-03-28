@@ -6,14 +6,14 @@ from five import grok
 from zope.component import getMultiAdapter
 from zope.interface import Interface
 
-from silva.core.contentlayout.interfaces import IBlockManager, IBlockController
+from ..interfaces import IBlockManager, IBlockController, IBlock
 
 _marker = object()
 logger = logging.getLogger('silva.core.contentlayout')
 
 
 class Block(object):
-    grok.context(Interface)
+    grok.implements(IBlock)
     grok.baseclass()
 
 
