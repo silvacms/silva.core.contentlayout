@@ -16,10 +16,14 @@
     };
 
     var EditorController = function(smi, urls, path) {
+        var validation_cache = {};
         return {
             add: function($slot) {
                 return $slot.SMIFormPopup({
-                    url: urls.actions.add.expand({path: path, id: $slot.data('slot-id')})
+                    url: urls.actions.add.expand({
+                        path: path,
+                        id: $slot.data('slot-id')
+                    })
                 }).pipe(
                     function(data) {
                         if (data.extra !== undefined && data.extra.block_id) {
@@ -50,6 +54,65 @@
                         };
                     }
                 );
+            },
+            validate: function($slot, $block, index) {
+                var slot_id = $slot.data('slot-id');
+                var block_id = $block.data('block-id');
+                var block_cache = validation_cache[block_id];
+                var slot_cache = undefined;
+
+                if (block_cache === undefined) {
+                    block_cache = validation_cache[block_id] = {};
+                };
+                slot_cache = block_cache[slot_id];
+                if (slot_cache !== undefined && !slot_cache.isRejected()) {
+                    return slot_cache;
+                };
+
+                return block_cache[slot_id] = smi.ajax.query(
+                    urls.actions.validate.expand({path: path, id: block_id}),
+                    [{name: 'slot_id', value: slot_id}]
+                ).pipe(function(data) {
+                    return $.Deferred().resolve({
+                        success: data.success,
+                        failed: !data.success,
+                        container: $slot,
+                        item: $block,
+                        index: index,
+                        fatal: false
+                    });
+                }, function(request) {
+                    return $.Deferred().reject({
+                        failed: true,
+                        success: false,
+                        fatal: true
+                    });
+                });
+            },
+            move: function($slot, $block, index) {
+                var slot_id = $slot.data('slot-id');
+                var block_id = $block.data('block-id');
+
+                return smi.ajax.query(
+                    urls.actions.move.expand({path: path, id: block_id}),
+                    [{name: 'slot_id', value: slot_id},
+                     {name: 'index', value: index}]
+                ).pipe(function(data) {
+                    return $.Deferred().resolve({
+                        success: data.success,
+                        failed: !data.success,
+                        container: $slot,
+                        item: $block,
+                        index: index,
+                        fatal: false
+                    });
+                }, function(request) {
+                    return $.Deferred().reject({
+                        failed: true,
+                        success: false,
+                        fatal: true
+                    });
+                });
             },
             remove: function($block) {
                 return smi.ajax.query(
@@ -98,6 +161,14 @@
                 this.contained = $other;
                 this.update();
             },
+            validate: function(event) {
+                var x = event.pageX, y = event.pageY;
+
+                if (y < this.top || x < this.left || y > this.bottom || x > this.right) {
+                    return false;
+                };
+                return true;
+            },
             move: function(event) {
                 var x = event.pageX, y = event.pageY;
 
@@ -135,31 +206,41 @@
         var timer = null;
         var disabled = false;
 
-        var update_layer = function() {
+        var update_layer = function(event) {
+            var new_position = null;
+
             if ($candidate.length) {
-                position = Layer($candidate);
+                new_position = Layer($candidate);
+                if (event !== undefined && !new_position.validate(event)) {
+                    return;
+                };
                 $layer.find('#contentlayout-block-actions').toggle(
                     $candidate.hasClass('edit-block'));
                 if (!$selected.length) {
                     $layer.appendTo($body);
                 };
-                position.add($actions);
-                position.cover($layer);
+                new_position.add($actions);
+                new_position.cover($layer);
             } else {
                 $layer.detach();
-                position = null;
             };
+            position = new_position;
             $selected = $candidate;
             $candidate = $([]);
         };
 
-        var select_layer = function($element) {
+        var select_layer = function($element, event) {
             if (!disabled) {
                 $candidate = $element;
                 if (timer !== null) {
                     clearTimeout(timer);
                 };
-                timer = setTimeout(update_layer, 200);
+                if (event !== undefined) {
+                    timer = null;
+                    update_layer(event);
+                } else {
+                    timer = setTimeout(function () {update_layer()}, 200);
+                };
             };
         };
 
@@ -176,7 +257,7 @@
             };
             if (disable !== undefined) {
                 disabled = disable;
-            }
+            };
         };
 
         $body.delegate('.edit-block, .edit-slot', 'mouseenter', function(event) {
@@ -214,17 +295,41 @@
             event.stopPropagation();
             event.preventDefault();
         });
-        $body.bind('blockstart', function(event) {
+        $body.bind('blockstart', function(event, data) {
             clear_layer(true);
+            data.save(function (result) {
+                if (!result.success) {
+                    return result;
+                };
+                data.placeholder
+                    .removeClass('contentlayout-block-valid-placeholder')
+                    .addClass('contentlayout-block-placeholder');
+                return api.move(result.container, result.item, result.index);
+            });
         });
-        $body.bind('blockstop', function(event) {
+        $body.bind('blockstop', function(event, data) {
             clear_layer(false);
+            select_layer(data.item, event.originalEvent);
         });
         $body.bind('blockorder', function(event, data) {
             //console.log('Block final order', data);
         });
         $body.bind('blockreorder', function(event, data) {
-            //console.log('Block reorder', data);
+            data.placeholder
+                .removeClass('contentlayout-block-valid-placeholder contentlayout-block-invalid-placeholder')
+                .addClass('contentlayout-block-placeholder');
+            data.validate(
+                api.validate(data.container, data.item, data.index).done(function(result) {
+                    var css_class = 'contentlayout-block-invalid-placeholder';
+
+                    if (result.success) {
+                        css_class = 'contentlayout-block-valid-placeholder';
+                    };
+                    data.placeholder
+                        .removeClass('contentlayout-block-placeholder')
+                        .addClass(css_class);
+                })
+            );
         });
         $layer.delegate('#contentlayout-remove-block', 'click', function(event) {
             var $block = $selected.closest('div.edit-block');
@@ -274,7 +379,7 @@
                             // Move action
                             $slots.each(function () {
                                 $(this).blockable({
-                                    placeholder: 'contentlayout-block-placeholder',
+                                    placeholder: 'contentlayout-block-valid-placeholder',
                                     forcePlaceholderSize: true,
                                     connectWith: $slots,
                                     tolerance: "pointer",

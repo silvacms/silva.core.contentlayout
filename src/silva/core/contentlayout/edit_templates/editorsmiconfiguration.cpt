@@ -6,6 +6,7 @@ contentlayout: {
     add: "${view.root_url}/{path}/++rest++silva.core.contentlayout.add/{id}",
     edit: "${view.root_url}/{path}/++rest++silva.core.contentlayout.edit/{id}",
     move: "${view.root_url}/{path}/++rest++silva.core.contentlayout.move/{id}",
+    validate: "${view.root_url}/{path}/++rest++silva.core.contentlayout.validate/{id}",
     remove: "${view.root_url}/{path}/++rest++silva.core.contentlayout.delete/{id}"
   }
 },

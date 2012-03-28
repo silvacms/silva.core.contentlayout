@@ -44,12 +44,13 @@ $.widget("infrae.blockable", {
 		scrollSensitivity: 20,
 		scrollSpeed: 20,
 		scope: "default",
-		tolerance: "intersect",
+		tolerance: "pointer",
 		zIndex: 1000,
 		cancel: ':input,option',
 		distance: 1,
 		delay: 0
 	},
+
 	_mouseInit: function() {
 		var self = this;
 
@@ -69,7 +70,8 @@ $.widget("infrae.blockable", {
 				}
 			});
 
-		this.started = false;
+		this._mouseStarted = false;
+        this._mouseStopping = false;
 	},
 
 	// TODO: make sure destroying one instance of mouse doesn't mess with
@@ -80,28 +82,29 @@ $.widget("infrae.blockable", {
 
 	_mouseDown: function(event) {
 		// don't let more than one widget handle mouseStart
-		if(mouseHandled) {
+		if (mouseHandled) {
             return;
         };
 
 		// we may have missed mouseup (out of window)
 		(this._mouseStarted && this._mouseUp(event));
 
-		this._mouseDownEvent = event;
+        if (!this._mouseStopping) {
+		    this._mouseDownEvent = event;
 
-		var btnIsLeft = (event.which == 1),
-			// event.target.nodeName works around a bug in IE 8 with
-			// disabled inputs (#7620)
-			elIsCancel = (typeof this.options.cancel == "string" && event.target.nodeName ? $(event.target).closest(this.options.cancel).length : false);
-		if (!btnIsLeft || elIsCancel || !this._mouseCapture(event)) {
-			return true;
-		}
+		    var btnIsLeft = (event.which == 1),
+		  // event.target.nodeName works around a bug in IE 8 with
+		  // disabled inputs (#7620)
+		  elIsCancel = (typeof this.options.cancel == "string" && event.target.nodeName ? $(event.target).closest(this.options.cancel).length : false);
+		    if (!btnIsLeft || elIsCancel || !this._mouseCapture(event)) {
+			    return true;
+		    }
 
-        this._mouseStartMoving(event, event.target);
+            this._mouseStartMoving(event, event.target);
 
-		event.preventDefault();
-
-		return true;
+		    event.preventDefault();
+		    return true;
+        };
 	},
 
     _mouseStartMoving: function(event, element) {
@@ -172,8 +175,7 @@ $.widget("infrae.blockable", {
 			.unbind('mousemove.' + this.widgetName, this._mouseMoveDelegate)
 			.unbind('mouseup.' + this.widgetName, this._mouseUpDelegate);
 
-		if (this._mouseStarted) {
-			this._mouseStarted = false;
+		if (this._mouseStarted && !this._mouseStopping) {
 
 			if (event.target == this._mouseDownEvent.target) {
 			    $.data(event.target, this.widgetName + '.preventClickEvent', true);
@@ -201,6 +203,8 @@ $.widget("infrae.blockable", {
 		var o = this.options;
         this.currentItem = undefined;
         this.currentContainer = undefined;
+        this.currentValidator = null;
+        this.saving = null;
 		this.containerCache = {};
 		this.element.addClass("ui-sortable");
         this.floating = this.options.axis === 'x';  // Define if matching should be horizontal or vertical.
@@ -288,6 +292,8 @@ $.widget("infrae.blockable", {
 	_mouseStart: function(event, overrideHandle, noActivation) {
 		var o = this.options, self = this;
 		this.currentContainer = this;
+        this.currentValidator = null;
+        this.saving = null;
 
 		// We only need to refresh all blocks positions.
 		this.refreshAllPositions(true);
@@ -373,7 +379,7 @@ $.widget("infrae.blockable", {
 			this.overflowOffset = this.scrollParent.offset();
 
 		// Call callbacks
-		this._trigger("start", event, this._eventInfo());
+		this._triggerEvent("start", event);
 
 		// Recache the helper size
 		if(!this._preserveHelperProportions)
@@ -444,65 +450,34 @@ $.widget("infrae.blockable", {
 	},
 
 	_mouseStop: function(event) {
-		if(!event)
+		if(!event || this._mouseStopping)
             return;
+        this._mouseStopping = true;
 
-		if(this.options.revert) {
-			var self = this;
-			var cur = self.placeholder.offset();
+        var promise = this.currentValidator !== null
+                ? this.currentValidator :
+                $.Deferred().resolve({
+                    success: true,
+                    container: this.currentContainer,
+                    item: this.currentItem,
+                    index: null});
+        if (this.saving !== null) {
+            promise = promise.pipe(this.saving, function (result) { return $.Deferred().reject(result); });
+        };
+        var self = this;
 
-			self.reverting = true;
-
-			$(this.helper).animate({
-				left: cur.left - this.offset.parent.left - self.margins.left + (this.offsetParent[0] == document.body ? 0 : this.offsetParent[0].scrollLeft),
-				top: cur.top - this.offset.parent.top - self.margins.top + (this.offsetParent[0] == document.body ? 0 : this.offsetParent[0].scrollTop)
-			}, parseInt(this.options.revert, 10) || 500, function() {
-				self._clear(event);
-			});
-		} else {
-            // We are done.
-            this._finish(event);
-			this._clear(event);
-		};
-
+        promise.done(function(result) {
+            if (result.success) {
+                self._finish(event);
+            } else {
+                self._cancel(event);
+            };
+        }).always(function() {
+           	self._clear(event);
+            self._mouseStopping = false;
+            self._mouseStarted = false;
+        });
 		return false;
-
-	},
-
-	cancel: function() {
-		var self = this;
-
-		if(this.dragging) {
-			this._mouseUp({target: null});
-
-			if(this.options.helper == "original")
-				this.currentItem.css(this._storedCSS).removeClass("ui-sortable-helper");
-			else
-				this.currentItem.show();
-		};
-
-		if (this.placeholder) {
-			if(this.placeholder[0].parentNode)
-                this.placeholder[0].parentNode.removeChild(this.placeholder[0]);
-			if(this.options.helper != "original" && this.helper && this.helper[0].parentNode)
-                this.helper.remove();
-
-			$.extend(this, {
-				helper: null,
-				dragging: false,
-				reverting: false,
-				_noFinalSort: null
-			});
-
-			if(this.domPosition.prev) {
-				$(this.domPosition.prev).after(this.currentItem);
-			} else {
-				$(this.domPosition.parent).prepend(this.currentItem);
-			}
-		}
-
-		return this;
-
 	},
 
 	/* Be careful with the following core functions */
@@ -655,7 +630,7 @@ $.widget("infrae.blockable", {
             if (hard_refresh && this != this.containers[i]) {
                 this.containers[i].findItems();
             };
-            this.containers[i].refreshPositions(hard_refresh);
+            this.containers[i].refreshPositions(true);
         };
     },
 
@@ -814,29 +789,27 @@ $.widget("infrae.blockable", {
 	},
 
     _reorderItem: function(event, container, item, direction) {
-        var refresh = [this.currentContainer];
-        var hard_refresh = false;
+        var refresh_all = false;
 
         // Move the placeholder.
         if (item !== undefined) {
-             item.item[0].parentNode.insertBefore(this.placeholder[0], (direction == "down" ? item.item[0] : item.item[0].nextSibling));
-            // if (direction) {
-            //     item.item.before(this.placeholder);
-            // } else {
-            //     item.item.after(this.placeholder);
-            // };
+            if (direction == "down") {
+                item.item.before(this.placeholder);
+            } else {
+                item.item.after(this.placeholder);
+            };
         } else {
             container.element.append(this.placeholder);
         };
         // Update the container if required.
         if (container != this.currentContainer) {
-            refresh.push(container);
-            hard_refresh = true;
             this.currentContainer = container;
             this.options.placeholder.update(this.currentContainer, this.placeholder);
+            refresh_all = true;
+            container = this;
         };
         // Event
-        this._trigger("reorder", event, this._eventOrderInfo(item, direction));
+        this._triggerOrderEvent("reorder", event, item, direction);
 
         // Refresh positions afterwards.
 		// 1. we create a setTimeout, that calls refreshPositions
@@ -848,8 +821,10 @@ $.widget("infrae.blockable", {
 
 		window.setTimeout(function() {
 			if(counter == self.counter) {
-                while (refresh.length) {
-                    refresh.pop().refreshPositions(hard_refresh);
+                if (refresh_all) {
+                    container.refreshAllPositions();
+                } else {
+                    container.refreshPositions();
                 };
             };
 		},0);
@@ -1068,25 +1043,31 @@ $.widget("infrae.blockable", {
 
 	},
 
+    _cancel: function(event) {
+		if(this.domPosition.prev) {
+			$(this.domPosition.prev).after(this.currentItem);
+		} else {
+			$(this.domPosition.parent).prepend(this.currentItem);
+		};
+        this._triggerOrderEvent("cancelorder", event);
+    },
+
     _finish: function(event) {
-		// We first have to update the dom position of the actual currentItem
-		// Note: don't do it if the current item is already removed (by a user), or it gets reappended (see #4088)
-		if(!this.currentItem.parent().length) {
-            this.placeholder.before(this.currentItem);
-        };
-        this._trigger("order", event, this._eventOrderInfo());
+        this.placeholder.before(this.currentItem);
+        this._triggerOrderEvent("reorder", event);
     },
 
 	_clear: function(event, noPropagation) {
-		this.reverting = false;
+        this._triggerEvent("beforeStop", event);
 
 		//Do what was originally in plugins
 		if(this._storedCursor) {
             $('body').css("cursor", this._storedCursor);
-        }
+        };
 
-		this.dragging = false;
-        this._trigger("beforeStop", event, this._eventInfo());
+        // Remove placeholder
+		this.placeholder.remove();
+        this.placeholder = null;
 
         // Revert CSS and remove helper.
         if(this.helper[0] == this.currentItem[0]) {
@@ -1097,65 +1078,80 @@ $.widget("infrae.blockable", {
 		    if(this._storedZIndex) {
                 this.currentItem.css("zIndex", this._storedZIndex == 'auto' ? '' : this._storedZIndex);
             };
-			for(var i in this._storedCSS) {
+			for (var i in this._storedCSS) {
 				if(this._storedCSS[i] == 'auto' || this._storedCSS[i] == 'static')
                     this._storedCSS[i] = '';
 			};
 			this.currentItem.css(this._storedCSS).removeClass("ui-sortable-helper");
 		} else {
+            this.currentItem.show();
             this.helper.remove();
-			this.currentItem.show();
 		};
         this.helper = null;
 
-        // Remove placeholder
-		this.placeholder[0].parentNode.removeChild(this.placeholder[0]);
-
-		this._trigger("stop", event, this._eventInfo());
+		this._triggerEvent("stop", event);
         this.currentItem = null;
         this.currentContainer = null;
+        this.currentValidator = null;
+        this.dragging = false;
 		return true;
 
 	},
 
-	_trigger: function() {
-		if ($.Widget.prototype._trigger.apply(this, arguments) === false) {
-			this.cancel();
-		}
-	},
+    _validate: function(event, validator) {
+        var self = this;
+        self.currentValidator = validator;
+        return validator.fail(function (result) {
+            self._mouseUp(event);
+        });
+    },
 
-    _eventOrderInfo: function(item, direction) {
-        var order = 0;
+    _save: function(event, savior) {
+        this.saving = savior;
+    },
+
+    _triggerOrderEvent: function(name, event, item, direction) {
+        var index = 0;
+        var self = this;
         if (item !== null) {
-            var correctif = 0;
             var items = this.currentContainer.items;
-            for (; order < items.length; order++) {
-                if (items[order] == item) {
+
+            for (; index < items.length; index++) {
+                if (items[index] == item) {
                     if (direction == 'up')
-                        correctif += 1;
-                    order += correctif;
+                        index += 1;
                     break;
                 };
             };
         } else {
-            order = null;
-        }
-        return {
-            placeholer: this.placeholder,
+            index = null;
+        };
+
+        var data = {
+            validate: function(validator) {
+                return self._validate(event, validator);
+            },
+            placeholder: this.placeholder,
             item: this.currentItem,
             container: this.currentContainer.element,
-            order: order,
+            index: index,
             relative: item
         };
+        return this._trigger(name, event, data);
     },
 
-	_eventInfo: function() {
-		return {
-            placeholder: this.placehoder,
+    _triggerEvent: function(name, event) {
+        var self = this;
+        var data = {
+            save: function(savior) {
+                return self._save(event, savior);
+            },
+            placeholder: this.placeholder,
             item: this.currentItem,
             container: this.currentContainer.element
 		};
-	}
+        return this._trigger(name, event, data);
+    }
 
 });
 

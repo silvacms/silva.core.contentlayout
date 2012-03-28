@@ -169,20 +169,31 @@ class MoveBlock(BlockUIREST):
                          self.context,
                          slot_id,
                          int(index))
-            return self.json_response({'content': {'success': True}})
         except ValueError as e:
             raise BadRequest(str(e))
+        return self.json_response({'content': {'success': True}})
 
-    def GET(self, slot_id=None, index=None):
+
+class ValidateBlock(BlockUIREST):
+    grok.context(IPage)
+    grok.name('silva.core.contentlayout.validate')
+    grok.require('silva.ChangeSilvaContent')
+
+    def _validate_parameters(self, slot_id):
+        if self.block_id is None:
+            raise BadRequest("invalid block id")
+        if slot_id is None:
+            raise BadRequest("invalid slot id")
+
+    def POST(self, slot_id=None):
         """Validate that you can move that block to this slot and index.
         """
-        self._validate_parameters(slot_id, index)
+        self._validate_parameters(slot_id)
         manager = IBlockManager(self.context)
         try:
             can = manager.can_move(self.block_id,
                                    self.context,
-                                   slot_id,
-                                   int(index))
+                                   slot_id)
             return self.json_response({'content': {'success': can}})
         except ValueError as e:
             raise BadRequest(str(e))
