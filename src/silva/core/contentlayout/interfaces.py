@@ -183,6 +183,9 @@ class IBlockView(interface.Interface):
     """Render a given content for a IReferenceBlock.
     """
 
+class ITextBlock(interface.Interface):
+   """A block that only contains html text.
+   """
 
 class ITemplateLookup(interface.Interface):
     """Defines how to lookup a template
