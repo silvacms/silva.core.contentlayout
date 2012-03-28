@@ -13,8 +13,27 @@ logger = logging.getLogger('silva.core.contentlayout')
 
 
 class Block(object):
-    grok.implements(IBlock)
     grok.baseclass()
+    grok.implements(IBlock)
+
+
+class BlockController(grok.MultiAdapter):
+    grok.baseclass()
+    grok.provides(IBlockController)
+
+    def __init__(self, block, context, request):
+        self.block = block
+        self.context = context
+        self.request = request
+
+    def editable(self):
+        return False
+
+    def remove(self):
+        pass
+
+    def render(self):
+        raise NotImplementedError
 
 
 class BlockManager(grok.Annotation):
