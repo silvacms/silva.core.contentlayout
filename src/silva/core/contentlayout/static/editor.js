@@ -224,8 +224,12 @@
                 if (event !== undefined && !new_position.validate(event)) {
                     return;
                 };
-                $layer.find('#contentlayout-block-actions').toggle(
-                    $candidate.hasClass('edit-block'));
+                var is_block = $candidate.hasClass('edit-block');
+                $layer.find('#contentlayout-block-actions').toggle(is_block);
+                if (is_block) {
+                    $layer.find('#contentlayout-edit-block').toggle(
+                        $candidate.data('block-editable') !== undefined);
+                };
                 if (!$selected.length) {
                     $layer.appendTo($body);
                 };

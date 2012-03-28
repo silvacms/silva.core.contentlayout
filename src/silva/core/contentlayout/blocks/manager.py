@@ -98,8 +98,10 @@ class BlockManager(grok.Annotation):
         for block_id in self._slot_to_block.get(slot_id, []):
             block = self.get(block_id)
             if block is not None:
-                bound = getMultiAdapter(
+                controller = getMultiAdapter(
                     (block, content, request), IBlockController)
-                yield {"block_id": block_id, "html": bound.render()}
+                yield {"block_id": block_id,
+                       "block_editable": controller.editable() and 'true',
+                       "html": controller.render()}
             else:
                 logger.error(u'Missing block %s in document.' % block_id)

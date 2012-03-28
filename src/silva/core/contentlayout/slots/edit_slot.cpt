@@ -4,6 +4,7 @@
      i18n:domain="silva">
   <div class="edit-block"
        data-block-id="${block.block_id}"
+       data-block-editable="${block.block_editable}"
        tal:repeat="block slot.blocks()"
        tal:content="structure block.html">
   </div>
