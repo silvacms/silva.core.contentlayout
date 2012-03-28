@@ -2,6 +2,7 @@
 from five import grok
 from zope import schema
 from zope.interface import Interface
+from zope.schema.vocabulary import SimpleVocabulary
 
 from Products.SilvaExternalSources.interfaces import IExternalSourceManager
 from Products.SilvaExternalSources.interfaces import SourceError, source_source
@@ -13,6 +14,7 @@ from silva.translations import translate as _
 from silva.ui.rest.exceptions import RESTRedirectHandler
 from zeam.component import getWrapper
 from zeam.form import silva as silvaforms
+from zeam.form.ztk.interfaces import IFormSourceBinder
 
 
 class SourceBlock(Block):
@@ -35,10 +37,19 @@ grok.global_adapter(
     IBlockController)
 
 
+@grok.provider(IFormSourceBinder)
+def form_source_source(form):
+    if form.restriction is None:
+        return source_source(form.context)
+
+    return SimpleVocabulary([term for term in source_source(form.context)
+                             if form.restriction.allow_name(term.token)])
+
+
 class IAddSourceSchema(Interface):
     source = schema.Choice(
         title=_(u"Select an external source"),
-        source=source_source,
+        source=form_source_source,
         required=True)
 
 

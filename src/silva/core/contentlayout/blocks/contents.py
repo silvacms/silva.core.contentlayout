@@ -11,6 +11,7 @@ from silva.core.contentlayout.blocks import Block
 from silva.core.contentlayout.interfaces import IBlockManager, IBlockController
 from silva.core.contentlayout.interfaces import IBlockView, IBlockable
 from silva.core.contentlayout.interfaces import IReferenceBlock, IPage
+from silva.core.contentlayout.interfaces import IContentSlotRestriction
 from silva.core.references.interfaces import IReferenceService
 from silva.core.references.reference import Reference
 from silva.translations import translate as _
@@ -119,6 +120,11 @@ class AddExternalBlock(silvaforms.RESTPopupForm):
     actions = silvaforms.Actions(
         AddExternalBlockAction(),
         silvaforms.CancelAction())
+
+    def update(self):
+        if self.restriction is not None and \
+                IContentSlotRestriction.providedBy(self.restriction):
+            self.fields['block'].schema = self.restriction.interface
 
 
 class EditExternalBlockAction(silvaforms.Action):

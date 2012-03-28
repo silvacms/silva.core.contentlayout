@@ -19,8 +19,33 @@ from zeam.form.ztk.interfaces import IFormSourceBinder
 from Products.Silva import roleinfo
 
 
+class ISlotRestriction(interface.Interface):
+   """Restriction on the blocks a slot accepts
+   """
+
+   def allow_block_type(block_type):
+      """ Allow this kind of block.
+      """
+
+   def allow_name(self, name):
+      """ The name is arbitrary defined by the each type of blocks.
+
+      For example for a code source, the name will be the identifier,
+      e.g: cs_toc
+      """
+
+   def allow_block(block, context, slot):
+      """ Allow this block instance in this context, on this slot.
+      """
+
+class IContentSlotRestriction(ISlotRestriction):
+
+   interface = interface.Attribute(u"interface to limit usable content")
+
+
 class ISlot(interface.Interface):
    fill_in = interface.Attribute(u"fill-in stragegy")
+   restriction= interface.Attribute(u"ISlotRestriction restriction")
 
 
 class InvalidSlot(KeyError):
@@ -38,6 +63,7 @@ class ITemplate(interface.Interface):
    def update():
       """Method called before the template is rendered.
       """
+
 
 class InvalidTemplate(ValueError):
    pass

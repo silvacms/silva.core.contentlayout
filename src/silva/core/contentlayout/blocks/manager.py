@@ -38,13 +38,19 @@ class BlockManager(grok.Annotation):
         self._p_changed = True
         return block_id
 
-    def can_move(self, block_id, slot_id=None, index=None):
-        return True
+    def can_move(self, block_id, context, slot_id, index):
+        block = self._blocks.get(block_id)
+        slot = context.template.slots[slot_id]
+        return slot.is_block_allowed(block, context)
 
-    def move(self, block_id, slot_id=None, index=None):
+    def move(self, block_id, context, slot_id, index):
+        if not self.can_move(block_id, context, slot_id, index):
+            raise ValueError('Cannot move this block in this slot')
         block = self._blocks.get(block_id)
         if block is None or slot_id is None or index is None:
-            raise ValueError("couldn't find block with id `%s`" % block_id)
+            raise ValueError("Invalid block id `%s`, slot `%s` "
+                             "or index `%s`" %
+                             (block_id, slot_id, index))
         previous_slot_id = self._block_to_slot[block_id]
         self._block_to_slot[block_id] = slot_id
         self._slot_to_block[previous_slot_id].remove(block_id)

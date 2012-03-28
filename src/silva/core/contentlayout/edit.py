@@ -4,12 +4,11 @@ import urllib
 from five import grok
 from zope.interface import alsoProvides, Interface, implementedBy
 from zope.schema.vocabulary import SimpleVocabulary, SimpleTerm
-from zope.schema.interfaces import IContextSourceBinder
 from zope import schema
+from zeam.form.ztk.interfaces import IFormSourceBinder
 
 from infrae.rest import queryRESTComponent, RESTWithTemplate
-from silva.core.interfaces import ISilvaObject, IVersion
-from silva.core.contentlayout.blocks.registry import registry
+from silva.core.interfaces import ISilvaObject
 from silva.core.contentlayout.interfaces import IEditionMode, IPage
 from silva.core.contentlayout.interfaces import IBlockManager
 from silva.core.views import views as silvaviews
@@ -18,6 +17,7 @@ from silva.ui.rest import REST, UIREST
 from silva.ui.rest.exceptions import RESTRedirectHandler
 from silva.ui.smi import SMIConfiguration
 from zeam.form import silva as silvaforms
+
 
 from zExceptions import BadRequest
 
@@ -49,12 +49,12 @@ class EditContentLayoutLayer(RESTWithTemplate):
         return self.template.render(self)
 
 
-@grok.provider(IContextSourceBinder)
-def block_source(context):
+@grok.provider(IFormSourceBinder)
+def block_source(form):
     result = []
-    if IVersion.providedBy(context):
-        context = context.get_content()
-    for name, block in registry.all(context):
+    template = form.context.template
+    slot = template.slots[form.slot_id]
+    for name, block in slot.available_block_types(form.context):
         result.append(SimpleTerm(
                 value=urllib.quote(name),
                 token=name,
@@ -86,7 +86,9 @@ class ChooseBlock(silvaforms.RESTPopupForm):
             self.slot_id = urllib.unquote(name)
             self.__name__ = '/'.join((self.__name__, name))
             return self
-        block = registry.lookup(urllib.unquote(name))
+
+        slot = self.context.template.slots[self.slot_id]
+        block, restriction = slot.get_block_factory(name)
         if block is not None:
             adder = queryRESTComponent(
                 (implementedBy(block), self.context),
@@ -95,6 +97,7 @@ class ChooseBlock(silvaforms.RESTPopupForm):
                 parent=self,
                 id=name)
             if adder is not None:
+                adder.restriction = restriction
                 return adder
         return super(ChooseBlock, self).publishTraverse(request, name)
 
@@ -163,8 +166,9 @@ class MoveBlock(BlockUIREST):
         manager = IBlockManager(self.context)
         try:
             manager.move(self.block_id,
-                         slot_id=slot_id,
-                         index=int(index))
+                         self.context,
+                         slot_id,
+                         int(index))
             return self.json_response({'content': {'success': True}})
         except ValueError as e:
             raise BadRequest(str(e))
@@ -176,8 +180,9 @@ class MoveBlock(BlockUIREST):
         manager = IBlockManager(self.context)
         try:
             can = manager.can_move(self.block_id,
-                                   slot_id=slot_id,
-                                   index=int(index))
+                                   self.context,
+                                   slot_id,
+                                   int(index))
             return self.json_response({'content': {'success': can}})
         except ValueError as e:
             raise BadRequest(str(e))
