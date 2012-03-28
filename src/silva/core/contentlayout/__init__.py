@@ -8,6 +8,6 @@ silvaconf.extension_system()
 
 from silva.core.contentlayout.templates.template import Template
 from silva.core.contentlayout.slots.slot import Slot
-from silva.core.contentlayout.blocks import Block, BlockView
+from silva.core.contentlayout.blocks import *
 
-__all__ = ['Template', 'Slot', 'Block', 'BlockView']
+__all__ = ['Template', 'Slot', 'Block', 'BlockView', 'BlockController']
