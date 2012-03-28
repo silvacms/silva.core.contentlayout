@@ -46,16 +46,6 @@ class Slot(object):
                 return restriction.allow_block(block, context, self)
         return True
 
-    def is_block_type_allowed(self, block_type, name=None):
-        for restriction in self._restrictions:
-            if restriction.apply_to(block_type):
-                if name is None:
-                    return restriction.allow_block_type(block_type)
-                else:
-                    return restriction.allow_block_type(block_type) and \
-                        restriction.allow_name(name)
-        return True
-
 
 class SlotView(object):
     edit_template = ChameleonPageTemplate(filename='edit_slot.cpt')
