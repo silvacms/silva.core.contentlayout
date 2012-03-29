@@ -26,9 +26,10 @@
 
 #contentlayout-edit-layer a {
   display: block;
+  background: url(icons.png) no-repeat;
   float: left;
-  height: 32px;
-  width: 32px;
+  height: 28px;
+  width: 28px;
   margin: 2px 4px;
 }
 #contentlayout-actions {
@@ -36,18 +37,18 @@
   border: 1px solid black;
   border-radius: 6px;
   margin: 4px;
-  width: 160px;
+  width: 150px;
   background: white;
 }
 #contentlayout-add-block {
-  background: url(add.png) no-repeat 0px 5px;
+  background-position: -28px 0px !important;
 }
 #contentlayout-edit-block {
-  background: url(edit.png) no-repeat;
+  background-position: -84px 0px  !important;
 }
 #contentlayout-move-block {
-  background: url(move.png) no-repeat;
+  background-position: 0px 0px !important;
 }
 #contentlayout-remove-block {
-  background: url(remove.png) no-repeat 0px -2px;
+  background-position: -56px 0px !important;
 }

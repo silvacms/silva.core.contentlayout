@@ -110,8 +110,8 @@ class ChooseBlock(silvaforms.RESTPopupForm):
                     return adder
         return super(ChooseBlock, self).publishTraverse(request, name)
 
-    @silvaforms.action(_('Next'))
-    def next(self):
+    @silvaforms.action(_('Choose'))
+    def choose(self):
         data, errors = self.extractData()
         if errors:
             return silvaforms.FAILURE
