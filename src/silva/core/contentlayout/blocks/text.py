@@ -2,8 +2,8 @@ from five import grok
 from zope.publisher.interfaces.http import IHTTPRequest
 from zope.interface import Interface
 from zope.component import getMultiAdapter
-from zope import schema
 
+from silva.core.conf import schema as silvaschema
 from silva.core.contentlayout.blocks import Block, BlockController
 from silva.core.contentlayout.interfaces import IBlockManager, IBlockController
 from silva.core.contentlayout.interfaces import ITextBlock, IPage
@@ -14,8 +14,8 @@ from zeam.form import silva as silvaforms
 class TextBlock(Block):
     grok.implements(ITextBlock)
     grok.name('text')
-    grok.title(_(u"Text content"))
-    grok.order(5)
+    grok.title(_(u"Rich text"))
+    grok.order(1)
 
     def __init__(self, text=u""):
         self.text = text
@@ -32,7 +32,7 @@ class TextBlockController(BlockController):
 
 
 class ITextBlockFields(Interface):
-    text = schema.Text(
+    text = silvaschema.HTMLText(
         title=_(u"Text"),
         required=True)
 
