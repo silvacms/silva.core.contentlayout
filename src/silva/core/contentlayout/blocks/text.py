@@ -52,7 +52,8 @@ class AddTextBlockAction(silvaforms.Action):
             return {}
         return {
             'block_id': self.block_id,
-            'block_data': self.block_manager.render()}
+            'block_data': self.block_manager.render(),
+            'block_editable': True}
 
     def __call__(self, form):
         data, errors = form.extractData()
@@ -94,7 +95,8 @@ class EditTextBlockAction(silvaforms.Action):
     def get_extra_payload(self, form):
         return {
             'block_id': form.__name__,
-            'block_data': self.block_manager.render()}
+            'block_data': self.block_manager.render(),
+            'block_editable': True}
 
     def __call__(self, form):
         data, errors = form.extractData()

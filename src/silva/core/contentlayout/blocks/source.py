@@ -93,7 +93,8 @@ class AddSourceBlockAction(silvaforms.Action):
             data = error.to_html()
         return {
             'block_id': self.block_id,
-            'block_data': data}
+            'block_data': data,
+            'block_editable': form.controller.editable()}
 
     def __call__(self, form):
         status = form.controller.create()
@@ -156,7 +157,8 @@ class EditSourceBlockAction(silvaforms.Action):
             return {}
         return {
             'block_id': form.__name__,
-            'block_data': form.controller.render()}
+            'block_data': form.controller.render(),
+            'block_editable': form.controller.editable()}
 
     def __call__(self, form):
         if form.controller is None:
@@ -177,9 +179,10 @@ class EditSourceBlock(silvaforms.RESTPopupForm):
         silvaforms.CancelAction(),
         EditSourceBlockAction())
 
-    def __init__(self, block, context, request):
+    def __init__(self, block, context, request, restriction=None):
         super(EditSourceBlock, self).__init__(context, request)
         self.block = block
+        self.restriction = restriction
         manager = getWrapper(context, IExternalSourceManager)
         try:
             self.controller = manager(request, instance=block.identifier)

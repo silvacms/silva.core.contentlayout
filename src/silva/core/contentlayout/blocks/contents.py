@@ -94,7 +94,8 @@ class AddExternalBlockAction(silvaforms.Action):
             return {}
         return {
             'block_id': self.block_id,
-            'block_data': self.block_controller.render()}
+            'block_data': self.block_controller.render(),
+            'block_editable': True}
 
     def __call__(self, form):
         data, errors = form.extractData()
@@ -144,7 +145,8 @@ class EditExternalBlockAction(silvaforms.Action):
         # This is kind of an hack, but the name of the form is the block id.
         return {
             'block_id': form.__name__,
-            'block_data': form.getContent().render()}
+            'block_data': form.getContent().render(),
+            'block_editable': True}
 
     def __call__(self, form):
         data, errors = form.extractData()

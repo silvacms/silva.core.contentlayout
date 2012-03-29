@@ -30,6 +30,9 @@
                             var $result = $('<div class="edit-block" />');
 
                             $result.attr('data-block-id', data.extra.block_id);
+                            if (data.extra.block_editable) {
+                                $result.attr('data-block-editable', 'true');
+                            };
                             $result.append(data.extra.block_data);
 
                             // Refresh the move
