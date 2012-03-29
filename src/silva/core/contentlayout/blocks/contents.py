@@ -170,11 +170,8 @@ class EditExternalBlock(AddExternalBlock):
     def __init__(self, block, context, request, restriction=None):
         super(EditExternalBlock, self).__init__(context, request, restriction)
         self.block = block
-
-    def update(self):
-        self.setContentData(getMultiAdapter(
-                (self.block, self.context, self.request), IBlockController))
-        super(EditExternalBlock, self).update()
+        self.setContentData(
+            getMultiAdapter((block, context, request), IBlockController))
 
 
 class BlockView(object):
