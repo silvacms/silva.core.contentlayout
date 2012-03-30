@@ -2,6 +2,7 @@
 from five import grok
 from grokcore.component.util import sort_components
 from zope.testing import cleanup
+from zope.interface.interfaces import IInterface
 
 from AccessControl.security import checkPermission
 
@@ -51,7 +52,13 @@ class TemplateRegistry(object):
         return self.lookup(parent)
 
     def _is_allowed(self, template, context):
-        # TODO: check context
+        required_context = grok.context.bind().get(template)
+        if IInterface.providedBy(required_context):
+            if not required_context.providedBy(context):
+                return False
+        elif not issubclass(context, required_context):
+            return False
+
         permission = grok.require.bind().get(template)
         if permission:
             return checkPermission(permission, context)

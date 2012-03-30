@@ -93,8 +93,8 @@ def template_source(form):
    else:
       candidates = registry.lookup(form.context)
    return SimpleVocabulary([SimpleTerm(value=t,
-                                       token=t.get_identifier(),
-                                       title=t.label)
+                                       token=grok.name.bind().get(t),
+                                       title=grok.title.bind().get(t))
                             for t in candidates])
 
 

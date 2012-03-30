@@ -38,6 +38,7 @@ class Template(object):
     grok.implements(ITemplate)
     grok.context(Interface)
     grok.provides(ITemplate)
+    grok.title('Template')
     grok.baseclass()
 
     template = None
@@ -46,6 +47,11 @@ class Template(object):
     @classmethod
     def get_identifier(cls):
         return grok.name.bind().get(cls)
+
+    @property
+    @classmethod
+    def label(cls):
+        grok.title.bind().get(cls)
 
     def __init__(self, content, request):
         self.content = content
