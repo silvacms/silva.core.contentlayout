@@ -195,7 +195,7 @@ class MoveBlock(BlockREST):
         msg = None
         try:
             self.manager.move(
-                self.block_id, self.context, self.slot_id, int(index))
+                self.block_id, self.slot_id, int(index), self.context)
             success = True
         except ValueError as e:
             success = False
@@ -214,7 +214,7 @@ class ValidateBlock(REST):
         move = self.__parent__
         move.verify()
         try:
-            success = move.manager.can_move(
+            success = move.manager.movable(
                 move.block_id, move.context, move.slot_id)
         except ValueError:
             success = False

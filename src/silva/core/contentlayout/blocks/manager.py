@@ -57,14 +57,14 @@ class BlockManager(grok.Annotation):
         self._p_changed = True
         return block_id
 
-    def can_move(self, block_id, context, slot_id):
+    def movable(self, block_id, slot_id, content):
         block = self._blocks.get(block_id)
-        template = context.get_template()
+        template = content.get_template()
         slot = template.slots[slot_id]
-        return slot.is_block_allowed(block, context)
+        return slot.is_block_allowed(block, content)
 
-    def move(self, block_id, context, slot_id, index):
-        if not self.can_move(block_id, context, slot_id):
+    def move(self, block_id, slot_id, index, content):
+        if not self.moveable(block_id, slot_id, content):
             raise ValueError('Cannot move this block in this slot')
         block = self._blocks.get(block_id)
         if block is None or slot_id is None or index is None:
@@ -91,6 +91,16 @@ class BlockManager(grok.Annotation):
             self._slot_to_block[slot_id].remove(block_id)
             del self._block_to_slot[block_id]
         del self._blocks[block_id]
+        self._p_changed = True
+        return True
+
+    def replace(self, block_id, new_block, content, request):
+        block = self.get(block_id)
+        if block is None:
+            return False
+        bound = getMultiAdapter((block, content, request), IBlockController)
+        bound.remove()
+        self._blocks[block_id] = new_block
         self._p_changed = True
         return True
 

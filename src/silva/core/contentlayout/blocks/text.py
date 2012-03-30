@@ -5,15 +5,20 @@ from five import grok
 from zope.publisher.interfaces.http import IHTTPRequest
 from zope.interface import Interface
 from zope.component import getMultiAdapter
+from zope.event import notify
+from zope.lifecycleevent import ObjectModifiedEvent
 
+from silva.core.contentlayout.blocks.contents import ReferenceBlock
 from silva.core.conf import schema as silvaschema
-from silva.core.editor.text import Text
-from silva.core.editor.transform.interfaces import ISaveEditorFilter
-from silva.core.editor.transform.interfaces import IInputEditorFilter
+from silva.core.conf.interfaces import ITitledContent
 from silva.core.contentlayout.blocks import Block, BlockController
 from silva.core.contentlayout.interfaces import IBlockManager, IBlockController
 from silva.core.contentlayout.interfaces import ITextBlock, IPage
+from silva.core.editor.text import Text
+from silva.core.editor.transform.interfaces import IInputEditorFilter
+from silva.core.editor.transform.interfaces import ISaveEditorFilter
 from silva.translations import translate as _
+from silva.ui.rest.exceptions import RESTRedirectHandler
 from zeam.form import silva as silvaforms
 
 
@@ -142,7 +147,6 @@ class EditTextBlock(silvaforms.RESTPopupForm):
     label = _(u"Edit a text block")
     fields = silvaforms.Fields(ITextBlockFields)
     actions = silvaforms.Actions(
-        EditTextBlockAction(),
         silvaforms.CancelAction())
     ignoreContent = False
 
@@ -152,3 +156,63 @@ class EditTextBlock(silvaforms.RESTPopupForm):
         self.restriction = restriction
         self.setContentData(
             getMultiAdapter((block, context, request), IBlockController))
+
+    @silvaforms.action(_('Convert'))
+    def convert(self):
+        raise RESTRedirectHandler('convert', relative=self, clear=True)
+
+    actions += EditTextBlockAction()
+
+
+
+class ConvertTextBlockAction(silvaforms.Action):
+    grok.implements(
+        silvaforms.IDefaultAction,
+        silvaforms.IRESTExtraPayloadProvider,
+        silvaforms.IRESTCloseOnSuccessAction)
+    title = _('Convert')
+
+    def get_extra_payload(self, form):
+        return {
+            'block_id': form.__name__,
+            'block_data': self.block_controller.render(),
+            'block_editable': True}
+
+    def __call__(self, form):
+        data, errors = form.extractData()
+        if errors:
+            return silvaforms.FAILURE
+        current = getMultiAdapter(
+            (form.__parent__.block, form.context, form.request),
+            IBlockController)
+        container = form.context.get_container()
+        factory = container.manage_addProduct['silva.app.document']
+        factory.manage_addDocument(data['id'], data['title'])
+        document = container._getOb(data['id'])
+        version = document.get_editable()
+        version.body.save(
+            version,
+            form.request,
+            current.text,
+            type=ISaveEditorFilter)
+        notify(ObjectModifiedEvent(version))
+        new_block = ReferenceBlock()
+        self.block_controller = getMultiAdapter(
+            (new_block, form.context, form.request), IBlockController)
+        self.block_controller.content = document
+        IBlockManager(form.context).replace(
+            form.__parent__.__parent__.block_id, new_block,
+            form.context, form.request)
+        return silvaforms.SUCCESS
+
+
+class ConvertTextBlock(silvaforms.RESTPopupForm):
+    grok.adapts(EditTextBlock, IPage)
+    grok.name('convert')
+
+    label = _(u"Convert block to document")
+    fields = silvaforms.Fields(ITitledContent)
+    actions = silvaforms.Actions(
+        silvaforms.CancelAction(),
+        ConvertTextBlockAction())
+
