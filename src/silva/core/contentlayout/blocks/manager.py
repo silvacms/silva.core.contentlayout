@@ -64,7 +64,7 @@ class BlockManager(grok.Annotation):
         return slot.is_block_allowed(block, content)
 
     def move(self, block_id, slot_id, index, content):
-        if not self.moveable(block_id, slot_id, content):
+        if not self.movable(block_id, slot_id, content):
             raise ValueError('Cannot move this block in this slot')
         block = self._blocks.get(block_id)
         if block is None or slot_id is None or index is None:

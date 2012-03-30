@@ -215,7 +215,7 @@ class ValidateBlock(REST):
         move.verify()
         try:
             success = move.manager.movable(
-                move.block_id, move.context, move.slot_id)
+                move.block_id, move.slot_id, move.context)
         except ValueError:
             success = False
         return self.json_response({'content': {'success': success}})
