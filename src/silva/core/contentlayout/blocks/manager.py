@@ -59,7 +59,8 @@ class BlockManager(grok.Annotation):
 
     def can_move(self, block_id, context, slot_id):
         block = self._blocks.get(block_id)
-        slot = context.template.slots[slot_id]
+        template = context.get_template()
+        slot = template.slots[slot_id]
         return slot.is_block_allowed(block, context)
 
     def move(self, block_id, context, slot_id, index):
@@ -73,6 +74,8 @@ class BlockManager(grok.Annotation):
         previous_slot_id = self._block_to_slot[block_id]
         self._block_to_slot[block_id] = slot_id
         self._slot_to_block[previous_slot_id].remove(block_id)
+        if slot_id not in self._slot_to_block:
+            self._slot_to_block[slot_id] = []
         self._slot_to_block[slot_id].insert(index, block_id)
         self._p_changed = True
         return previous_slot_id

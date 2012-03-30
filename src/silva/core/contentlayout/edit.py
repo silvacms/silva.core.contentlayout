@@ -91,9 +91,10 @@ class ChooseBlock(silvaforms.RESTPopupForm):
         if self.slot is None:
             slot_id = urllib.unquote(name)
             # XXX Fix template acess
-            if slot_id not in self.context.template.slots:
+            template = self.context.get_template()
+            if slot_id not in template.slots:
                 raise NotFound()
-            self.slot = self.context.template.slots[slot_id]
+            self.slot = template.slots[slot_id]
             self.slot_id = slot_id
             self.__name__ = '/'.join((self.__name__, name))
             return self
@@ -139,9 +140,10 @@ class BlockREST(REST):
         if self.slot is None:
             slot_id = urllib.unquote(name)
             # XXX Fix template acess
-            if slot_id not in self.context.template.slots:
+            template = self.context.get_template()
+            if slot_id not in template.slots:
                 raise NotFound('Unknown slot %s' % name)
-            self.slot = self.context.template.slots[slot_id]
+            self.slot = template.slots[slot_id]
             self.slot_id = slot_id
             self.__name__ = '/'.join((self.__name__, name))
             return self
