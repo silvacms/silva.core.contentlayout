@@ -100,7 +100,7 @@ class ChooseBlock(silvaforms.RESTPopupForm):
             return self
 
         if self.slot is not None:
-            block, restriction = self.slot.get_block_factory(name)
+            block, restriction = self.slot.get_block_type(name)
             if block is not None:
                 adder = queryRESTComponent(
                     (implementedBy(block), self.context),
@@ -168,7 +168,7 @@ class EditBlock(BlockREST):
     grok.name('edit')
 
     def publishBlock(self, name, request, block):
-        restriction = self.slot.get_restriction(block)
+        restriction = self.slot.get_block_restriction(block)
         return queryRESTComponent(
             (block, self.context),
             (block, self.context, request, restriction),

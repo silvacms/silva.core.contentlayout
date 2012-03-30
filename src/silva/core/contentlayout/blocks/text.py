@@ -107,8 +107,8 @@ class AddTextBlock(silvaforms.RESTPopupForm):
     label = _(u"Add a text block ")
     fields = silvaforms.Fields(ITextBlockFields)
     actions = silvaforms.Actions(
-        AddTextBlockAction(),
-        silvaforms.CancelAction())
+        silvaforms.CancelAction(),
+        AddTextBlockAction())
 
     def __init__(self, context, request, restriction=None):
         super(AddTextBlock, self).__init__(context, request)

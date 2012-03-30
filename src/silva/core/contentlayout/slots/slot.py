@@ -27,18 +27,18 @@ class Slot(object):
                 factories.append((name, block_type))
         return factories
 
-    def get_block_factory(self, name):
-        block_factory = registry.lookup(name)
-        if block_factory is None:
+    def get_block_type(self, name):
+        factory = registry.lookup(name)
+        if factory is None:
             return None, None
 
         for restriction in self._restrictions:
-            if restriction.apply_to(block_factory):
-                if restriction.allow_block_type(block_factory):
-                    return block_factory, restriction
+            if restriction.apply_to(factory):
+                if restriction.allow_block_type(factory):
+                    return factory, restriction
                 return None, None
 
-        return block_factory, None
+        return factory, None
 
     def is_block_allowed(self, block, context):
         for restriction in self._restrictions:
@@ -46,7 +46,7 @@ class Slot(object):
                 return restriction.allow_block(block, context, self)
         return True
 
-    def get_restriction(self, block):
+    def get_block_restriction(self, block):
         for restriction in self._restrictions:
             if restriction.apply_to(block.__class__):
                 return restriction

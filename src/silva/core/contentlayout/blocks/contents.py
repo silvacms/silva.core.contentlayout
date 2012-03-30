@@ -120,8 +120,8 @@ class AddExternalBlock(silvaforms.RESTPopupForm):
     label = _(u"Add an content block ")
     baseFields = silvaforms.Fields(IExternalBlockFields)
     actions = silvaforms.Actions(
-        AddExternalBlockAction(),
-        silvaforms.CancelAction())
+        silvaforms.CancelAction(),
+        AddExternalBlockAction())
 
     def __init__(self, context, request, restriction=None):
         super(AddExternalBlock, self).__init__(context, request)
@@ -163,8 +163,8 @@ class EditExternalBlock(AddExternalBlock):
 
     label = _(u"Edit an content block")
     actions = silvaforms.Actions(
-        EditExternalBlockAction(),
-        silvaforms.CancelAction())
+        silvaforms.CancelAction(),
+        EditExternalBlockAction())
     ignoreContent = False
 
     def __init__(self, block, context, request, restriction=None):
