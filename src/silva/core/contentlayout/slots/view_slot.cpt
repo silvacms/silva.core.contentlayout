@@ -1,5 +1,5 @@
 <div id="${slot.css_id}" class="${slot.css_class}">
   <div tal:repeat="block slot.blocks()"
-       tal:content="structure block.html">
+       tal:content="structure block.block_data">
   </div>
 </div>

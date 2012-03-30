@@ -105,6 +105,6 @@ class BlockManager(grok.Annotation):
                     (block, content, request), IBlockController)
                 yield {"block_id": block_id,
                        "block_editable": controller.editable() and 'true',
-                       "html": controller.render()}
+                       "block_data": controller.render()}
             else:
                 logger.error(u'Missing block %s in document.' % block_id)
