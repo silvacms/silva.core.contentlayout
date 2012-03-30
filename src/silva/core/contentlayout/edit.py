@@ -33,8 +33,9 @@ class EditPage(silvaviews.Page):
         alsoProvides(self.request, IEditionMode)
 
     def render(self):
-        template = self.context.template(self.context, self.request)
-        return template()
+        template = self.context.get_template()
+        render = template(self.context, self.request)
+        return render()
 
 
 class EditorSMIConfiguration(silvaviews.Viewlet):

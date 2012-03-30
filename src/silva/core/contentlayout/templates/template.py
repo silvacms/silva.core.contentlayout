@@ -7,10 +7,13 @@ from chameleon.tales import NotExpr
 from chameleon.tales import ExistsExpr
 from chameleon.tales import StructureExpr
 from z3c.pt.expressions import PathExpr, ProviderExpr
-from zope.interface import Interface
+from zope.interface import Interface, alsoProvides, noLongerProvides
 
+from silva.core.interfaces import IVersion
 from silva.core.contentlayout.templates.expressions import SlotExpr
-from silva.core.contentlayout.interfaces import ITemplate
+from silva.core.contentlayout.interfaces import ITemplate, IPage
+from silva.core.contentlayout.interfaces import (ITemplateAssociatedEvent,
+                                                 ITemplateDeassociatedEvent)
 
 
 class TemplateFile(PageTemplateFile):
@@ -42,7 +45,7 @@ class Template(object):
 
     @classmethod
     def get_identifier(cls):
-        return cls.__module__ + '.' + cls.__name__
+        return grok.name.bind().get(cls)
 
     def __init__(self, content, request):
         self.content = content
@@ -68,3 +71,20 @@ class Template(object):
         namespace.update(self.default_namespace())
         namespace.update(self.namespace())
         return self.template(**namespace)
+
+
+@grok.subscribe(IPage, ITemplateAssociatedEvent)
+def set_markers(content, event):
+    target = content
+    if IVersion.providedBy(content):
+        target = content.get_content()
+    if hasattr(event.template, 'markers'):
+        alsoProvides(target, event.template.markers)
+
+@grok.subscribe(IPage, ITemplateDeassociatedEvent)
+def remove_markers(content, event):
+    target = content
+    if IVersion.providedBy(content):
+        target = content.get_content()
+    if hasattr(event.template, 'markers'):
+        noLongerProvides(target, event.template.markers)

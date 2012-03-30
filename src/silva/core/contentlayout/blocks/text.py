@@ -139,7 +139,7 @@ class EditTextBlock(silvaforms.RESTPopupForm):
     grok.adapts(ITextBlock, IPage)
     grok.name('edit')
 
-    label = _(u"Edit a text block ")
+    label = _(u"Edit a text block")
     fields = silvaforms.Fields(ITextBlockFields)
     actions = silvaforms.Actions(
         EditTextBlockAction(),

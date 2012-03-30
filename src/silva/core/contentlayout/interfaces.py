@@ -6,6 +6,7 @@ from zope.schema.interfaces import IContextSourceBinder
 from zope.publisher.interfaces.browser import IDefaultBrowserLayer
 from zope.annotation import IAttributeAnnotatable
 from zope.component import getUtility
+from zope.component.interfaces import IObjectEvent, ObjectEvent
 
 from silva.core import conf as silvaconf
 from silva.core.interfaces import IViewableObject, ISilvaLocalService
@@ -37,6 +38,7 @@ class ISlotRestriction(interface.Interface):
    def allow_block(block, context, slot):
       """ Allow this block instance in this context, on this slot.
       """
+
 
 class IContentSlotRestriction(ISlotRestriction):
 
@@ -127,13 +129,24 @@ class IPageAware(IViewableObject):
     """Define an interface that a content using a page should implement.
     """
 
+
 class IPage(IAttributeAnnotatable):
    """Where the page is stored (that would be a version).
    """
 
+   def get_template():
+      """return the template using ITemplateLookup.
+      """
+
+   def set_template(template):
+      """set the template and triggers ITemplate(De)associatedEvent events.
+      """
+
+
 class IBlock(interface.Interface):
    """A block.
    """
+
 
 class IBlockController(interface.Interface):
    """Update block
@@ -196,6 +209,11 @@ class ITemplateLookup(interface.Interface):
     def lookup_by_content_type(content_type, parent):
       """Same as lookup but accept a silva content type as argument.
       """
+
+    def lookup_by_name(name):
+       """Lookup a template by its grok name
+       """
+
     def default_template(context):
        """Try to find a default template for this context or None.
        """
@@ -273,4 +291,39 @@ class IContentDefaultTemplates(interface.Interface):
       title=_(u"Default templates"),
       value_type=schema.Object(schema=IDefaultTemplateRule),
       required=False)
+
+
+class ITemplateEvent(IObjectEvent):
+   """Base interface for template related events.
+   """
+   template = interface.Attribute('the template')
+
+
+class ITemplateAssociatedEvent(ITemplateEvent):
+   """Event triggered when a template is associated to a content.
+   """
+
+
+class ITemplateDeassociatedEvent(ITemplateEvent):
+   """Event triggered when a template is deassociated to a content.
+   """
+
+
+class TemplateEvent(ObjectEvent):
+
+   interface.implements(ITemplateEvent)
+
+   def __init__(self, object, template):
+      super(TemplateEvent, self).__init__(object)
+      self.template = template
+
+
+class TemplateAssociatedEvent(TemplateEvent):
+
+   interface.implements(ITemplateAssociatedEvent)
+
+
+class TemplateDeassociatedEvent(TemplateEvent):
+
+   interface.implements(ITemplateDeassociatedEvent)
 

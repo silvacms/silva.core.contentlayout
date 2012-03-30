@@ -77,6 +77,11 @@ class ContentLayoutService(SilvaService):
             candidates)
 
     security.declareProtected(
+        'View Management Screens', 'lookup_by_name')
+    def lookup_by_name(self, name):
+        return registry.lookup_by_name(name)
+
+    security.declareProtected(
         'View Management Screens', 'default_template')
     def default_template(self, context):
         rule = self._default_templates_index.get(context.meta_type)
