@@ -10,7 +10,8 @@ from silva.core.contentlayout.blocks.registry import registry
 class Slot(object):
     grok.implements(ISlot)
 
-    def __init__(self, css_class=None, restrictions=None):
+    def __init__(self, tag='div', css_class=None, restrictions=None):
+        self.tag = tag
         self.css_class = css_class
         self._restrictions = restrictions or []
 
@@ -60,6 +61,7 @@ class SlotView(object):
     def __init__(self, slot, name, content, request):
         self.slot = slot
         self.slot_id = name
+        self.tag = slot.tag
         self.css_id = 'slot-' + name
         self.css_class = slot.css_class
         self.content = content

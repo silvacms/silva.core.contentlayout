@@ -42,6 +42,8 @@ class Design(object):
     grok.baseclass()
 
     template = None
+    description = None
+    markers = []
     __template_path__ = 'inline'
 
     @classmethod
@@ -83,13 +85,14 @@ def set_markers(content, event):
     target = content
     if IVersion.providedBy(content):
         target = content.get_content()
-    if hasattr(event.design, 'markers'):
-        alsoProvides(target, event.design.markers)
+    for marker in event.design.markers:
+        alsoProvides(target, marker)
 
 @grok.subscribe(IPage, IDesignDeassociatedEvent)
 def remove_markers(content, event):
     target = content
     if IVersion.providedBy(content):
         target = content.get_content()
-    if hasattr(event.design, 'markers'):
-        noLongerProvides(target, event.design.markers)
+    for marker in event.design.markers:
+        if marker.providedBy(target):
+            noLongerProvides(target, marker)
