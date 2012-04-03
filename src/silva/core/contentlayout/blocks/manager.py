@@ -29,6 +29,9 @@ class BlockController(grok.MultiAdapter):
     def editable(self):
         return False
 
+    def indexes(self):
+        return []
+
     def fulltext(self):
         return []
 

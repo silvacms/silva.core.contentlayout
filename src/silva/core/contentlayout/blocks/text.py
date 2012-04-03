@@ -8,12 +8,13 @@ from zope.interface import Interface
 from zope.lifecycleevent import ObjectModifiedEvent
 from zope.publisher.interfaces.http import IHTTPRequest
 
-from silva.core.contentlayout.blocks.contents import ReferenceBlock
 from silva.core.conf import schema as silvaschema
 from silva.core.conf.interfaces import ITitledContent
 from silva.core.contentlayout.blocks import Block, BlockController
+from silva.core.contentlayout.blocks.contents import ReferenceBlock
 from silva.core.contentlayout.interfaces import IBlockManager, IBlockController
 from silva.core.contentlayout.interfaces import ITextBlock, IPage
+from silva.core.editor.interfaces import ITextIndexEntries
 from silva.core.editor.text import Text
 from silva.core.editor.transform.interfaces import IInputEditorFilter
 from silva.core.editor.transform.interfaces import ISaveEditorFilter
@@ -56,6 +57,9 @@ class TextBlockController(BlockController):
                 type=ISaveEditorFilter)
 
         return property(getter, setter)
+
+    def indexes(self):
+        return ITextIndexEntries(self.block).entries
 
     def fulltext(self):
         return [unicode(self.block)]

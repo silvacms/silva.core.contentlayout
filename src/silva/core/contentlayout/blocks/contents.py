@@ -14,8 +14,9 @@ from zope.publisher.interfaces.http import IHTTPRequest
 from silva.core.contentlayout.blocks import Block, BlockController
 from silva.core.contentlayout.interfaces import IBlockManager, IBlockController
 from silva.core.contentlayout.interfaces import IBlockView, IBlockable
-from silva.core.contentlayout.interfaces import IReferenceBlock, IPage
 from silva.core.contentlayout.interfaces import IContentSlotRestriction
+from silva.core.contentlayout.interfaces import IReferenceBlock, IPage
+from silva.core.interfaces.adapters import IIndexEntries
 from silva.core.references.interfaces import IReferenceService
 from silva.core.references.reference import Reference
 from silva.translations import translate as _
@@ -65,6 +66,12 @@ class ReferenceBlockController(BlockController):
 
     def remove(self):
         self._service.delete_reference(self.context, name=self._name)
+
+    def indexes(self):
+        entries = IIndexEntries(self.content, None)
+        if entries is not None:
+            return entries.get_entries()
+        return []
 
     def fulltext(self):
         content = self.content

@@ -160,6 +160,10 @@ class IBlockController(interface.Interface):
       """Remove associated data with the block.
       """
 
+   def indexes():
+      """Return list of defined anchors in the block.
+      """
+
    def fulltext():
       """Return a list with the associated fulltext to the block.
       """
