@@ -1,7 +1,9 @@
 
 from five import grok
 from zope import schema
+from zope.event import notify
 from zope.interface import Interface
+from zope.lifecycleevent import ObjectModifiedEvent
 from zope.schema.vocabulary import SimpleVocabulary
 
 from Products.SilvaExternalSources.interfaces import IExternalSourceManager
@@ -104,6 +106,7 @@ class AddSourceBlockAction(silvaforms.Action):
         self.block_id = manager.add(
             form.__parent__.__parent__.slot_id,
             SourceBlock(form.controller.getId()))
+        notify(ObjectModifiedEvent(form.context))
         form.send_message(_(u"Added new block"))
         return silvaforms.SUCCESS
 
@@ -165,6 +168,7 @@ class EditSourceBlockAction(silvaforms.Action):
             return silvaforms.FAILURE
         status = form.controller.save()
         if status is silvaforms.SUCCESS:
+            notify(ObjectModifiedEvent(form.context))
             form.send_message(_(u"Block modified"))
         return status
 

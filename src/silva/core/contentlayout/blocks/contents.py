@@ -1,11 +1,15 @@
 
 import uuid
 
+from Acquisition import aq_base
+
 from five import grok
-from zope.publisher.interfaces.http import IHTTPRequest
-from zope.interface import Interface
-from zope.component import getUtility, queryMultiAdapter
 from zope.component import getMultiAdapter
+from zope.component import getUtility, queryMultiAdapter
+from zope.event import notify
+from zope.interface import Interface
+from zope.lifecycleevent import ObjectModifiedEvent
+from zope.publisher.interfaces.http import IHTTPRequest
 
 from silva.core.contentlayout.blocks import Block, BlockController
 from silva.core.contentlayout.interfaces import IBlockManager, IBlockController
@@ -62,6 +66,12 @@ class ReferenceBlockController(BlockController):
     def remove(self):
         self._service.delete_reference(self.context, name=self._name)
 
+    def fulltext(self):
+        content = self.content
+        if hasattr(aq_base(content), 'fulltext'):
+            return content.fulltext()
+        return []
+
     def render(self):
         content = self.content
         if content is None:
@@ -108,6 +118,7 @@ class AddExternalBlockAction(silvaforms.Action):
         self.block_controller = getMultiAdapter(
             (block, form.context, form.request), IBlockController)
         self.block_controller.content = data['content']
+        notify(ObjectModifiedEvent(form.context))
         form.send_message(_(u"New content block added."))
         return silvaforms.SUCCESS
 
@@ -155,6 +166,7 @@ class EditExternalBlockAction(silvaforms.Action):
         manager = form.getContentData()
         manager.set('content', data.getWithDefault('content'))
         form.send_message(_(u"Content block modified."))
+        notify(ObjectModifiedEvent(form.context))
         return silvaforms.SUCCESS
 
 

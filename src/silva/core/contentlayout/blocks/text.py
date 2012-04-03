@@ -2,11 +2,11 @@
 import uuid
 
 from five import grok
-from zope.publisher.interfaces.http import IHTTPRequest
-from zope.interface import Interface
 from zope.component import getMultiAdapter
 from zope.event import notify
+from zope.interface import Interface
 from zope.lifecycleevent import ObjectModifiedEvent
+from zope.publisher.interfaces.http import IHTTPRequest
 
 from silva.core.contentlayout.blocks.contents import ReferenceBlock
 from silva.core.conf import schema as silvaschema
@@ -57,6 +57,9 @@ class TextBlockController(BlockController):
 
         return property(getter, setter)
 
+    def fulltext(self):
+        return [unicode(self.block)]
+
     def render(self):
         return self.block.render(self.context, self.request)
 
@@ -96,6 +99,7 @@ class AddTextBlockAction(silvaforms.Action):
         self.block_manager = getMultiAdapter(
             (block, form.context, form.request), IBlockController)
         self.block_manager.text = data['text']
+        notify(ObjectModifiedEvent(form.context))
         form.send_message(_(u"New text block added."))
         return silvaforms.SUCCESS
 
@@ -125,7 +129,7 @@ class EditTextBlockAction(silvaforms.Action):
     def get_extra_payload(self, form):
         return {
             'block_id': form.__name__,
-            'block_data': self.block_manager.render(),
+            'block_data': form.getContent().render(),
             'block_editable': True}
 
     def __call__(self, form):
@@ -134,9 +138,8 @@ class EditTextBlockAction(silvaforms.Action):
             return silvaforms.FAILURE
         manager = form.getContentData()
         manager.set('text', data.getWithDefault('text'))
+        notify(ObjectModifiedEvent(form.context))
         form.send_message(_(u"Text block modified."))
-        self.block_manager = getMultiAdapter(
-            (form.block, form.context, form.request), IBlockController)
         return silvaforms.SUCCESS
 
 
@@ -195,7 +198,6 @@ class ConvertTextBlockAction(silvaforms.Action):
             form.request,
             current.text,
             type=ISaveEditorFilter)
-        notify(ObjectModifiedEvent(version))
         new_block = ReferenceBlock()
         self.block_controller = getMultiAdapter(
             (new_block, form.context, form.request), IBlockController)
@@ -203,6 +205,7 @@ class ConvertTextBlockAction(silvaforms.Action):
         IBlockManager(form.context).replace(
             form.__parent__.__parent__.block_id, new_block,
             form.context, form.request)
+        notify(ObjectModifiedEvent(version))
         return silvaforms.SUCCESS
 
 

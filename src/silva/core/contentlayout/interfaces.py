@@ -152,8 +152,16 @@ class IBlockController(interface.Interface):
    """Update block
    """
 
+   def editable():
+      """Return true if the block is editable.
+      """
+
    def remove():
       """Remove associated data with the block.
+      """
+
+   def fulltext():
+      """Return a list with the associated fulltext to the block.
       """
 
    def render():
@@ -164,6 +172,20 @@ class IBlockController(interface.Interface):
 class IBlockManager(interface.Interface):
     """Manage blocks for a content.
     """
+
+    def add(slot_id, block):
+       """Add the block to the slot_it, return a new block_id.
+       """
+
+    def moveable(block_id, slot_id, content):
+       """Return True if the block identified by block_id is moveable
+       into the slot identified by slot_id on the given content.
+       """
+
+    def remove(block_id, content, request):
+       """Remove the given block_id, on the given content, using the
+       given request.
+       """
 
 
 class IEditionMode(IDefaultBrowserLayer):

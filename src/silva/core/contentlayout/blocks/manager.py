@@ -29,6 +29,9 @@ class BlockController(grok.MultiAdapter):
     def editable(self):
         return False
 
+    def fulltext(self):
+        return []
+
     def remove(self):
         pass
 
@@ -106,6 +109,12 @@ class BlockManager(grok.Annotation):
 
     def get(self, block_id):
         return self._blocks.get(block_id)
+
+    def visit(self, function, content, request):
+        for block_id, block in self._blocks.iteritems():
+            controller = getMultiAdapter(
+                (block, content, request), IBlockController)
+            function(block_id, controller)
 
     def render(self, slot_id, content, request):
         for block_id in self._slot_to_block.get(slot_id, []):
