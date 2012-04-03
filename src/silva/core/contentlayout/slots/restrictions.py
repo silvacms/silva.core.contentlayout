@@ -49,11 +49,14 @@ class CodeSource(SlotRestriction):
 
 class CodeSourceName(CodeSource):
 
-    def __init__(self, *names):
-        self._names = set(names)
+    def __init__(self, allowed=set(), disallowed=set()):
+        self._allowed = set(allowed)
+        self._disallowed = set(disallowed)
 
     def allow_name(self, name):
-        return name in self._names
+        if self._allowed:
+            return name in self._allowed
+        return name not in self._disallowed
 
 
 class Content(SlotRestriction):
