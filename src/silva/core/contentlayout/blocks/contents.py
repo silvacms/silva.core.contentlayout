@@ -102,7 +102,7 @@ class AddExternalBlockAction(silvaforms.Action):
         if errors:
             return silvaforms.FAILURE
         block = ReferenceBlock()
-        self.block_id = IBlockManager(form.context).new(
+        self.block_id = IBlockManager(form.context).add(
             form.__parent__.slot_id,
             block)
         self.block_controller = getMultiAdapter(

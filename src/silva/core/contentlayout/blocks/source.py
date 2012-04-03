@@ -101,7 +101,7 @@ class AddSourceBlockAction(silvaforms.Action):
         if status is silvaforms.FAILURE:
             return silvaforms.FAILURE
         manager = IBlockManager(form.context)
-        self.block_id = manager.new(
+        self.block_id = manager.add(
             form.__parent__.__parent__.slot_id,
             SourceBlock(form.controller.getId()))
         form.send_message(_(u"Added new block"))
