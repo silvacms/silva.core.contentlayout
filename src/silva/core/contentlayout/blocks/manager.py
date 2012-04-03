@@ -59,8 +59,8 @@ class BlockManager(grok.Annotation):
 
     def movable(self, block_id, slot_id, content):
         block = self._blocks.get(block_id)
-        template = content.get_template()
-        slot = template.slots[slot_id]
+        design = content.get_design()
+        slot = design.slots[slot_id]
         return slot.is_block_allowed(block, content)
 
     def move(self, block_id, slot_id, index, content):

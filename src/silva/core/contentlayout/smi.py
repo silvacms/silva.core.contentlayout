@@ -33,8 +33,8 @@ class EditPage(silvaviews.Page):
         alsoProvides(self.request, IEditionMode)
 
     def render(self):
-        template = self.context.get_template()
-        render = template(self.context, self.request)
+        design = self.context.get_design()
+        render = design(self.context, self.request)
         return render()
 
 
@@ -90,11 +90,11 @@ class ChooseBlock(silvaforms.RESTPopupForm):
     def publishTraverse(self, request, name):
         if self.slot is None:
             slot_id = urllib.unquote(name)
-            # XXX Fix template acess
-            template = self.context.get_template()
-            if slot_id not in template.slots:
+            # XXX Fix design acess
+            design = self.context.get_design()
+            if slot_id not in design.slots:
                 raise NotFound()
-            self.slot = template.slots[slot_id]
+            self.slot = design.slots[slot_id]
             self.slot_id = slot_id
             self.__name__ = '/'.join((self.__name__, name))
             return self
@@ -139,11 +139,11 @@ class BlockREST(REST):
     def publishTraverse(self, request, name):
         if self.slot is None:
             slot_id = urllib.unquote(name)
-            # XXX Fix template acess
-            template = self.context.get_template()
-            if slot_id not in template.slots:
+            # XXX Fix design acess
+            design = self.context.get_design()
+            if slot_id not in design.slots:
                 raise NotFound('Unknown slot %s' % name)
-            self.slot = template.slots[slot_id]
+            self.slot = design.slots[slot_id]
             self.slot_id = slot_id
             self.__name__ = '/'.join((self.__name__, name))
             return self

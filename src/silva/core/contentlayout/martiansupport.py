@@ -14,44 +14,43 @@ from silva.core.contentlayout.interfaces import IBlockView
 from silva.core.contentlayout.blocks import BlockView, Block
 from silva.core.contentlayout.blocks.registry import \
     registry as block_registry
-from silva.core.contentlayout.templates.template import Template, TemplateFile
-from silva.core.contentlayout.templates.registry import \
-    registry as template_registry
+from silva.core.contentlayout.designs.design import Design, TemplateFile
+from silva.core.contentlayout.designs.registry import \
+    registry as design_registry
 
 
 def default_name(component, module=None, **data):
     return component.__name__.lower()
 
 
-class RegisterTemplateGrokker(martian.ClassGrokker):
-    martian.component(Template)
+class RegisterDesignGrokker(martian.ClassGrokker):
+    martian.component(Design)
     extension = '.upt'
 
     def grok(self, name, factory, module_info, **kw):
         # Need to store the module info to look for a template
         factory.module_info = module_info
-        return super(RegisterTemplateGrokker, self).grok(
+        return super(RegisterDesignGrokker, self).grok(
             name, factory, module_info, **kw)
 
     def execute(self, factory, **kw):
         if factory.template is None:
             self.associate_template(factory)
 
-        template_registry.register(factory)
+        design_registry.register(factory)
         return True
 
     def associate_template(self, factory):
         component_name = factory.__name__.lower()
-        module_name, template_name = grok.template.bind(
+        module_name, design_name = grok.template.bind(
             default=(None, None)).get(factory)
         if module_name is None:
             module_info = factory.module_info
-            template_name = component_name
+            design_name = component_name
         else:
             module_info = module_info_from_dotted_name(module_name)
-        template_dir = file_template_registry.get_template_dir(module_info)
-        template_path = os.path.join(
-            template_dir, template_name + self.extension)
+        design_dir = file_template_registry.get_template_dir(module_info)
+        template_path = os.path.join(design_dir, design_name + self.extension)
         if not os.path.isfile(template_path):
             raise GrokError(u"Missing template %s for %s" % (
                     template_path, factory))

@@ -6,72 +6,72 @@ from zope.interface.interfaces import IInterface
 
 from AccessControl.security import checkPermission
 
-from silva.core.contentlayout.interfaces import ITemplateLookup
+from silva.core.contentlayout.interfaces import IDesignLookup
 
 
-class TemplateRegistry(object):
-    """Register templates
+class DesignRegistry(object):
+    """Register designs
     """
-    grok.implements(ITemplateLookup)
+    grok.implements(IDesignLookup)
 
     def __init__(self):
-        self._templates = {}
-        self._templates_by_name = {}
+        self._designs = {}
+        self._designs_by_name = {}
 
     def register(self, factory):
         context = grok.context.bind().get(factory)
         name = grok.name.bind().get(factory)
         if not name:
-            raise ValueError('Template %r must defined a grok.name' % factory)
-        if name in self._templates_by_name:
+            raise ValueError('Design %r must defined a grok.name' % factory)
+        if name in self._designs_by_name:
             raise ValueError(
-                'Error while registering template %r, '
-                'Template %r is already registered for name "%s"' %
-                (factory, self._templates_by_name[name], name))
-        self._templates_by_name[name] = factory
-        factories = self._templates.setdefault(context, [])
+                'Error while registering design %r, '
+                'Design %r is already registered for name "%s"' %
+                (factory, self._designs_by_name[name], name))
+        self._designs_by_name[name] = factory
+        factories = self._designs.setdefault(context, [])
         factories.append(factory)
 
     def lookup(self, context):
         candidates = []
-        for iface, factories in self._templates.iteritems():
+        for iface, factories in self._designs.iteritems():
             candidates.extend([factory for factory in factories
                                if self._is_allowed(factory, context)])
         return sort_components(candidates)
 
     def lookup_by_name(self, name):
-        return self._templates_by_name.get(name)
+        return self._designs_by_name.get(name)
 
-    def default_template(self, context):
+    def default_design(self, context):
         return None
 
-    def default_template_by_content_type(self, content_type, parent):
+    def default_design_by_content_type(self, content_type, parent):
         return None
 
     def lookup_by_content_type(self, content_type, parent):
         return self.lookup(parent)
 
-    def _is_allowed(self, template, context):
-        required_context = grok.context.bind().get(template)
+    def _is_allowed(self, design, context):
+        required_context = grok.context.bind().get(design)
         if IInterface.providedBy(required_context):
             if not required_context.providedBy(context):
                 return False
         elif not issubclass(context, required_context):
             return False
 
-        permission = grok.require.bind().get(template)
+        permission = grok.require.bind().get(design)
         if permission:
             return checkPermission(permission, context)
         return True
 
     def clear(self):
-        self._templates = {}
+        self._designs = {}
 
 
-registry = TemplateRegistry()
+registry = DesignRegistry()
 cleanup.addCleanUp(registry.clear)
 
 grok.global_utility(
     registry,
-    provides=ITemplateLookup,
+    provides=IDesignLookup,
     direct=True)

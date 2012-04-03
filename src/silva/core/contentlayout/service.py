@@ -21,7 +21,7 @@ from Products.Silva.ExtensionRegistry import extensionRegistry
 from Products.Silva import roleinfo
 
 from silva.core.contentlayout import interfaces
-from silva.core.contentlayout.templates.registry import registry
+from silva.core.contentlayout.designs.registry import registry
 
 
 def get_content_class_from_content_type(content_type):
@@ -33,13 +33,13 @@ def get_content_class_from_content_type(content_type):
 
 
 class ContentLayoutService(SilvaService):
-    """Template service provides security and other settings for content
-    layout templates
+    """Design service provides security and other settings for content
+    layout designs
     """
     grok.implements(interfaces.IContentLayoutService)
     grok.name('service_contentlayout')
     silvaconf.icon('service.png')
-    meta_type = 'Silva Template Service'
+    meta_type = 'Silva ContentLayout Service'
 
     security = ClassSecurityInfo()
     manage_options = (
@@ -47,7 +47,7 @@ class ContentLayoutService(SilvaService):
         ) + SilvaService.manage_options
 
     _restrictions_index = {}
-    _default_templates_index = {}
+    _default_designs_index = {}
 
 
     @property
@@ -55,15 +55,15 @@ class ContentLayoutService(SilvaService):
         return set(chain.from_iterable(self._restrictions_index.itervalues()))
 
     @property
-    def _default_templates(self):
-        return set(self._default_templates_index.itervalues())
+    def _default_designs(self):
+        return set(self._default_designs_index.itervalues())
 
     security.declareProtected(
         'View Management Screens', 'lookup')
     def lookup(self, context):
         candidates = registry.lookup(context)
         return filter(
-            lambda t: self._template_allowed_in_context(t, context),
+            lambda t: self._design_allowed_in_context(t, context),
             candidates)
 
     security.declareProtected(
@@ -72,7 +72,7 @@ class ContentLayoutService(SilvaService):
         candidates = registry.lookup_by_content_type(content_type, parent)
         object_class = get_content_class_from_content_type(content_type)
         return filter(
-            lambda t: self._template_allowed_in_context(
+            lambda t: self._design_allowed_in_context(
                 t, parent, object_class=object_class),
             candidates)
 
@@ -82,22 +82,22 @@ class ContentLayoutService(SilvaService):
         return registry.lookup_by_name(name)
 
     security.declareProtected(
-        'View Management Screens', 'default_template')
-    def default_template(self, context):
-        rule = self._default_templates_index.get(context.meta_type)
+        'View Management Screens', 'default_design')
+    def default_design(self, context):
+        rule = self._default_designs_index.get(context.meta_type)
         if rule is not None and \
-                self._template_allowed_in_context(rule.template, context):
-            return rule.template
+                self._design_allowed_in_context(rule.design, context):
+            return rule.design
         return None
 
     security.declareProtected(
-        'View Management Screens', 'default_template_by_content_type')
-    def default_template_by_content_type(self, content_type, parent):
-        rule = self._default_templates_index.get(content_type)
+        'View Management Screens', 'default_design_by_content_type')
+    def default_design_by_content_type(self, content_type, parent):
+        rule = self._default_designs_index.get(content_type)
         content_class = get_content_class_from_content_type(content_type)
-        if rule is not None and self._template_allowed_in_context(
-                rule.template, parent, object_class=content_class):
-            return rule.template
+        if rule is not None and self._design_allowed_in_context(
+                rule.design, parent, object_class=content_class):
+            return rule.design
         return None
 
     security.declareProtected(
@@ -107,25 +107,25 @@ class ContentLayoutService(SilvaService):
             rule.validate()
         self._restrictions_index = {}
         for rule in rules:
-            identifier = rule.template.get_identifier()
+            identifier = rule.design.get_identifier()
             if identifier not in self._restrictions_index:
                 self._restrictions_index[identifier] = set()
             self._restrictions_index[identifier].add(rule)
 
     security.declareProtected(
-        'View Management Screens', 'update_default_templates')
-    def update_default_templates(self, rules):
+        'View Management Screens', 'update_default_designs')
+    def update_default_designs(self, rules):
         for rule in rules:
             rule.validate()
-        self._default_templates_index = {}
+        self._default_designs_index = {}
         for rule in rules:
-            self._default_templates_index[rule.content_type] = rule
+            self._default_designs_index[rule.content_type] = rule
 
-    def _template_allowed_in_context(self, template, context,
+    def _design_allowed_in_context(self, design, context,
                                      object_class=None):
         if object_class is None:
             object_class = context.__class__
-        rules = self._restrictions_index.get(template.get_identifier())
+        rules = self._restrictions_index.get(design.get_identifier())
         if rules is None:
             return True
         user_role = IAuthorizationManager(context).get_user_role()
@@ -142,74 +142,74 @@ InitializeClass(ContentLayoutService)
 
 
 class ContentLayoutServiceManageSettings(silvaforms.ZMIComposedForm):
-    """ Template Service configuration.
+    """ Design Service configuration.
     """
     grok.name('manage_settings')
     grok.context(ContentLayoutService)
 
-    label = _(u"Template Service configuration")
+    label = _(u"Design Service configuration")
     description = _(u"Configure restrictions and defaults"
                     u" for content layout tempates")
 
 
-class TemplateContentRule(object):
-    """ Base class for template / content rules.
+class DesignContentRule(object):
+    """ Base class for design / content rules.
     """
-    grok.implements(interfaces.ITemplateContentRule)
+    grok.implements(interfaces.IDesignContentRule)
 
-    def __init__(self, template, content_type):
-        self.template = template
+    def __init__(self, design, content_type):
+        self.design = design
         self.content_type = content_type
 
     def __hash__(self):
-        return hash((self.content_type, self.template.get_identifier()))
+        return hash((self.content_type, self.design.get_identifier()))
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
-        return (self.template.get_identifier(), self.content_type) == \
-            (other.template.get_identifier(), other.content_type)
-        return (self.content_type, self.template.get_identifier())
+        return (self.design.get_identifier(), self.content_type) == \
+            (other.design.get_identifier(), other.content_type)
+        return (self.content_type, self.design.get_identifier())
 
     def validate(self):
-        template_context_restriction = grok.context.bind().get(self.template)
+        design_context_restriction = grok.context.bind().get(self.design)
         object_type = get_content_class_from_content_type(self.content_type)
         verify = lambda x: issubclass(object_type, x)
-        if issubclass(template_context_restriction, Interface):
-            verify = template_context_restriction.implementedBy
+        if issubclass(design_context_restriction, Interface):
+            verify = design_context_restriction.implementedBy
         if not verify(object_type):
-            raise ValueError(_(u'Template %s restricts its usage to %s objects'
+            raise ValueError(_(u'Design %s restricts its usage to %s objects'
                                u', However %s do not comply') %
-                             (self.template.label,
-                              template_context_restriction.__name__,
+                             (self.design.label,
+                              design_context_restriction.__name__,
                               self.content_type))
 
 
-class TemplateRestriction(TemplateContentRule):
-    """ Require a minimal role to set a template on a content.
+class DesignRestriction(DesignContentRule):
+    """ Require a minimal role to set a design on a content.
     """
 
-    def __init__(self, template, content_type, role):
-        super(TemplateRestriction, self).__init__(template, content_type)
+    def __init__(self, design, content_type, role):
+        super(DesignRestriction, self).__init__(design, content_type)
         self.role = role
 
 
 grok.global_utility(
-    TemplateRestriction,
+    DesignRestriction,
     provides=IFactory,
-    name=interfaces.ITemplateRestriction.__identifier__,
+    name=interfaces.IDesignRestriction.__identifier__,
     direct=True)
 
 
-class TemplateRestrictionsSettings(silvaforms.ZMISubForm):
-    """Configure templates access restrictions.
+class DesignRestrictionsSettings(silvaforms.ZMISubForm):
+    """Configure designs access restrictions.
     """
     grok.context(ContentLayoutService)
     grok.view(ContentLayoutServiceManageSettings)
     grok.order(10)
 
-    label = _(u"Define templates access restrictions")
-    fields = silvaforms.Fields(interfaces.ITemplateRestrictions)
+    label = _(u"Define designs access restrictions")
+    fields = silvaforms.Fields(interfaces.IDesignRestrictions)
     ignoreContent = False
     ignoreRequest = True
 
@@ -227,28 +227,28 @@ class TemplateRestrictionsSettings(silvaforms.ZMISubForm):
         return silvaforms.SUCCESS
 
 
-class DefaultTemplateRule(TemplateContentRule):
-    """Default template for a content type.
+class DefaultDesignRule(DesignContentRule):
+    """Default design for a content type.
     """
-    grok.implements(interfaces.IDefaultTemplateRule)
+    grok.implements(interfaces.IDefaultDesignRule)
 
 
 grok.global_utility(
-    DefaultTemplateRule,
+    DefaultDesignRule,
     provides=IFactory,
-    name=interfaces.IDefaultTemplateRule.__identifier__,
+    name=interfaces.IDefaultDesignRule.__identifier__,
     direct=True)
 
 
-class ContentDefaultTemplateSettings(silvaforms.ZMISubForm):
-    """Configure default template for content types
+class ContentDefaultDesignSettings(silvaforms.ZMISubForm):
+    """Configure default design for content types
     """
     grok.context(ContentLayoutService)
     grok.view(ContentLayoutServiceManageSettings)
     grok.order(10)
 
-    label = _(u"Define default template for content types")
-    fields = silvaforms.Fields(interfaces.IContentDefaultTemplates)
+    label = _(u"Define default design for content types")
+    fields = silvaforms.Fields(interfaces.IContentDefaultDesigns)
     ignoreContent = False
     ignoreRequest = True
 
@@ -258,7 +258,7 @@ class ContentDefaultTemplateSettings(silvaforms.ZMISubForm):
         if errors:
             return silvaforms.FAILURE
         try:
-            self.context.update_default_templates(data['_default_templates'])
+            self.context.update_default_designs(data['_default_designs'])
             self.status = _(u"Changes saved.")
         except ValueError as e:
             self.status = e.args[0]

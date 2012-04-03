@@ -4,19 +4,19 @@ from chameleon.codegen import template
 from chameleon.astutil import Symbol
 
 from silva.core.contentlayout.slots.slot import SlotView
-from silva.core.contentlayout.interfaces import ITemplate
-from silva.core.contentlayout.interfaces import InvalidTemplate, InvalidSlot
+from silva.core.contentlayout.interfaces import IDesign
+from silva.core.contentlayout.interfaces import InvalidDesign, InvalidSlot
 
 
 def slot_renderer(econtext, name):
     content = econtext.get('content')
     request = econtext.get('request')
-    template = econtext.get('template')
-    if not ITemplate.providedBy(template):
-        raise InvalidTemplate(template)
-    if name not in template.slots:
+    design = econtext.get('design')
+    if not IDesign.providedBy(design):
+        raise InvalidDesign(design)
+    if name not in design.slots:
         raise InvalidSlot(name)
-    return SlotView(template.slots[name], name, content, request)()
+    return SlotView(design.slots[name], name, content, request)()
 
 
 class SlotExpr(StringExpr):

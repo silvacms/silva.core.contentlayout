@@ -10,10 +10,10 @@ from z3c.pt.expressions import PathExpr, ProviderExpr
 from zope.interface import Interface, alsoProvides, noLongerProvides
 
 from silva.core.interfaces import IVersion
-from silva.core.contentlayout.templates.expressions import SlotExpr
-from silva.core.contentlayout.interfaces import ITemplate, IPage
-from silva.core.contentlayout.interfaces import (ITemplateAssociatedEvent,
-                                                 ITemplateDeassociatedEvent)
+
+from ..interfaces import IDesign, IPage
+from ..interfaces import IDesignAssociatedEvent, IDesignDeassociatedEvent
+from .expressions import SlotExpr
 
 
 class TemplateFile(PageTemplateFile):
@@ -32,13 +32,13 @@ class TemplateFile(PageTemplateFile):
         }
 
 
-class Template(object):
-    """A Template.
+class Design(object):
+    """A Design.
     """
-    grok.implements(ITemplate)
+    grok.implements(IDesign)
     grok.context(Interface)
-    grok.provides(ITemplate)
-    grok.title('Template')
+    grok.provides(IDesign)
+    grok.title('Design')
     grok.baseclass()
 
     template = None
@@ -48,10 +48,9 @@ class Template(object):
     def get_identifier(cls):
         return grok.name.bind().get(cls)
 
-    @property
     @classmethod
-    def label(cls):
-        grok.title.bind().get(cls)
+    def get_title(cls):
+        return grok.title.bind().get(cls)
 
     def __init__(self, content, request):
         self.content = content
@@ -59,7 +58,7 @@ class Template(object):
 
     def default_namespace(self):
         namespace = {}
-        namespace['template'] = self
+        namespace['design'] = self
         namespace['content'] = self.content
         namespace['request'] = self.request
         return namespace
@@ -71,7 +70,7 @@ class Template(object):
         pass
 
     def __call__(self):
-        __info__ = 'Rendering template: %s' % self.__template_path__
+        __info__ = 'Rendering design: %s' % self.__template_path__
         self.update()
         namespace = {}
         namespace.update(self.default_namespace())
@@ -79,18 +78,18 @@ class Template(object):
         return self.template(**namespace)
 
 
-@grok.subscribe(IPage, ITemplateAssociatedEvent)
+@grok.subscribe(IPage, IDesignAssociatedEvent)
 def set_markers(content, event):
     target = content
     if IVersion.providedBy(content):
         target = content.get_content()
-    if hasattr(event.template, 'markers'):
-        alsoProvides(target, event.template.markers)
+    if hasattr(event.design, 'markers'):
+        alsoProvides(target, event.design.markers)
 
-@grok.subscribe(IPage, ITemplateDeassociatedEvent)
+@grok.subscribe(IPage, IDesignDeassociatedEvent)
 def remove_markers(content, event):
     target = content
     if IVersion.providedBy(content):
         target = content.get_content()
-    if hasattr(event.template, 'markers'):
-        noLongerProvides(target, event.template.markers)
+    if hasattr(event.design, 'markers'):
+        noLongerProvides(target, event.design.markers)

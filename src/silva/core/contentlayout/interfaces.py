@@ -41,12 +41,11 @@ class ISlotRestriction(interface.Interface):
 
 
 class IContentSlotRestriction(ISlotRestriction):
-
    interface = interface.Attribute(u"interface to limit usable content")
 
 
 class ISlot(interface.Interface):
-   fill_in = interface.Attribute(u"fill-in stragegy")
+   css_class = interface.Attribute(u"CSS class to apply")
    restriction= interface.Attribute(u"ISlotRestriction restriction")
 
 
@@ -54,75 +53,76 @@ class InvalidSlot(KeyError):
    pass
 
 
-class ITemplate(interface.Interface):
-   label = interface.Attribute(
-       u"user-friendly name of template")
+class IDesign(interface.Interface):
    description = interface.Attribute(
-       u"a description of the template")
+       u"a description of the design")
    slots = interface.Attribute(
-       u"a dictionary of slot definition in the template")
+       u"a dictionary of slot definition in the design")
+   markers = interface.Attribute(
+      u"list of customization markers to apply in addition with the design")
 
    def update():
-      """Method called before the template is rendered.
+      """Method called before the design is rendered.
       """
 
 
-class InvalidTemplate(ValueError):
+class InvalidDesign(ValueError):
    pass
 
 
 @grok.provider(IContextSourceBinder)
-def registry_template_source(context):
-    from silva.core.contentlayout.templates.registry import registry
+def registry_design_source(context):
+    from silva.core.contentlayout.designs.registry import registry
 
-    def make_term(template):
-        return SimpleTerm(value=template,
-                          token=template.get_identifier(),
-                          title=template.label)
+    def make_term(design):
+        return SimpleTerm(value=design,
+                          token=design.get_identifier(),
+                          title=design.get_title())
 
     return SimpleVocabulary([make_term(t) for t in registry.lookup(context)])
 
 @grok.provider(IFormSourceBinder)
-def template_source(form):
+def design_source(form):
    from zeam.form.silva.form.smi import SMIAddForm
-   registry = getUtility(ITemplateLookup)
+   registry = getUtility(IDesignLookup)
    candidates = None
    if isinstance(form, SMIAddForm):
       candidates = registry.lookup_by_content_type(
          form._content_type, form.context)
    else:
       candidates = registry.lookup(form.context)
-   return SimpleVocabulary([SimpleTerm(value=t,
-                                       token=grok.name.bind().get(t),
-                                       title=grok.title.bind().get(t))
-                            for t in candidates])
+   return SimpleVocabulary([
+         SimpleTerm(value=design,
+                    token=design.get_identifier(),
+                    title=design.get_title())
+         for design in candidates])
 
 
 class ITitledPage(ITitledContent):
     """Interface defining an add schema for a page.
     """
-    template = schema.Choice(
-        title=_(u"Template"),
-        description=_(u"Select a template for your document."),
-        source=template_source)
+    design = schema.Choice(
+        title=_(u"Design"),
+        description=_(u"Select a design for your document."),
+        source=design_source)
 
 
-def default_templates(form):
+def default_designs(form):
    from zeam.form.silva.form.smi import SMIAddForm
-   registry = getUtility(ITemplateLookup)
-   template = None
+   registry = getUtility(IDesignLookup)
+   design = None
    if isinstance(form, SMIAddForm):
-      template = registry.default_template_by_content_type(
+      design = registry.default_design_by_content_type(
          form._content_type, form.context)
    else:
-      template = registry.default_template(form.context)
+      design = registry.default_design(form.context)
 
-   if template is not None:
-      return template
+   if design is not None:
+      return design
    return silvaforms.NO_VALUE
 
 PageFields = silvaforms.Fields(ITitledPage)
-PageFields['template'].defaultValue = default_templates
+PageFields['design'].defaultValue = default_designs
 
 
 class IPageAware(IViewableObject):
@@ -134,12 +134,12 @@ class IPage(IAttributeAnnotatable):
    """Where the page is stored (that would be a version).
    """
 
-   def get_template():
-      """return the template using ITemplateLookup.
+   def get_design():
+      """return the design using IDesignLookup.
       """
 
-   def set_template(template):
-      """set the template and triggers ITemplate(De)associatedEvent events.
+   def set_design(design):
+      """set the design and triggers IDesign(De)associatedEvent events.
       """
 
 
@@ -200,29 +200,29 @@ class ITextBlock(interface.Interface):
    """A block that only contains html text.
    """
 
-class ITemplateLookup(interface.Interface):
-    """Defines how to lookup a template
+class IDesignLookup(interface.Interface):
+    """Defines how to lookup a design
     """
     def lookup(context):
-      """Lookup and return a list of available template.
+      """Lookup and return a list of available design.
       """
     def lookup_by_content_type(content_type, parent):
       """Same as lookup but accept a silva content type as argument.
       """
 
     def lookup_by_name(name):
-       """Lookup a template by its grok name
+       """Lookup a design by its grok name
        """
 
-    def default_template(context):
-       """Try to find a default template for this context or None.
+    def default_design(context):
+       """Try to find a default design for this context or None.
        """
-    def default_template_by_content_type(content_type, parent):
-       """Same as default_template but accept a silva content type as argument.
+    def default_design_by_content_type(content_type, parent):
+       """Same as default_design but accept a silva content type as argument.
        """
 
 
-class IContentLayoutService(ISilvaLocalService, ITemplateLookup):
+class IContentLayoutService(ISilvaLocalService, IDesignLookup):
     """ContentLayout Service for Silva
     """
 
@@ -250,80 +250,80 @@ def content_type_source(context):
    return SimpleVocabulary(terms)
 
 
-class ITemplateContentRule(interface.Interface):
-   """Rules bind together a template and a content
+class IDesignContentRule(interface.Interface):
+   """Rules bind together a design and a content
    """
-   template = schema.Choice(title=_(u"Template"),
-                            source=registry_template_source)
+   design = schema.Choice(title=_(u"Design"),
+                            source=registry_design_source)
    content_type = schema.Choice(title=_(u"Content type"),
                                 source=content_type_source)
 
 
-class ITemplateRestriction(ITemplateContentRule):
-    """A template access rule limit the use of a template and a content type
+class IDesignRestriction(IDesignContentRule):
+    """A design access rule limit the use of a design and a content type
     to a minimal role.
     """
     role = schema.Choice(title=_(u"Role"),
                          source=editor_roles_source)
 
 
-class IDefaultTemplateRule(ITemplateContentRule):
-   """Default template per content type
+class IDefaultDesignRule(IDesignContentRule):
+   """Default design per content type
    """
    # same fields as parent class but in reverse order
    content_type = schema.Choice(title=_(u"Content type"),
                                 source=content_type_source)
-   template = schema.Choice(title=_(u"Template"),
-                            source=registry_template_source)
+   design = schema.Choice(title=_(u"Design"),
+                            source=registry_design_source)
 
 
-class ITemplateRestrictions(interface.Interface):
+class IDesignRestrictions(interface.Interface):
 
    _restrictions = schema.Set(
       title=_(u"Restrictions"),
-      value_type=schema.Object(schema=ITemplateRestriction),
+      value_type=schema.Object(schema=IDesignRestriction),
       required=False)
 
 
-class IContentDefaultTemplates(interface.Interface):
+class IContentDefaultDesigns(interface.Interface):
 
-   _default_templates = schema.Set(
-      title=_(u"Default templates"),
-      value_type=schema.Object(schema=IDefaultTemplateRule),
+   _default_designs = schema.Set(
+      title=_(u"Default designs"),
+      value_type=schema.Object(schema=IDefaultDesignRule),
       required=False)
 
 
-class ITemplateEvent(IObjectEvent):
-   """Base interface for template related events.
+class IDesignEvent(IObjectEvent):
+   """Base interface for design related events.
    """
-   template = interface.Attribute('the template')
+   design = interface.Attribute('the design')
 
 
-class ITemplateAssociatedEvent(ITemplateEvent):
-   """Event triggered when a template is associated to a content.
-   """
-
-
-class ITemplateDeassociatedEvent(ITemplateEvent):
-   """Event triggered when a template is deassociated to a content.
+class IDesignAssociatedEvent(IDesignEvent):
+   """Event triggered when a design is associated to a content.
    """
 
 
-class TemplateEvent(ObjectEvent):
-
-   interface.implements(ITemplateEvent)
-
-   def __init__(self, object, template):
-      super(TemplateEvent, self).__init__(object)
-      self.template = template
+class IDesignDeassociatedEvent(IDesignEvent):
+   """Event triggered when a design is deassociated to a content.
+   """
 
 
-class TemplateAssociatedEvent(TemplateEvent):
+class DesignEvent(ObjectEvent):
 
-   interface.implements(ITemplateAssociatedEvent)
+   interface.implements(IDesignEvent)
+
+   def __init__(self, object, design):
+      super(DesignEvent, self).__init__(object)
+      self.design = design
 
 
-class TemplateDeassociatedEvent(TemplateEvent):
+class DesignAssociatedEvent(DesignEvent):
 
-   interface.implements(ITemplateDeassociatedEvent)
+   interface.implements(IDesignAssociatedEvent)
+
+
+class DesignDeassociatedEvent(DesignEvent):
+
+   interface.implements(IDesignDeassociatedEvent)
 
