@@ -5,8 +5,10 @@ import logging
 from five import grok
 from zope.component import getMultiAdapter
 from zope.interface import Interface
+from zeam.component import component
 
-from ..interfaces import IBlockManager, IBlockController, IBlock
+from ..interfaces import IBlockManager, IBlockController
+from ..interfaces import IBlockFactories, IBlock
 
 _marker = object()
 logger = logging.getLogger('silva.core.contentlayout')
@@ -15,6 +17,18 @@ logger = logging.getLogger('silva.core.contentlayout')
 class Block(object):
     grok.baseclass()
     grok.implements(IBlock)
+
+
+@component(IBlock, Interface, provides=IBlockFactories)
+def block_factories(cls, context):
+    # XXX Add icon with silvaconf.icon
+    name = grok.name.bind().get(cls)
+    return [{'name': name,
+             'add': name,
+             'title': grok.title.bind().get(cls),
+             'icon': None,
+             'context': grok.context.bind(default=None).get(cls),
+             'block': cls},]
 
 
 class BlockController(grok.MultiAdapter):

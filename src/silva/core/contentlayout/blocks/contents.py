@@ -27,7 +27,6 @@ class ReferenceBlock(Block):
     grok.implements(IReferenceBlock)
     grok.name('site-content')
     grok.title(_(u"Site content"))
-    grok.order(15)
 
     def __init__(self):
         self.identifier = unicode(uuid.uuid1())

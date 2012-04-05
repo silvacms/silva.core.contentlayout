@@ -148,6 +148,14 @@ class IBlock(interface.Interface):
    """
 
 
+class IBlockFactories(interface.Interface):
+   """Return block factories as a list of dictionnaries.
+   """
+
+   def __call__():
+      pass
+
+
 class IBlockController(interface.Interface):
    """Update block
    """

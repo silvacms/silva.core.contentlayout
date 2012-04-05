@@ -27,7 +27,6 @@ class TextBlock(Text, Block):
     grok.implements(ITextBlock)
     grok.name('text')
     grok.title(_(u"Rich text"))
-    grok.order(1)
 
     def __init__(self):
         self.identifier = u'text block %s' % uuid.uuid1()

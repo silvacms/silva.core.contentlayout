@@ -8,25 +8,37 @@ from zope.schema.vocabulary import SimpleVocabulary
 
 from Products.SilvaExternalSources.interfaces import IExternalSourceManager
 from Products.SilvaExternalSources.interfaces import SourceError, source_source
+from Products.SilvaExternalSources.interfaces import availableSources
 
-from silva.core.contentlayout.blocks import Block
-from silva.core.contentlayout.interfaces import IBlockManager, IBlockController
-from silva.core.contentlayout.interfaces import IPage, IBlock
 from silva.translations import translate as _
 from silva.ui.rest.exceptions import RESTRedirectHandler
-from zeam.component import getWrapper
+from zeam.component import getWrapper, component
 from zeam.form import silva as silvaforms
 from zeam.form.ztk.interfaces import IFormSourceBinder
+
+from . import Block
+from ..interfaces import IPage, IBlock, IBlockFactories
+from ..interfaces import IBlockManager, IBlockController
 
 
 class SourceBlock(Block):
     grok.implements(IBlock)
     grok.name('source')
-    grok.title(_(u"Code source"))
-    grok.order(5)
 
     def __init__(self, identifier):
         self.identifier = identifier
+
+
+@component(SourceBlock, Interface, provides=IBlockFactories)
+def source_factories(cls, context):
+    name = grok.name.bind().get(cls)
+    for identifier, source in availableSources(context):
+        yield {'name': identifier,
+               'add': '/'.join((name, identifier)),
+               'title': source.get_title(),
+               'icon': None,
+               'context': None,
+               'block': cls}
 
 
 def source_controller(block, context, request):

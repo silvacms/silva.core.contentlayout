@@ -3,9 +3,12 @@ from five import grok
 from grokcore.component.util import _sort_key
 from zope.interface import implementedBy
 from zope.interface.interfaces import ISpecification
-
-from silva.core.contentlayout.interfaces import IBlock
 from zope.testing import cleanup
+
+
+from zeam.component import getComponent
+from ..interfaces import IBlock, IBlockFactories
+
 
 
 class BlockRegistry(object):
@@ -21,6 +24,22 @@ class BlockRegistry(object):
         if name in self._blocks:
             raise ValueError(u'Duplicate block type "%s".' % name)
         self._blocks[name] = factory
+
+
+    def all_new(self, context):
+
+        def get_factories(factory):
+            component = getComponent(
+                (implementedBy(factory), context),
+                IBlockFactories, default=None)
+            if component is None:
+                return []
+            return component(factory, context)
+
+        candidates = []
+        for factory in self._blocks.itervalues():
+            candidates.extend(get_factories(factory))
+        return candidates
 
     def lookup(self, name):
         return self._blocks.get(name)
