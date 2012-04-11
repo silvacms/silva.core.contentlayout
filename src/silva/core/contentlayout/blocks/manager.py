@@ -7,6 +7,8 @@ from zope.component import getMultiAdapter
 from zope.interface import Interface
 from zeam.component import component
 
+from Products.Silva.icon import registry as icon_registry
+
 from ..interfaces import IBlockManager, IBlockController
 from ..interfaces import IBlockFactories, IBlock
 
@@ -21,12 +23,17 @@ class Block(object):
 
 @component(IBlock, Interface, provides=IBlockFactories)
 def block_factories(cls, context):
-    # XXX Add icon with silvaconf.icon
     name = grok.name.bind().get(cls)
+    icon = None
+    try:
+        icon = icon_registry.get_icon_by_identifier(
+            ('silva.core.contentlayout.blocks', grok.name.bind().get(cls)))
+    except ValueError:
+        pass
     return [{'name': name,
              'add': name,
              'title': grok.title.bind().get(cls),
-             'icon': None,
+             'icon': icon,
              'context': grok.context.bind(default=None).get(cls),
              'block': cls},]
 
