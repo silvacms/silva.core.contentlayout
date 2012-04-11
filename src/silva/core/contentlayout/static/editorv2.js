@@ -26,11 +26,11 @@
                     events.onchange.add(callback);
                 }
             },
-            add: function($slot) {
-                return $slot.SMIFormPopup({
+            add: function(state) {
+                return state.slot.$slot.SMIFormPopup({
                     url: urls.actions.add.expand({
                         path: path,
-                        slot_id: $slot.data('slot-id')
+                        slot_id: state.slot.id
                     })
                 }).pipe(
                     function(data) {
@@ -42,7 +42,8 @@
                                 $result.attr('data-block-editable', 'true');
                             };
                             $result.append(data.extra.block_data);
-                            $slot.append($result);
+                            state.slot.$slot.append($result);
+                            state.slot.append($result);
                             events.onchange.invoke();
                         };
                         return data;
@@ -237,7 +238,7 @@
         return api;
     };
 
-    var MovingView = function($document, editor, containers, original) {
+    var MovingView = function($document, editor, shortcuts, containers, original) {
         var $placeholder = $('<div class="contentlayout-block-valid-placeholder"></div>');
         var $helper = null;
         var slot = original.slot;
@@ -246,9 +247,10 @@
         // Save original index
         original.index = slot.index(block);
 
-        var finish = function() {
+        var finish = function(failed) {
             $document.unbind('click', finish);
-            (validator !== null
+            shortcuts.remove('editor', 'moving');
+            (validator !== null && failed !== true
              ?  validator.done(function() {
                  $placeholder.attr('class', 'contentlayout-block-placeholder');
              }).pipe(editor.move, function() {
@@ -318,7 +320,7 @@
                     };
                     return result;
                 }, function(data) {
-                    finish();
+                    finish(true);
                 });
             };
         };
@@ -342,15 +344,50 @@
                     reorder(this);
                 };
             });
-            $document.bind('click', finish);
+            var save = function(event) {
+                finish(false);
+                event.stopPropagation();
+                event.preventDefault();
+            };
+            var cancel = function(event) {
+                finish(true);
+                event.stopPropagation();
+                event.preventDefault();
+            };
+            $document.bind('click', save);
+            shortcuts.bind('editor', 'moving', ['ctrl+s'], save);
+            shortcuts.bind('editor', 'moving', ['esc'], cancel);
         };
         bootstrap();
     };
 
 
-    var StandardView = function($document, $layer, editor, containers) {
+    var StandardView = function($document, $layer, editor, shortcuts, containers) {
         var selected = null;
         var api = {
+            actions: {
+                edit: function() {
+                    if (selected !== null && selected.current.$block !== undefined) {
+                        editor.edit(selected);
+                    };
+                },
+                remove: function() {
+                    if (selected !== null && selected.current.$block !== undefined) {
+                        infrae.ui.ConfirmationDialog({
+                            title: 'Remove block',
+                            message: 'Please confirm the permanent deletion of the block'
+                        }).done(function () {
+                            editor.remove(selected);
+                        });
+                    };
+                },
+                move: function() {
+                    if (selected !== null && selected.current.$block !== undefined) {
+                        MovingView($document, editor, shortcuts, containers, selected);
+                        api.disable();
+                    };
+                }
+            },
             update: function() {
                 if (selected !== null) {
                     $layer.offset(selected.current);
@@ -394,29 +431,28 @@
             };
         });
         // Actions
-        $layer.delegate('#contentlayout-edit-block', 'click', function(event) {
-            if (selected.current.$block !== undefined) {
-                editor.edit(selected);
-            };
+        var edit = function(event) {
+            api.actions.edit();
             event.stopPropagation();
             event.preventDefault();
-        });
-        $layer.delegate('#contentlayout-move-block', 'click', function(event) {
-            if (selected.current.$block !== undefined) {
-                MovingView($document, editor, containers, selected);
-                api.disable();
-            };
+        };
+        var move = function(event) {
+            api.actions.move();
             event.stopPropagation();
             event.preventDefault();
-        });
-        $layer.delegate('#contentlayout-remove-block', 'click', function(event) {
-            if (selected.current.$block !== undefined) {
-                editor.remove(selected);
-            };
+        };
+        var remove = function(event) {
+            // We should add a confirmation here.
+            api.actions.remove();
             event.stopPropagation();
             event.preventDefault();
-        });
-
+        };
+        $layer.delegate('#contentlayout-edit-block', 'click', edit);
+        shortcuts.bind('editor', null, ['ctrl+e'], edit);
+        $layer.delegate('#contentlayout-move-block', 'click', move);
+        shortcuts.bind('editor', null, ['ctrl+m'], move);
+        $layer.delegate('#contentlayout-remove-block', 'click', remove);
+        shortcuts.bind('editor', null, ['ctrl+d'], remove);
         return api;
     };
 
@@ -670,9 +706,10 @@
                             var $slots = $body.find('div.edit-slot');
                             var $layer = $(layer);
                             var timer = null;
+                            smi.shortcuts.create('editor', $content, true);
 
                             var slots = Slots($body, $slots, '> div.edit-block');
-                            var overlay = StandardView($body, $layer, editor, slots);
+                            var overlay = StandardView($body, $layer, editor, smi.shortcuts, slots);
 
                             // When the iframe is resize, positions need to be updated.
                             this.$window.bind('resize', function() {
@@ -686,7 +723,7 @@
                                 }, 50);
                             });
 
-                            //$components.dialog();
+                            $components.dialog({position: [30, 200]});
                             $components.bind('dialogclose', function() {
                                 $components.remove();
                                 $components = null;
@@ -703,6 +740,7 @@
                             if ($components !== null) {
                                 $components.dialog('close');
                             };
+                            smi.shortcuts.remove('editor');
                             $content.empty();
                         }
                     };
