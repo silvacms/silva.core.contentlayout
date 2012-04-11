@@ -9,6 +9,15 @@ from zeam.component import getComponent
 from ..interfaces import IBlock, IBlockFactories
 
 
+def get_block_factories(factory, context):
+    component = getComponent(
+        (implementedBy(factory), context),
+        IBlockFactories, default=None)
+    if component is None:
+        return []
+    return component(factory, context)
+
+
 class BlockRegistry(object):
     """Register available block types.
     """
@@ -23,20 +32,10 @@ class BlockRegistry(object):
             raise ValueError(u'Duplicate block type "%s".' % name)
         self._blocks[name] = factory
 
-
     def all_new(self, context):
-
-        def get_factories(factory):
-            component = getComponent(
-                (implementedBy(factory), context),
-                IBlockFactories, default=None)
-            if component is None:
-                return []
-            return component(factory, context)
-
         candidates = []
         for factory in self._blocks.itervalues():
-            candidates.extend(get_factories(factory))
+            candidates.extend(get_block_factories(factory, context))
         return candidates
 
     def lookup(self, name):

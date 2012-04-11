@@ -22,6 +22,9 @@ from Products.Silva import roleinfo
 
 from silva.core.contentlayout import interfaces
 from silva.core.contentlayout.designs.registry import registry
+from silva.core.contentlayout.blocks.registry import registry as block_registry
+from silva.core.contentlayout.blocks.registry import get_block_factories
+
 
 
 def get_content_class_from_content_type(content_type):
@@ -30,6 +33,23 @@ def get_content_class_from_content_type(content_type):
     if addable is None:
         raise ValueError('Unknow content type %s' % content_type)
     return addable['instance']
+
+
+class BlockGroup(object):
+
+    title = None
+    components = None
+
+    def __init__(self, title, components):
+        self.title = title
+        self.components = components
+
+
+grok.global_utility(
+    BlockGroup,
+    provides=IFactory,
+    name=interfaces.IBlockGroup.__identifier__,
+    direct=True)
 
 
 class ContentLayoutService(SilvaService):
@@ -44,11 +64,12 @@ class ContentLayoutService(SilvaService):
     security = ClassSecurityInfo()
     manage_options = (
         {'label': 'Settings', 'action': 'manage_settings'},
+        {'label': 'Blocks', 'action': 'manage_blocks'},
         ) + SilvaService.manage_options
 
     _restrictions_index = {}
     _default_designs_index = {}
-
+    _block_groups = []
 
     @property
     def _restrictions(self):
@@ -136,6 +157,31 @@ class ContentLayoutService(SilvaService):
                 continue
             return False
         return True
+
+    security.declareProtected(
+        'View Management Screens', 'get_block_groups')
+    def get_block_groups(self):
+        return list(self._block_groups)
+
+    security.declareProtected(
+        'View Management Screens', 'set_block_groups')
+    def set_block_groups(self, groups):
+        self._block_groups = groups
+
+    security.declareProtected(
+        'View Management Screens', 'lookup_block_groups')
+    def lookup_block_groups(self, context):
+        group_infos = []
+        for group in self._block_groups:
+            group_info = {'title': group.title, 'components': []}
+            for name in group.components:
+                block_type = block_registry.lookup(name)
+                if block_type:
+                    group_info['components'].extend(
+                        get_block_factories(block_type, context))
+            if group_info['components']:
+                group_infos.append(group_info)
+        return group_infos
 
 
 InitializeClass(ContentLayoutService)
@@ -263,4 +309,28 @@ class ContentDefaultDesignSettings(silvaforms.ZMISubForm):
         except ValueError as e:
             self.status = e.args[0]
             return silvaforms.FAILURE
+        return silvaforms.SUCCESS
+
+
+class ContentLayoutServiceManageBlocks(silvaforms.ZMIForm):
+    """ Block Groups Service configuration.
+    """
+    grok.name('manage_blocks')
+    grok.context(ContentLayoutService)
+
+    label = _(u"Blocks palette configuration")
+    description = _(u"Configure block groups")
+    fields = silvaforms.Fields(interfaces.IBlockGroupsFields)
+    ignoreContent = False
+    ignoreRequest = True
+
+    @silvaforms.action(_("Save changes"))
+    def save(self):
+        data, errors = self.extractData()
+        if errors:
+            return silvaforms.FAILURE
+
+        self.context.set_block_groups(data['_block_groups'])
+        import pdb; pdb.set_trace()
+        self.status = _(u"Changes saved.")
         return silvaforms.SUCCESS

@@ -257,7 +257,43 @@ class IDesignLookup(interface.Interface):
        """
 
 
-class IContentLayoutService(ISilvaLocalService, IDesignLookup):
+@grok.provider(IContextSourceBinder)
+def block_factory_source(context):
+   from silva.core.contentlayout.blocks.registry \
+       import registry as block_registry
+   factories = block_registry.all_new(None)
+   return SimpleVocabulary(
+      [SimpleTerm(value=f['name'], token=f['name'], title=f['title'])
+       for f in factories])
+
+
+class IBlockLookup(interface.Interface):
+
+   def lookup_block_groups(context):
+      """ Return a list of group with block factory informations
+      """
+
+
+class IBlockGroup(interface.Interface):
+
+   title = schema.TextLine(title=_(u"Title"),
+                           required=True)
+   components = schema.List(
+      title=_(u"Components"),
+      value_type=schema.Choice(title=_(u"Block type"),
+                              required=True,
+                              source=block_factory_source),
+      required=True)
+
+
+class IBlockGroupsFields(interface.Interface):
+
+   _block_groups = schema.List(
+      title=_(u"Groups"),
+      value_type=schema.Object(IBlockGroup))
+
+
+class IContentLayoutService(ISilvaLocalService, IDesignLookup, IBlockLookup):
     """ContentLayout Service for Silva
     """
 
