@@ -1,0 +1,13 @@
+<div title="Components"
+     i18n:domain="silva"
+     i18n:attributes="title">
+ <tal:block tal:repeat="block view.blocks">
+   <h3><a href="#" tal:content="block.title">Title</a></h3>
+   <div>
+     <div class="component"
+           tal:repeat="component block.components">
+       <span tal:content="component.title" />
+     </div>
+   </div>
+ </tal:block>
+</div>

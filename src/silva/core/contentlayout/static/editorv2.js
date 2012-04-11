@@ -684,71 +684,64 @@
         var urls = prepare_urls(smi.options.contentlayout);
         var components_position = [30, 200];
 
-        $.ajax({
-            url: smi.options.contentlayout.layer,
-            async: false,
-            dataType: 'html'
-        }).pipe(function (layer) {
-            infrae.views.view({
-                iface: 'content-layout',
-                name: 'content',
-                factory: function($content, data, smi) {
-                    var path = smi.opened.path + (data.path !== undefined ? '/' + data.path : '');
-                    var editor = Editor(smi, urls, path);
-                    var $components = $('<div title="Components"></div>');
+        infrae.views.view({
+            iface: 'content-layout',
+            name: 'content',
+            factory: function($content, data, smi) {
+                var path = smi.opened.path + (data.identifier ? '/' + data.identifier : '');
+                var editor = Editor(smi, urls, path);
+                var $components = $(data.components);
+                var $layer = $(data.layer);
 
-                    return {
-                        html_url: urls.url.expand({path: path}),
-                        iframe: true,
-                        nocache: true,
-                        render: function($content) {
-                            var $body = this.$document.find('body');
-                            var $slots = $body.find('div.edit-slot');
-                            var $layer = $(layer);
-                            var timer = null;
-                            smi.shortcuts.create('editor', $content, true);
+                return {
+                    html_url: urls.url.expand({path: path}),
+                    iframe: true,
+                    nocache: true,
+                    render: function($content) {
+                        var $body = this.$document.find('body');
+                        var $slots = $body.find('div.edit-slot');
+                        var timer = null;
+                        smi.shortcuts.create('editor', $content, true);
 
-                            var slots = Slots($body, $slots, '> div.edit-block');
-                            var overlay = StandardView($body, $layer, editor, smi.shortcuts, slots);
+                        var slots = Slots($body, $slots, '> div.edit-block');
+                        var overlay = StandardView($body, $layer, editor, smi.shortcuts, slots);
 
-                            // When the iframe is resize, positions need to be updated.
-                            this.$window.bind('resize', function() {
-                                if (timer !== null) {
-                                    clearTimeout(timer);
-                                };
-                                timer = setTimeout(function() {
-                                    slots.update();
-                                    overlay.update();
-                                    timer = null;
-                                }, 50);
-                            });
-
-                            $components.dialog({position: components_position, closeOnEscape: false});
-                            $components.bind('dialogclose', function() {
-                                components_position = $components.dialog('option', 'position');
-                                $components.remove();
-                                $components = null;
-                            });
-
-                            // Disable links and selection
-                            $body.delegate('a', 'click', function (event) {
-                                event.preventDefault();
-                            });
-                            $body.disableSelection();
-
-                        },
-                        cleanup: function() {
-                            if ($components !== null) {
-                                $components.dialog('close');
+                        // When the iframe is resize, positions need to be updated.
+                        this.$window.bind('resize', function() {
+                            if (timer !== null) {
+                                clearTimeout(timer);
                             };
-                            smi.shortcuts.remove('editor');
-                            $content.empty();
-                        }
-                    };
-                }
+                            timer = setTimeout(function() {
+                                slots.update();
+                                overlay.update();
+                                timer = null;
+                            }, 50);
+                        });
 
-            });
+                        $components.dialog({position: components_position, closeOnEscape: false});
+                        $components.accordion();
+                        $components.bind('dialogclose', function() {
+                            components_position = $components.dialog('option', 'position');
+                            $components.remove();
+                            $components = null;
+                        });
 
+                        // Disable links and selection
+                        $body.delegate('a', 'click', function (event) {
+                            event.preventDefault();
+                        });
+                        $body.disableSelection();
+
+                    },
+                    cleanup: function() {
+                        if ($components !== null) {
+                            $components.dialog('close');
+                        };
+                        smi.shortcuts.remove('editor');
+                        $content.empty();
+                    }
+                };
+            }
         });
     });
 })(jQuery, infrae, jsontemplate);

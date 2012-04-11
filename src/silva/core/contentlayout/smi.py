@@ -2,27 +2,30 @@
 import urllib
 
 from five import grok
+from grokcore.chameleon.components import ChameleonPageTemplate
+from zope import schema
+from zope.cachedescriptors.property import CachedProperty
+from zope.component import getUtility
 from zope.interface import alsoProvides, Interface, implementedBy
 from zope.schema.vocabulary import SimpleVocabulary, SimpleTerm
-from zope.cachedescriptors.property import CachedProperty
-from zope import schema
-from zeam.form.ztk.interfaces import IFormSourceBinder
 
 from infrae.rest import queryRESTComponent, RESTWithTemplate
 from silva.core.interfaces import ISilvaObject
 from silva.core.contentlayout.interfaces import IEditionMode, IPage
-from silva.core.contentlayout.interfaces import IBlockManager
+from silva.core.contentlayout.interfaces import IBlockManager, IBlockLookup
 from silva.core.views import views as silvaviews
 from silva.translations import translate as _
 from silva.ui.rest import REST
 from silva.ui.rest.exceptions import RESTRedirectHandler
 from silva.ui.smi import SMIConfiguration
+from silva.ui.interfaces import IJSView
 from zeam.form import silva as silvaforms
-
+from zeam.form.ztk.interfaces import IFormSourceBinder
 
 from zExceptions import BadRequest, NotFound
 
 _marker = object()
+
 
 class EditPage(silvaviews.Page):
     grok.context(IPage)
@@ -44,14 +47,33 @@ class EditorSMIConfiguration(silvaviews.Viewlet):
     grok.viewletmanager(SMIConfiguration)
 
 
-class EditContentLayoutLayer(RESTWithTemplate):
-    """Template for the reference widget.
-    """
-    grok.context(ISilvaObject)
-    grok.name('silva.core.contentlayout.layer')
+class EditorJSView(grok.MultiAdapter):
+    grok.provides(IJSView)
+    grok.adapts(Interface, Interface)
+    grok.name('content-layout')
 
-    def GET(self):
-        return self.template.render(self)
+    layer = ChameleonPageTemplate(filename="smi_templates/layer.cpt")
+    components = ChameleonPageTemplate(filename="smi_templates/components.cpt")
+
+    def __init__(self, context, request):
+        self.context = context
+        self.request = request
+        self.screen = None
+
+    def namespace(self):
+        return {}
+
+    def default_namespace(self):
+        return {"view": self,
+                "target_language": self.screen.language}
+
+    def __call__(self, screen, identifier=None):
+        self.screen = screen
+        self.blocks = getUtility(IBlockLookup).lookup_block_groups(self.context)
+        return {"ifaces": ["content-layout"],
+                "layer": self.layer.render(self),
+                "components": self.components.render(self),
+                "identifier": identifier}
 
 
 class PageAPI(REST):
