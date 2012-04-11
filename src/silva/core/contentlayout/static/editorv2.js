@@ -168,39 +168,37 @@
         var $current = $element;
         var placeholding = null;
         var api = {
-            placeholder: {
-                set: function($placeholder) {
-                    if (placeholding === null) {
-                        placeholding = {
-                            container: $current.parent(),
-                            item: $current.prev(),
-                            direction: "after"
+            placeholder_set: function($placeholder) {
+                if (placeholding === null) {
+                    placeholding = {
+                        container: $current.parent(),
+                        item: $current.prev(),
+                        direction: "after"
                         };
-                        $placeholder.hide();
-                        $current = $placeholder;
-                        $element.before($placeholder);
-                        $element.detach();
-                        $placeholder.width(api.width);
-                        $placeholder.height(api.height);
-                        $placeholder.show();
-                    };
-                },
-                clear: function() {
-                    if (placeholding !== null) {
-                        $current.before($element);
-                        $current.remove();
-                        $current = $element;
-                        placeholding = null;
-                    };
-                },
-                revert: function() {
-                    if (placeholding !== null) {
-                        $current.remove();
-                        $current = $element;
-                        api.deplace(placeholding);
-                        placeholding = null;
-                    };
-                }
+                    $placeholder.hide();
+                    $current = $placeholder;
+                    $element.before($placeholder);
+                    $element.detach();
+                    $placeholder.width(this.width);
+                    $placeholder.height(this.height);
+                    $placeholder.show();
+                };
+            },
+            placeholder_clear: function() {
+                if (placeholding !== null) {
+                    $current.before($element);
+                    $current.remove();
+                    $current = $element;
+                    placeholding = null;
+                };
+            },
+            placeholder_revert: function() {
+                if (placeholding !== null) {
+                    $current.remove();
+                    $current = $element;
+                    this.deplace(placeholding);
+                    placeholding = null;
+                };
             },
             deplace: function(position) {
                 if (position.item.length) {
@@ -247,8 +245,20 @@
         // Save original index
         original.index = slot.index(block);
 
+        var save = function(event) {
+            finish(false);
+            event.stopPropagation();
+            event.preventDefault();
+        };
+
+        var cancel = function(event) {
+            finish(true);
+            event.stopPropagation();
+            event.preventDefault();
+        };
+
         var finish = function(failed) {
-            $document.unbind('click', finish);
+            $document.unbind('click', save);
             shortcuts.remove('editor', 'moving');
             (validator !== null && failed !== true
              ?  validator.done(function() {
@@ -261,14 +271,14 @@
                  slot: slot,
                  current: block})
             ).done(function() {
-                block.placeholder.clear();
+                block.placeholder_clear();
             }).fail(function() {
                 if (original.slot !== slot ||
                     original.index !== slot.index(block)) {
                     slot.remove(block);
                     original.slot.add(block, original.index);
                 };
-                block.placeholder.revert();
+                block.placeholder_revert();
             }).always(function() {
                 $helper.remove();
                 containers.update();
@@ -276,7 +286,6 @@
                 $document.css('cursor', 'inherit');
             });
         };
-
         var reorder = function(info) {
             var index = 0;
             var position = {container: info.slot.$slot, item: []};
@@ -332,7 +341,7 @@
             $helper.offset(original.mouse);
             $document.append($helper);
             $document.css('cursor', 'move');
-            block.placeholder.set($placeholder);
+            block.placeholder_set($placeholder);
 
             containers.events.snapshot();
             containers.events.onenter(function(event) {
@@ -344,16 +353,6 @@
                     reorder(this);
                 };
             });
-            var save = function(event) {
-                finish(false);
-                event.stopPropagation();
-                event.preventDefault();
-            };
-            var cancel = function(event) {
-                finish(true);
-                event.stopPropagation();
-                event.preventDefault();
-            };
             $document.bind('click', save);
             shortcuts.bind('editor', 'moving', ['ctrl+s'], save);
             shortcuts.bind('editor', 'moving', ['esc'], cancel);
@@ -683,6 +682,7 @@
 
     $(document).bind('load-smiplugins', function(event, smi) {
         var urls = prepare_urls(smi.options.contentlayout);
+        var components_position = [30, 200];
 
         $.ajax({
             url: smi.options.contentlayout.layer,
@@ -723,8 +723,9 @@
                                 }, 50);
                             });
 
-                            $components.dialog({position: [30, 200]});
+                            $components.dialog({position: components_position, closeOnEscape: false});
                             $components.bind('dialogclose', function() {
+                                components_position = $components.dialog('option', 'position');
                                 $components.remove();
                                 $components = null;
                             });
