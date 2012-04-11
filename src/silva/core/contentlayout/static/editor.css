@@ -22,6 +22,7 @@
 #contentlayout-edit-layer {
   background: rgba(200, 200, 200, 0.5);
   zIndex: 25000;
+  position: absolute;
 }
 
 #contentlayout-edit-layer a {
@@ -37,11 +38,8 @@
   border: 1px solid black;
   border-radius: 6px;
   margin: 4px;
-  width: 150px;
+  width: 110px;
   background: white;
-}
-#contentlayout-add-block {
-  background-position: -28px 0px !important;
 }
 #contentlayout-edit-block {
   background-position: -84px 0px  !important;

@@ -5,10 +5,8 @@ from zope.interface import implementedBy
 from zope.interface.interfaces import ISpecification
 from zope.testing import cleanup
 
-
 from zeam.component import getComponent
 from ..interfaces import IBlock, IBlockFactories
-
 
 
 class BlockRegistry(object):
