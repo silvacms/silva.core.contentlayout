@@ -20,10 +20,10 @@ from zeam.form import silva as silvaforms
 from Products.Silva.ExtensionRegistry import extensionRegistry
 from Products.Silva import roleinfo
 
-from silva.core.contentlayout import interfaces
-from silva.core.contentlayout.designs.registry import registry
-from silva.core.contentlayout.blocks.registry import registry as block_registry
-from silva.core.contentlayout.blocks.registry import get_block_factories
+from . import interfaces
+from .designs.registry import registry
+from .blocks.registry import registry as block_registry
+from .blocks.registry import get_block_factories
 
 
 
@@ -175,10 +175,10 @@ class ContentLayoutService(SilvaService):
         for group in self._block_groups:
             group_info = {'title': group.title, 'components': []}
             for name in group.components:
-                block_type = block_registry.lookup(name)
-                if block_type:
+                factory = block_registry.lookup_factory(name, context)
+                if factory:
                     group_info['components'].extend(
-                        get_block_factories(block_type, context))
+                        get_block_factories(factory, context))
             if group_info['components']:
                 group_infos.append(group_info)
         return group_infos
@@ -331,6 +331,5 @@ class ContentLayoutServiceManageBlocks(silvaforms.ZMIForm):
             return silvaforms.FAILURE
 
         self.context.set_block_groups(data['_block_groups'])
-        import pdb; pdb.set_trace()
         self.status = _(u"Changes saved.")
         return silvaforms.SUCCESS

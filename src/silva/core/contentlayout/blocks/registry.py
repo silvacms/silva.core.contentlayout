@@ -41,6 +41,14 @@ class BlockRegistry(object):
     def lookup(self, name):
         return self._blocks.get(name)
 
+    def lookup_factory(self, name, context):
+        factory = self._blocks.get(name)
+        if factory is None:
+            return None
+        if self._check(factory, context):
+            return factory
+        return None
+
     def all(self, context=None):
         candidates = [
             (name, factory) for name, factory in self._blocks.iteritems()
