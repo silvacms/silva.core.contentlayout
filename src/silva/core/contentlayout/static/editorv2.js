@@ -71,7 +71,7 @@
                     }
                 );
             },
-            validate: function(state) {
+            move_validate: function(state) {
                 var block_cache = validation_cache[state.current.id];
                 var slot_cache = undefined;
 
@@ -168,7 +168,7 @@
         var $current = $element;
         var placeholding = null;
         var api = {
-            placeholder_set: function($placeholder) {
+            placeholder_set: function($placeholder, heigth, width) {
                 if (placeholding === null) {
                     placeholding = {
                         container: $current.parent(),
@@ -179,8 +179,8 @@
                     $current = $placeholder;
                     $element.before($placeholder);
                     $element.detach();
-                    $placeholder.width(this.width);
-                    $placeholder.height(this.height);
+                    $placeholder.width(width || this.width);
+                    $placeholder.height(heigth || this.height);
                     $placeholder.show();
                 };
             },
@@ -236,7 +236,97 @@
         return api;
     };
 
-    var MovingView = function($document, editor, shortcuts, containers, original) {
+
+    var AddView = function($document, editor, shortcuts, containers, $component) {
+        var $placeholder = $('<div class="contentlayout-block-valid-placeholder"></div>');
+        var block = Block($('<div class="edit-block" />'));
+        var slot = null;
+
+        var save = function(event) {
+            finish(false);
+            event.stopPropagation();
+            event.preventDefault();
+        };
+
+        var cancel = function(event) {
+            finish(true);
+            event.stopPropagation();
+            event.preventDefault();
+        };
+
+        var finish = function(failed) {
+            $document.unbind('click', save);
+            shortcuts.remove('editor', 'adding');
+
+            return $.Deferred().reject().always(function() {
+                block.placeholder_clear();
+            }).fail(function() {
+                if (slot !== null) {
+                    slot.remove(block);
+                };
+                block.destroy();
+            }).always(function() {
+                containers.update();
+                containers.events.restore();
+                $document.css('cursor', 'inherit');
+            });
+        };
+
+        var reorder = function(info) {
+            var index = 0;
+            var position = {container: info.slot.$slot, item: []};
+
+            if (info.current.$block !== undefined) {
+                position.item = info.current.$block;
+                index = info.slot.index(info.current);
+                if ((!info.slot.horizontal && info.mouse.direction.bottom) ||
+                    (info.slot.horizontal && info.mouse.direction.right)) {
+                    index += 1;
+                    position.direction = "after";
+                } else {
+                    position.direction = "before";
+                };
+                if (info.slot === slot) {
+                    var current = slot.index(block);
+                    if (current < index) {
+                        index -= 1;
+                    };
+                };
+            };
+            if (info.slot.get(index) !== block) {
+                if (slot !== null) {
+                    slot.remove(block);
+                };
+                info.slot.add(block, index);
+                slot = info.slot;
+                block.deplace(position);
+                containers.update();
+            };
+        };
+
+        var bootstrap = function() {
+            $placeholder.html($component.children().clone());
+            block.placeholder_set($placeholder, '1em', '100%');
+            $document.css('cursor', 'move');
+
+            containers.events.snapshot(event);
+            containers.events.onenter(function(event) {
+               reorder(this);
+            });
+            containers.events.onmove(function(event) {
+                if (this.current !== null && this.mouse.changed !== false) {
+                    reorder(this);
+                };
+            });
+            $document.bind('click', save);
+            shortcuts.bind('editor', 'adding', ['ctrl+s'], save);
+            shortcuts.bind('editor', 'adding', ['esc'], cancel);
+        };
+
+        bootstrap();
+    };
+
+    var MoveView = function($document, editor, shortcuts, containers, original) {
         var $placeholder = $('<div class="contentlayout-block-valid-placeholder"></div>');
         var $helper = null;
         var slot = original.slot;
@@ -260,7 +350,7 @@
         var finish = function(failed) {
             $document.unbind('click', save);
             shortcuts.remove('editor', 'moving');
-            (validator !== null && failed !== true
+            return (validator !== null && failed !== true
              ?  validator.done(function() {
                  $placeholder.attr('class', 'contentlayout-block-placeholder');
              }).pipe(editor.move, function() {
@@ -286,6 +376,7 @@
                 $document.css('cursor', 'inherit');
             });
         };
+
         var reorder = function(info) {
             var index = 0;
             var position = {container: info.slot.$slot, item: []};
@@ -313,7 +404,7 @@
                 slot = info.slot;
                 block.deplace(position);
                 containers.update();
-                validator = editor.validate({
+                validator = editor.move_validate({
                     slot: slot,
                     current: block,
                     index: index
@@ -361,10 +452,16 @@
     };
 
 
-    var StandardView = function($document, $layer, editor, shortcuts, containers) {
+    var View = function($document, $layer, $components, editor, shortcuts, containers) {
         var selected = null;
         var api = {
             actions: {
+                add: function($component) {
+                    if (selected !== null) {
+                        api.disable();
+                    };
+                    AddView($document, editor, shortcuts, containers, $component);
+                },
                 edit: function() {
                     if (selected !== null && selected.current.$block !== undefined) {
                         editor.edit(selected);
@@ -382,7 +479,7 @@
                 },
                 move: function() {
                     if (selected !== null && selected.current.$block !== undefined) {
-                        MovingView($document, editor, shortcuts, containers, selected);
+                        MoveView($document, editor, shortcuts, containers, selected);
                         api.disable();
                     };
                 }
@@ -430,6 +527,11 @@
             };
         });
         // Actions
+        var add = function(event){
+            api.actions.add($(this));
+            event.stopPropagation();
+            event.preventDefault();
+        };
         var edit = function(event) {
             api.actions.edit();
             event.stopPropagation();
@@ -446,6 +548,7 @@
             event.stopPropagation();
             event.preventDefault();
         };
+        $components.delegate('div.component', 'click', add);
         $layer.delegate('#contentlayout-edit-block', 'click', edit);
         shortcuts.bind('editor', null, ['ctrl+e'], edit);
         $layer.delegate('#contentlayout-move-block', 'click', move);
@@ -529,7 +632,7 @@
         var api = {
             top: -1,
             left: -1,
-            threshold: 25,
+            threshold: 15,
             changed: false,
             direction: {
                 right: null,
@@ -599,12 +702,12 @@
                 onmove: function(callback) {
                     events.onmove.add(callback);
                 },
-                snapshot: function() {
+                snapshot: function(event) {
                     for (var name in events) {
                         events[name].push();
                     };
                 },
-                restore: function() {
+                restore: function(event) {
                     for (var name in events) {
                         events[name].pop();
                     };
@@ -626,6 +729,35 @@
                 current: current,
                 slot: slot
             };
+        };
+
+        var lookup = function(event) {
+            var new_current = null;
+            var previous_current = current;
+
+            for (var i=0; i < slots.length; i++) {
+                new_current = slots[i].over(event);
+                if (new_current !== null) {
+                    slot = slots[i];
+                    if (new_current !== current) {
+                        current = new_current;
+                        if (previous_current === null) {
+                            events.onenter.invoke(SlotEvent(), [event]);
+                        } else {
+                            events.onswitch.invoke(SlotEvent(), [event]);
+                        };
+                        return true;
+                    };
+                    return false;
+                };
+            };
+            if (current !== null) {
+                events.onleave.invoke(SlotEvent(), [event]);
+                current = null;
+                slot = null;
+                return true;
+            };
+            return false;
         };
 
         var move = function(event) {
@@ -704,7 +836,7 @@
                         smi.shortcuts.create('editor', $content, true);
 
                         var slots = Slots($body, $slots, '> div.edit-block');
-                        var overlay = StandardView($body, $layer, editor, smi.shortcuts, slots);
+                        var view = View($body, $layer, $components, editor, smi.shortcuts, slots);
 
                         // When the iframe is resize, positions need to be updated.
                         this.$window.bind('resize', function() {
@@ -713,7 +845,7 @@
                             };
                             timer = setTimeout(function() {
                                 slots.update();
-                                overlay.update();
+                                view.update();
                                 timer = null;
                             }, 50);
                         });
