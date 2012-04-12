@@ -74,11 +74,19 @@ class BlockManager(grok.Annotation):
         self._slot_to_block = {}
         self._block_to_slot = {}
 
-    def add(self, slot_id, block):
+    def addable(self, slot_id, block_name, content):
+        design = content.get_design()
+        slot = design.slot[slot_id]
+        factory, restriction = slot.get_block_type(block_name)
+        if factory is not None:
+            return True
+        return False
+
+    def add(self, slot_id, block, index):
         if slot_id not in self._slot_to_block:
             self._slot_to_block[slot_id] = []
         block_id = str(uuid.uuid1())
-        self._slot_to_block[slot_id].append(block_id)
+        self._slot_to_block[slot_id].insert(index, block_id)
         self._block_to_slot[block_id] = slot_id
         self._blocks[block_id] = block
         self._p_changed = True

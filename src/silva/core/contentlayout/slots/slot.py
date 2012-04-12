@@ -37,7 +37,7 @@ class Slot(object):
             if restriction.apply_to(factory):
                 if restriction.allow_block_type(factory):
                     return factory, restriction
-                return None, None
+                return None, restriction
 
         return factory, None
 
