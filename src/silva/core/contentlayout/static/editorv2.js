@@ -237,7 +237,7 @@
     };
 
 
-    var AddView = function($document, editor, shortcuts, containers, $component) {
+    var AddMode = function(view, $component) {
         var $placeholder = $('<div class="contentlayout-block-valid-placeholder"></div>');
         var block = Block($('<div class="edit-block" />'));
         var slot = null;
@@ -255,8 +255,8 @@
         };
 
         var finish = function(failed) {
-            $document.unbind('click', save);
-            shortcuts.remove('editor', 'adding');
+            view.$body.unbind('click', save);
+            view.shortcuts.remove('editor', 'adding');
 
             return $.Deferred().reject().always(function() {
                 block.placeholder_clear();
@@ -266,9 +266,9 @@
                 };
                 block.destroy();
             }).always(function() {
-                containers.update();
-                containers.events.restore();
-                $document.css('cursor', 'inherit');
+                view.slots.update();
+                view.slots.events.restore();
+                view.$body.css('cursor', 'inherit');
             });
         };
 
@@ -300,33 +300,33 @@
                 info.slot.add(block, index);
                 slot = info.slot;
                 block.deplace(position);
-                containers.update();
+                view.slots.update();
             };
         };
 
         var bootstrap = function() {
             $placeholder.html($component.children().clone());
             block.placeholder_set($placeholder, '1em', '100%');
-            $document.css('cursor', 'move');
+            view.$body.css('cursor', 'move');
 
-            containers.events.snapshot(event);
-            containers.events.onenter(function(event) {
+            view.slots.events.snapshot();
+            view.slots.events.onenter(function(event) {
                reorder(this);
             });
-            containers.events.onmove(function(event) {
+            view.slots.events.onmove(function(event) {
                 if (this.current !== null && this.mouse.changed !== false) {
                     reorder(this);
                 };
             });
-            $document.bind('click', save);
-            shortcuts.bind('editor', 'adding', ['ctrl+s'], save);
-            shortcuts.bind('editor', 'adding', ['esc'], cancel);
+            view.$body.bind('click', save);
+            view.shortcuts.bind('editor', 'adding', ['ctrl+s'], save);
+            view.shortcuts.bind('editor', 'adding', ['esc'], cancel);
         };
 
         bootstrap();
     };
 
-    var MoveView = function($document, editor, shortcuts, containers, original) {
+    var MoveMode = function(view, original) {
         var $placeholder = $('<div class="contentlayout-block-valid-placeholder"></div>');
         var $helper = null;
         var slot = original.slot;
@@ -336,24 +336,24 @@
         original.index = slot.index(block);
 
         var save = function(event) {
-            finish(false);
+            finish(event, false);
             event.stopPropagation();
             event.preventDefault();
         };
 
         var cancel = function(event) {
-            finish(true);
+            finish(event, true);
             event.stopPropagation();
             event.preventDefault();
         };
 
-        var finish = function(failed) {
-            $document.unbind('click', save);
-            shortcuts.remove('editor', 'moving');
+        var finish = function(event, failed) {
+            view.$body.unbind('click', save);
+            view.shortcuts.remove('editor', 'moving');
             return (validator !== null && failed !== true
              ?  validator.done(function() {
                  $placeholder.attr('class', 'contentlayout-block-placeholder');
-             }).pipe(editor.move, function() {
+             }).pipe(view.editor.move, function() {
                  return $.Deferred().reject();
              })
              : $.Deferred().reject({
@@ -371,9 +371,9 @@
                 block.placeholder_revert();
             }).always(function() {
                 $helper.remove();
-                containers.update();
-                containers.events.restore();
-                $document.css('cursor', 'inherit');
+                view.slots.update();
+                view.slots.events.restore(event);
+                view.$body.css('cursor', 'inherit');
             });
         };
 
@@ -403,8 +403,8 @@
                 info.slot.add(block, index);
                 slot = info.slot;
                 block.deplace(position);
-                containers.update();
-                validator = editor.move_validate({
+                view.slots.update();
+                validator = view.editor.move_validate({
                     slot: slot,
                     current: block,
                     index: index
@@ -430,73 +430,45 @@
             $helper.css('position', 'absolute');
             $helper.css('opacity', '0.5');
             $helper.offset(original.mouse);
-            $document.append($helper);
-            $document.css('cursor', 'move');
+            view.$body.append($helper);
+            view.$body.css('cursor', 'move');
             block.placeholder_set($placeholder);
 
-            containers.events.snapshot();
-            containers.events.onenter(function(event) {
+            view.slots.events.snapshot();
+            view.slots.events.onenter(function(event) {
                reorder(this);
             });
-            containers.events.onmove(function(event) {
+            view.slots.events.onmove(function(event) {
                 $helper.offset(this.mouse);
                 if (this.current !== null && this.mouse.changed !== false) {
                     reorder(this);
                 };
             });
-            $document.bind('click', save);
-            shortcuts.bind('editor', 'moving', ['ctrl+s'], save);
-            shortcuts.bind('editor', 'moving', ['esc'], cancel);
+            view.$body.bind('click', save);
+            view.shortcuts.bind('editor', 'moving', ['ctrl+s'], save);
+            view.shortcuts.bind('editor', 'moving', ['esc'], cancel);
         };
         bootstrap();
     };
 
 
-    var View = function($document, $layer, $components, editor, shortcuts, containers) {
+    var NormalMode = function(view, $layer, $components) {
         var selected = null;
         var api = {
-            actions: {
-                add: function($component) {
-                    if (selected !== null) {
-                        api.disable();
-                    };
-                    AddView($document, editor, shortcuts, containers, $component);
-                },
-                edit: function() {
-                    if (selected !== null && selected.current.$block !== undefined) {
-                        editor.edit(selected);
-                    };
-                },
-                remove: function() {
-                    if (selected !== null && selected.current.$block !== undefined) {
-                        infrae.ui.ConfirmationDialog({
-                            title: 'Remove block',
-                            message: 'Please confirm the permanent deletion of the block'
-                        }).done(function () {
-                            editor.remove(selected);
-                        });
-                    };
-                },
-                move: function() {
-                    if (selected !== null && selected.current.$block !== undefined) {
-                        MoveView($document, editor, shortcuts, containers, selected);
-                        api.disable();
-                    };
-                }
-            },
             update: function() {
                 if (selected !== null) {
                     $layer.offset(selected.current);
                     $layer.width(selected.current.width);
                     $layer.height(selected.current.height);
                 };
+                view.slots.update();
             },
             enable: function(other) {
                 var $block = other.current.$block;
 
                 $layer.find('#contentlayout-actions').toggle($block !== undefined);
                 if (selected === null) {
-                    $layer.appendTo($document);
+                    $layer.appendTo(view.$body);
                 };
                 selected = other;
                 api.update();
@@ -509,17 +481,17 @@
             }
         };
         // Display / hide layer
-        containers.events.onenter(function () {
+        view.slots.events.onenter(function () {
             api.enable(this);
         });
-        containers.events.onswitch(function () {
+        view.slots.events.onswitch(function () {
             api.enable(this);
         });
-        containers.events.onleave(function () {
+        view.slots.events.onleave(function () {
             api.disable();
         });
-        editor.events.onchange(function() {
-            containers.update();
+        view.editor.events.onchange(function() {
+            view.slots.update();
             if (this.modified) {
                 api.enable(this);
             } else if (this.removed) {
@@ -528,33 +500,47 @@
         });
         // Actions
         var add = function(event){
-            api.actions.add($(this));
+            if (selected !== null) {
+                api.disable();
+            };
+            AddMode(view, $(this));
             event.stopPropagation();
             event.preventDefault();
         };
         var edit = function(event) {
-            api.actions.edit();
+            if (selected !== null && selected.current.$block !== undefined) {
+                view.editor.edit(selected);
+            };
             event.stopPropagation();
             event.preventDefault();
         };
         var move = function(event) {
-            api.actions.move();
+            if (selected !== null && selected.current.$block !== undefined) {
+                MoveMode(view, selected);
+                api.disable();
+            };
             event.stopPropagation();
             event.preventDefault();
         };
         var remove = function(event) {
-            // We should add a confirmation here.
-            api.actions.remove();
+            if (selected !== null && selected.current.$block !== undefined) {
+                infrae.ui.ConfirmationDialog({
+                    title: 'Remove block',
+                    message: 'Please confirm the permanent deletion of the block'
+                }).done(function () {
+                    view.editor.remove(selected);
+                });
+            };
             event.stopPropagation();
             event.preventDefault();
         };
         $components.delegate('div.component', 'click', add);
         $layer.delegate('#contentlayout-edit-block', 'click', edit);
-        shortcuts.bind('editor', null, ['ctrl+e'], edit);
+        view.shortcuts.bind('editor', null, ['ctrl+e'], edit);
         $layer.delegate('#contentlayout-move-block', 'click', move);
-        shortcuts.bind('editor', null, ['ctrl+m'], move);
+        view.shortcuts.bind('editor', null, ['ctrl+m'], move);
         $layer.delegate('#contentlayout-remove-block', 'click', remove);
-        shortcuts.bind('editor', null, ['ctrl+d'], remove);
+        view.shortcuts.bind('editor', null, ['ctrl+d'], remove);
         return api;
     };
 
@@ -702,7 +688,7 @@
                 onmove: function(callback) {
                     events.onmove.add(callback);
                 },
-                snapshot: function(event) {
+                snapshot: function() {
                     for (var name in events) {
                         events[name].push();
                     };
@@ -711,9 +697,7 @@
                     for (var name in events) {
                         events[name].pop();
                     };
-                    if (current !== null) {
-                        events.onenter.invoke(SlotEvent(), [null]);
-                    }
+                    lookup(event);
                 }
             },
             update: function() {
@@ -760,42 +744,6 @@
             return false;
         };
 
-        var move = function(event) {
-            if (!mouse.update(event)) {
-                // The mouse didn't move
-                return;
-            };
-            var new_current = null;
-            var previous_current = current;
-
-            for (var i=0; i < slots.length; i++) {
-                new_current = slots[i].over(event);
-                if (new_current !== null) {
-                    slot = slots[i];
-                    if (new_current !== current) {
-                        current = new_current;
-                        if (previous_current === null) {
-                            events.onenter.invoke(SlotEvent(), [event]);
-                        } else {
-                            events.onswitch.invoke(SlotEvent(), [event]);
-                        }
-                    } else {
-                        events.onmove.invoke(SlotEvent(), [event]);
-                    };
-                    mouse.finish(event);
-                    return;
-                };
-            };
-            if (current !== null) {
-                events.onleave.invoke(SlotEvent(), [event]);
-                current = null;
-                slot = null;
-            } else {
-                events.onmove.invoke(SlotEvent(), [event]);
-            };
-            mouse.finish(event);
-        };
-
         $slots.each(function() {
             slots.push(Slot($(this), selector));
         });
@@ -805,7 +753,15 @@
                 clearTimeout(timer);
             };
             timer = setTimeout(function() {
-                move(event);
+                if (!mouse.update(event)) {
+                    // The mouse didn't move
+                    return;
+                };
+
+                if (!lookup(event)) {
+                    events.onmove.invoke(SlotEvent(), [event]);
+                };
+                mouse.finish(event);
                 timer = null;
             }, 0);
         });
@@ -814,14 +770,13 @@
 
     $(document).bind('load-smiplugins', function(event, smi) {
         var urls = prepare_urls(smi.options.contentlayout);
-        var components_position = [30, 200];
+        var position = [30, 200];
 
         infrae.views.view({
             iface: 'content-layout',
             name: 'content',
             factory: function($content, data, smi) {
                 var path = smi.opened.path + (data.identifier ? '/' + data.identifier : '');
-                var editor = Editor(smi, urls, path);
                 var $components = $(data.components);
                 var $layer = $(data.layer);
 
@@ -829,14 +784,16 @@
                     html_url: urls.url.expand({path: path}),
                     iframe: true,
                     nocache: true,
+                    editor: Editor(smi, urls, path),
+                    shortcuts: smi.shortcuts,
                     render: function($content) {
-                        var $body = this.$document.find('body');
-                        var $slots = $body.find('div.edit-slot');
                         var timer = null;
-                        smi.shortcuts.create('editor', $content, true);
 
-                        var slots = Slots($body, $slots, '> div.edit-block');
-                        var view = View($body, $layer, $components, editor, smi.shortcuts, slots);
+                        this.$body = this.$document.find('body');
+                        this.shortcuts.create('editor', $content, true);
+                        this.slots = Slots(this.$body, this.$body.find('div.edit-slot'), '> div.edit-block');
+
+                        var mode = NormalMode(this, $layer, $components);
 
                         // When the iframe is resize, positions need to be updated.
                         this.$window.bind('resize', function() {
@@ -844,32 +801,31 @@
                                 clearTimeout(timer);
                             };
                             timer = setTimeout(function() {
-                                slots.update();
-                                view.update();
+                                mode.update();
                                 timer = null;
                             }, 50);
                         });
 
-                        $components.dialog({position: components_position, closeOnEscape: false});
+                        $components.dialog({position: position, closeOnEscape: false});
                         $components.accordion();
                         $components.bind('dialogclose', function() {
-                            components_position = $components.dialog('option', 'position');
+                            position = $components.dialog('option', 'position');
                             $components.remove();
                             $components = null;
                         });
 
                         // Disable links and selection
-                        $body.delegate('a', 'click', function (event) {
+                        this.$body.delegate('a', 'click', function (event) {
                             event.preventDefault();
                         });
-                        $body.disableSelection();
+                        this.$body.disableSelection();
 
                     },
                     cleanup: function() {
                         if ($components !== null) {
                             $components.dialog('close');
                         };
-                        smi.shortcuts.remove('editor');
+                        this.shortcuts.remove('editor');
                         $content.empty();
                     }
                 };
