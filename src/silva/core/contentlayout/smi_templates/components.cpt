@@ -4,7 +4,7 @@
   <tal:block tal:repeat="block view.blocks">
     <h3><a href="#" tal:content="block.title">Title</a></h3>
     <div>
-      <div class="component"
+      <div class="contentlayout-component"
            tal:repeat="component block.components"
              tal:attributes="data-block-name component.name">
         <img src="${component.icon}" alt="${component.title}"

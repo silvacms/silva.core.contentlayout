@@ -7,13 +7,13 @@
 
 /* Contentlayout layer CSS */
 
-.contentlayout-add {
+.contentlayout-component {
   padding: 2em;
 }
-.contentlayout-add span {
+.contentlayout-component span {
   padding-left: 0.5em;
 }
-.contentlayout-add img {
+.contentlayout-component img {
   float: left;
 }
 

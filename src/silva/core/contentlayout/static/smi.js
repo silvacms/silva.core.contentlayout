@@ -277,10 +277,11 @@
 
 
     var AddMode = function(view, $component) {
-        var $placeholder = $('<div class="contentlayout-add contentlayout-valid-placeholder"></div>');
+        var $placeholder = $('<div class="contentlayout-component contentlayout-valid-placeholder"></div>');
         var block = Block($('<div class="edit-block" />'));
         var slot = null;
         var validator = null;
+        var $helper = null;
         var deferred = $.Deferred();
 
         var save = function(event) {
@@ -305,7 +306,7 @@
 
             return (validator !== null && failed !== true
              ?  validator.done(function() {
-                 $placeholder.attr('class', 'contentlayout-add contentlayout-placeholder');
+                 $placeholder.attr('class', 'contentlayout-component contentlayout-placeholder');
              }).pipe(view.editor.add, function() {
                  return $.Deferred().reject();
              })
@@ -327,6 +328,7 @@
                 view.slots.events.restore(event);
                 view.$body.css('cursor', 'inherit');
                 $component.removeClass('selected');
+                $helper.remove();
                 deferred.resolve();
             });
         };
@@ -360,7 +362,7 @@
                 slot = info.slot;
                 block.deplace(position);
                 view.slots.update();
-                $placeholder.attr('class', 'contentlayout-add contentlayout-placeholder');
+                $placeholder.attr('class', 'contentlayout-component contentlayout-placeholder');
                 validator = view.editor.addable({
                     slot: slot,
                     block: block,
@@ -370,10 +372,10 @@
                     var result = $.Deferred();
 
                     if (data.success) {
-                        $placeholder.attr('class', 'contentlayout-add contentlayout-valid-placeholder');
+                        $placeholder.attr('class', 'contentlayout-component contentlayout-valid-placeholder');
                         result.resolve(data);
                     } else {
-                        $placeholder.attr('class', 'contentlayout-add contentlayout-invalid-placeholder');
+                        $placeholder.attr('class', 'contentlayout-component contentlayout-invalid-placeholder');
                         result.reject(data);
                     };
                     return result;
@@ -395,6 +397,15 @@
                reorder(this);
             });
             view.slots.events.onmove(function(event) {
+                if ($helper === null) {
+                    $helper = $component.clone();
+                    $helper.css('position', 'absolute');
+                    $helper.css('opacity', '0.5');
+                    $helper.offset(this.mouse);
+                    view.$body.append($helper);
+                } else {
+                    $helper.offset(this.mouse);
+                }
                 if (this.current !== null && this.mouse.changed !== false) {
                     reorder(this);
                 };
@@ -649,7 +660,7 @@
             event.stopPropagation();
             event.preventDefault();
         };
-        $components.delegate('div.component', 'click', add);
+        $components.delegate('div.contentlayout-component', 'click', add);
         $layer.delegate('#contentlayout-edit-block', 'click', edit);
         view.shortcuts.bind('editor', null, ['ctrl+e'], edit);
         $layer.delegate('#contentlayout-move-block', 'click', move);

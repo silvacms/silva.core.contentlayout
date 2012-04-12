@@ -1,15 +1,15 @@
 
-div.contentlayout-components div.component {
+div.contentlayout-components div.contentlayout-component {
   border: 1px solid #FFF;
   margin: 0.1em;
   padding: 0.1em;
 }
-div.contentlayout-components div.component:hover, div.contentlayout-components div.selected {
+div.contentlayout-components div.contentlayout-component:hover, div.contentlayout-components div.selected {
   border: 1px dotted #555555;
 }
-div.contentlayout-components div.component span {
+div.contentlayout-components div.contentlayout-component span {
   padding-left: 0.5em;
 }
-div.contentlayout-components div.component img {
+div.contentlayout-components div.contentlayout-component img {
   float: left;
 }
