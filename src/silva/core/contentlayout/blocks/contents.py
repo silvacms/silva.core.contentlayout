@@ -22,11 +22,13 @@ from silva.core.references.reference import Reference
 from silva.translations import translate as _
 from zeam.form import silva as silvaforms
 
+from silva.core import conf as silvaconf
 
 class ReferenceBlock(Block):
     grok.implements(IReferenceBlock)
     grok.name('site-content')
     grok.title(_(u"Site content"))
+    silvaconf.icon('refblock.png')
 
     def __init__(self):
         self.identifier = unicode(uuid.uuid1())

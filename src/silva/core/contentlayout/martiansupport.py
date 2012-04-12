@@ -17,6 +17,7 @@ from silva.core.contentlayout.blocks.registry import \
 from silva.core.contentlayout.designs.design import Design, TemplateFile
 from silva.core.contentlayout.designs.registry import \
     registry as design_registry
+from silva.core import conf as silvaconf
 
 
 def default_name(component, module=None, **data):
@@ -73,12 +74,45 @@ class RegisterBlockViewGrokker(martian.ClassGrokker):
             args=(factory, adapts, provides))
         return True
 
+import sys
+from Products.Silva.icon import registry as icon_registry
+from silva.core.conf.utils import IconResourceFactory
+from zope.interface import Interface
+from zope.publisher.interfaces.browser import IHTTPRequest
+
 
 class RegistryBlockGrokker(martian.ClassGrokker):
     martian.component(Block)
     martian.directive(grok.name, get_default=default_name)
+    martian.directive(silvaconf.icon)
 
-    def execute(self, factory, name, **kw):
+    icon_namespace = 'silva.core.contentlayout.blocks'
+
+    def register_icon(self, config, cls, block_name, icon_fs_path):
+        if not icon_fs_path:
+            return
+        base_dir = os.path.dirname(sys.modules[cls.__module__].__file__)
+        fs_path = os.path.join(base_dir, icon_fs_path)
+        name = ''.join((
+                'icon-blocks-',
+                block_name.strip().replace(' ', '-'),
+                os.path.splitext(icon_fs_path)[1] or '.png'))
+
+        factory = IconResourceFactory(name, fs_path)
+        config.action(
+            discriminator = ('resource', name, IHTTPRequest, Interface),
+            callable = provideAdapter,
+            args = (factory, (IHTTPRequest,), Interface, name))
+
+        resource_name = "++resource++" + name
+
+        icon_registry.register((self.icon_namespace, block_name),
+                               resource_name)
+        cls.icon = resource_name
+
+    def execute(self, factory, name, icon, config=None, **kw):
+        if icon is not None and config is not None:
+            self.register_icon(config, factory, name, icon)
         block_registry.register(name, factory)
         return True
 

@@ -99,6 +99,7 @@ class IChooseSchema(Interface):
         source=block_source)
 
 
+# AddBlockREST -> REST Handler
 class ChooseBlock(silvaforms.RESTPopupForm):
     grok.adapts(PageAPI, IPage)
     grok.name('add')
