@@ -33,7 +33,8 @@
                         path: path,
                         slot_id: state.slot.id,
                         block_name: state.name
-                    })
+                    }),
+                    payload: [{name: 'index', value: state.index}]
                 }).pipe(
                     function(data) {
                         if (data.extra !== undefined) {

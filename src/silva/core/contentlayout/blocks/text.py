@@ -80,28 +80,21 @@ class AddTextBlockAction(silvaforms.Action):
         silvaforms.IRESTCloseOnSuccessAction)
     title = _('Add')
 
-    block_id = None
-    block_manager = None
-
     def get_extra_payload(self, form):
-        if self.block_id is None:
+        adding = form.__parent__
+        if adding.block_id is None:
             return {}
         return {
-            'block_id': self.block_id,
-            'block_data': self.block_manager.render(),
+            'block_id': adding.block_id,
+            'block_data': adding.block_controller.render(),
             'block_editable': True}
 
     def __call__(self, form):
         data, errors = form.extractData()
         if errors:
             return silvaforms.FAILURE
-        block = TextBlock()
-        self.block_id = IBlockManager(form.context).add(
-            form.__parent__.slot_id,
-            block)
-        self.block_manager = getMultiAdapter(
-            (block, form.context, form.request), IBlockController)
-        self.block_manager.text = data['text']
+        adding = form.__parent__
+        adding.add(TextBlock()).text = data['text']
         notify(ObjectModifiedEvent(form.context))
         form.send_message(_(u"New text block added."))
         return silvaforms.SUCCESS

@@ -12,7 +12,7 @@ from zope.lifecycleevent import ObjectModifiedEvent
 from zope.publisher.interfaces.http import IHTTPRequest
 
 from silva.core.contentlayout.blocks import Block, BlockController
-from silva.core.contentlayout.interfaces import IBlockManager, IBlockController
+from silva.core.contentlayout.interfaces import IBlockController
 from silva.core.contentlayout.interfaces import IBlockView, IBlockable
 from silva.core.contentlayout.interfaces import IContentSlotRestriction
 from silva.core.contentlayout.interfaces import IReferenceBlock, IPage
@@ -23,6 +23,7 @@ from silva.translations import translate as _
 from zeam.form import silva as silvaforms
 
 from silva.core import conf as silvaconf
+
 
 class ReferenceBlock(Block):
     grok.implements(IReferenceBlock)
@@ -104,28 +105,21 @@ class AddExternalBlockAction(silvaforms.Action):
         silvaforms.IRESTCloseOnSuccessAction)
     title = _('Add')
 
-    block_id = None
-    block_controller = None
-
     def get_extra_payload(self, form):
-        if self.block_id is None:
+        adding = form.__parent__
+        if adding.block_id is None:
             return {}
         return {
-            'block_id': self.block_id,
-            'block_data': self.block_controller.render(),
+            'block_id': adding.block_id,
+            'block_data': adding.block_controller.render(),
             'block_editable': True}
 
     def __call__(self, form):
         data, errors = form.extractData()
         if errors:
             return silvaforms.FAILURE
-        block = ReferenceBlock()
-        self.block_id = IBlockManager(form.context).add(
-            form.__parent__.slot_id,
-            block)
-        self.block_controller = getMultiAdapter(
-            (block, form.context, form.request), IBlockController)
-        self.block_controller.content = data['content']
+        adding = form.__parent__
+        adding.add(ReferenceBlock()).content = data['content']
         notify(ObjectModifiedEvent(form.context))
         form.send_message(_(u"New content block added."))
         return silvaforms.SUCCESS

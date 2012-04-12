@@ -4,10 +4,11 @@ import urllib
 from five import grok
 from grokcore.chameleon.components import ChameleonPageTemplate
 from zope.cachedescriptors.property import CachedProperty
-from zope.component import getUtility
+from zope.component import getUtility, getMultiAdapter
 from zope.interface import alsoProvides, Interface, implementedBy
 
 from infrae.rest import queryRESTComponent
+from silva.core.contentlayout.interfaces import IBlockController
 from silva.core.contentlayout.interfaces import IBlockManager, IBlockLookup
 from silva.core.contentlayout.interfaces import IEditionMode, IPage
 from silva.core.views import views as silvaviews
@@ -81,10 +82,22 @@ class AddBlock(REST):
 
     slot = None
     slot_id = None
+    block = None
+    block_id = None
+    block_controller = None
 
-    @CachedProperty
-    def manager(self):
-        return IBlockManager(self.context)
+    def add(self, block):
+        try:
+            index = int(self.request.form.get('index', 0))
+        except ValueError:
+            index = 0
+        self.block = block
+        self.block_id = IBlockManager(self.context).add(
+            self.slot_id, block, index)
+        self.block_controller = getMultiAdapter(
+            (block, self.context, self.request),
+            IBlockController)
+        return self.block_controller
 
     def publishTraverse(self, request, name):
         if self.slot is None:

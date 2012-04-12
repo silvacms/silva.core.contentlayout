@@ -63,7 +63,7 @@ class ContentLayoutService(SilvaService):
 
     security = ClassSecurityInfo()
     manage_options = (
-        {'label': 'Settings', 'action': 'manage_settings'},
+        {'label': 'Templates', 'action': 'manage_templates'},
         {'label': 'Blocks', 'action': 'manage_blocks'},
         ) + SilvaService.manage_options
 
@@ -187,10 +187,10 @@ class ContentLayoutService(SilvaService):
 InitializeClass(ContentLayoutService)
 
 
-class ContentLayoutServiceManageSettings(silvaforms.ZMIComposedForm):
+class ContentLayoutServiceManageTemplates(silvaforms.ZMIComposedForm):
     """ Design Service configuration.
     """
-    grok.name('manage_settings')
+    grok.name('manage_templates')
     grok.context(ContentLayoutService)
 
     label = _(u"Design Service configuration")
@@ -251,7 +251,7 @@ class DesignRestrictionsSettings(silvaforms.ZMISubForm):
     """Configure designs access restrictions.
     """
     grok.context(ContentLayoutService)
-    grok.view(ContentLayoutServiceManageSettings)
+    grok.view(ContentLayoutServiceManageTemplates)
     grok.order(10)
 
     label = _(u"Define designs access restrictions")
@@ -290,7 +290,7 @@ class ContentDefaultDesignSettings(silvaforms.ZMISubForm):
     """Configure default design for content types
     """
     grok.context(ContentLayoutService)
-    grok.view(ContentLayoutServiceManageSettings)
+    grok.view(ContentLayoutServiceManageTemplates)
     grok.order(10)
 
     label = _(u"Define default design for content types")
