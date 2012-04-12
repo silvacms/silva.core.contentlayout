@@ -555,6 +555,8 @@
     var NormalMode = function(view, $layer, $components) {
         var selected = null;
         var delegated = null;
+        var $actions = $layer.find('#contentlayout-actions');
+
         var api = {
             update: function() {
                 if (selected !== null) {
@@ -567,7 +569,7 @@
             enable: function(other) {
                 var $block = other.current.$block;
 
-                $layer.find('#contentlayout-actions').toggle($block !== undefined);
+                $actions.toggle($block !== undefined);
                 if (selected === null) {
                     $layer.appendTo(view.$body);
                 };
@@ -581,7 +583,12 @@
                 };
             }
         };
-        // Display / hide layer
+        // Block mouse move over the actions, that prevent to loose
+        // the focus on small items
+        $actions.bind('mousemove', function(event) {
+            event.stopPropagation();
+        });
+        // Display and hide layer
         view.slots.events.onenter(function () {
             api.enable(this);
         });
