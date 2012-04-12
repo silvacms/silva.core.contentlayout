@@ -82,7 +82,7 @@ class BlockManager(grok.Annotation):
             return True
         return False
 
-    def add(self, slot_id, block, index):
+    def add(self, slot_id, block, index=0):
         if slot_id not in self._slot_to_block:
             self._slot_to_block[slot_id] = []
         block_id = str(uuid.uuid1())

@@ -7,19 +7,20 @@
 
 /* Contentlayout layer CSS */
 
-.contentlayout-block-valid-placeholder {
+.contentlayout-add {
+  padding: 2em;
+}
+
+.contentlayout-valid-placeholder {
   background: rgba(20, 200, 20, 0.5);
-  padding: 2em;
 }
 
-.contentlayout-block-invalid-placeholder {
+.contentlayout-invalid-placeholder {
   background: rgba(200, 20, 20, 0.5);
-  padding: 2em;
 }
 
-.contentlayout-block-placeholder {
+.contentlayout-placeholder {
   background: rgba(200, 200, 200, 0.5);
-  padding: 2em;
 }
 
 #contentlayout-edit-layer {

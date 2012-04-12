@@ -6,8 +6,9 @@
     <div>
       <div class="component"
            tal:repeat="component block.components"
-             tal:attributes="data-add component.add">
-        <img src="${component.icon}" alt="${component.title}" />
+             tal:attributes="data-block-name component.name">
+        <img src="${component.icon}" alt="${component.title}"
+             tal:condition="component.icon is not None" />
         <span tal:content="component.title" />
       </div>
     </div>

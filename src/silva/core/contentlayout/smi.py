@@ -3,24 +3,17 @@ import urllib
 
 from five import grok
 from grokcore.chameleon.components import ChameleonPageTemplate
-from zope import schema
 from zope.cachedescriptors.property import CachedProperty
 from zope.component import getUtility
 from zope.interface import alsoProvides, Interface, implementedBy
-from zope.schema.vocabulary import SimpleVocabulary, SimpleTerm
 
-from infrae.rest import queryRESTComponent, RESTWithTemplate
-from silva.core.interfaces import ISilvaObject
-from silva.core.contentlayout.interfaces import IEditionMode, IPage
+from infrae.rest import queryRESTComponent
 from silva.core.contentlayout.interfaces import IBlockManager, IBlockLookup
+from silva.core.contentlayout.interfaces import IEditionMode, IPage
 from silva.core.views import views as silvaviews
-from silva.translations import translate as _
-from silva.ui.rest import REST
-from silva.ui.rest.exceptions import RESTRedirectHandler
-from silva.ui.smi import SMIConfiguration
 from silva.ui.interfaces import IJSView
-from zeam.form import silva as silvaforms
-from zeam.form.ztk.interfaces import IFormSourceBinder
+from silva.ui.rest import REST
+from silva.ui.smi import SMIConfiguration
 
 from zExceptions import BadRequest, NotFound
 
@@ -81,44 +74,24 @@ class PageAPI(REST):
     grok.name('silva.contentlayout')
 
 
-@grok.provider(IFormSourceBinder)
-def block_source(form):
-    result = []
-    for name, block in form.slot.available_block_types(form.context):
-        result.append(SimpleTerm(
-                value=urllib.quote(name),
-                token=name,
-                title=grok.title.bind().get(block)))
-    return SimpleVocabulary(result)
-
-
-class IChooseSchema(Interface):
-    category = schema.Choice(
-        title=_(u"Block"),
-        description=_(u"Select a type of block to include in your document."),
-        source=block_source)
-
-
-# AddBlockREST -> REST Handler
-class ChooseBlock(silvaforms.RESTPopupForm):
+class AddBlock(REST):
     grok.adapts(PageAPI, IPage)
     grok.name('add')
     grok.require('silva.ChangeSilvaContent')
 
-    label = _(u"Choose a new block to add to the slot")
-    fields = silvaforms.Fields(IChooseSchema)
-    fields['category'].mode = 'radio'
-    actions = silvaforms.Actions(silvaforms.CancelAction())
     slot = None
     slot_id = None
+
+    @CachedProperty
+    def manager(self):
+        return IBlockManager(self.context)
 
     def publishTraverse(self, request, name):
         if self.slot is None:
             slot_id = urllib.unquote(name)
-            # XXX Fix design acess
             design = self.context.get_design()
             if slot_id not in design.slots:
-                raise NotFound()
+                raise NotFound('Unknown slot %s' % slot_id)
             self.slot = design.slots[slot_id]
             self.slot_id = slot_id
             self.__name__ = '/'.join((self.__name__, name))
@@ -135,14 +108,50 @@ class ChooseBlock(silvaforms.RESTPopupForm):
                     id=name)
                 if adder is not None:
                     return adder
-        return super(ChooseBlock, self).publishTraverse(request, name)
+        return super(AddBlock, self).publishTraverse(request, name)
 
-    @silvaforms.action(_('Choose'))
-    def choose(self):
-        data, errors = self.extractData()
-        if errors:
-            return silvaforms.FAILURE
-        raise RESTRedirectHandler(data['category'], relative=self, clear=True)
+
+class AddableBlock(REST):
+    grok.adapts(PageAPI, IPage)
+    grok.name('addable')
+    grok.require('silva.ReadSilvaContent')
+
+    slot = None
+    slot_id = None
+    block_name = None
+
+    @CachedProperty
+    def manager(self):
+        return IBlockManager(self.context)
+
+    def publishTraverse(self, request, name):
+        if self.slot is None:
+            slot_id = urllib.unquote(name)
+            design = self.context.get_design()
+            if slot_id not in design.slots:
+                raise NotFound('Unknown slot %s' % slot_id)
+            self.slot = design.slots[slot_id]
+            self.slot_id = slot_id
+            self.__name__ = '/'.join((self.__name__, name))
+            return self
+
+        if self.slot is not None and self.block_name is None:
+            self.block_name = urllib.unquote(name)
+            self.__name__ = '/'.join((self.__name__, name))
+            return self
+        return super(AddableBlock, self).publishTraverse(request, name)
+
+    def GET(self):
+        if self.slot_id is None:
+            raise BadRequest('missing slot identifier')
+        if self.block_name is None:
+            raise BadRequest('missing block name')
+
+        success = False
+        block, restriction = self.slot.get_block_type(self.block_name)
+        if block is not None:
+            success = True
+        return self.json_response({'content': {'success': success}})
 
 
 class BlockREST(REST):
@@ -164,10 +173,9 @@ class BlockREST(REST):
     def publishTraverse(self, request, name):
         if self.slot is None:
             slot_id = urllib.unquote(name)
-            # XXX Fix design acess
             design = self.context.get_design()
             if slot_id not in design.slots:
-                raise NotFound('Unknown slot %s' % name)
+                raise NotFound('Unknown slot %s' % slot_id)
             self.slot = design.slots[slot_id]
             self.slot_id = slot_id
             self.__name__ = '/'.join((self.__name__, name))
@@ -205,7 +213,9 @@ class EditBlock(BlockREST):
 class MoveBlock(BlockREST):
     grok.name('move')
 
-    def verify(self, index=_marker):
+    def POST(self, index=None):
+        """Move the block to the slot and index
+        """
         if self.slot_id is None:
             raise BadRequest('missing slot identifier')
         if self.block_id is None:
@@ -213,37 +223,38 @@ class MoveBlock(BlockREST):
         if index is None:
             raise BadRequest('missing index parameter')
 
-    def POST(self, index=None):
-        """Move the block to the slot and index
-        """
-        self.verify(index)
-        msg = None
+        message = None
         try:
             self.manager.move(
                 self.block_id, self.slot_id, int(index), self.context)
             success = True
         except ValueError as e:
             success = False
-            msg = str(e)
+            message = str(e)
         return self.json_response({
-                'content': {'success': success, 'message': msg}})
+                'content': {'success': success, 'message': message}})
 
 
-class ValidateBlock(REST):
-    grok.adapts(MoveBlock, IPage)
-    grok.name('validate')
+class MovableBlock(BlockREST):
+    grok.name('movable')
 
     def GET(self):
         """Validate that you can move that block to this slot and index.
         """
-        move = self.__parent__
-        move.verify()
+        if self.slot_id is None:
+            raise BadRequest('missing slot identifier')
+        if self.block_id is None:
+            raise BadRequest('missing block identifier')
+
+        message = None
         try:
-            success = move.manager.movable(
-                move.block_id, move.slot_id, move.context)
-        except ValueError:
+            success = self.manager.movable(
+                self.block_id, self.slot_id, self.context)
+        except ValueError as error:
             success = False
-        return self.json_response({'content': {'success': success}})
+            message = str(error)
+        return self.json_response({
+                'content': {'success': success, 'message': message}})
 
 
 class RemoveBlock(BlockREST):

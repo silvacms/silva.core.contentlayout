@@ -16,7 +16,8 @@
     };
 
     var Editor = function(smi, urls, path) {
-        var validation_cache = {};
+        var validation_move = {};
+        var validation_add = {};
         var events = {
             onchange: infrae.deferred.Callbacks()
         };
@@ -30,25 +31,62 @@
                 return state.slot.$slot.SMIFormPopup({
                     url: urls.actions.add.expand({
                         path: path,
-                        slot_id: state.slot.id
+                        slot_id: state.slot.id,
+                        block_name: state.name
                     })
                 }).pipe(
                     function(data) {
-                        if (data.extra !== undefined && data.extra.block_id) {
-                            var $result = $('<div class="edit-block" />');
-
-                            $result.attr('data-block-id', data.extra.block_id);
-                            if (data.extra.block_editable) {
-                                $result.attr('data-block-editable', 'true');
-                            };
-                            $result.append(data.extra.block_data);
-                            state.slot.$slot.append($result);
-                            state.slot.append($result);
-                            events.onchange.invoke();
+                        if (data.extra !== undefined) {
+                            return data.extra;
                         };
                         return data;
                     }
                 );
+            },
+            addable: function(state) {
+                var slot_cache = validation_add[state.slot.id];
+                var block_cache = undefined;
+
+                if (slot_cache === undefined) {
+                    slot_cache = validation_add[state.slot.id] = {};
+                };
+                block_cache = slot_cache[state.name];
+                if (block_cache !== undefined && !block_cache.isRejected()) {
+                    return block_cache.pipe(function (data) {
+                        return {
+                            success: data.success,
+                            failed: data.failed,
+                            slot: state.slot,
+                            block: state.block,
+                            name: state.name,
+                            index: state.index,
+                            fatal: false
+                        };
+                    });
+                };
+                return slot_cache[state.name] = smi.ajax.query(
+                    urls.actions.addable.expand({
+                        path: path,
+                        slot_id: state.slot.id,
+                        block_name: state.name
+                    })
+                ).pipe(function(data) {
+                    return {
+                        success: data.success,
+                        failed: !data.success,
+                        slot: state.slot,
+                        block: state.block,
+                        name: state.name,
+                        index: state.index,
+                        fatal: false
+                    };
+                }, function(request) {
+                    return $.Deferred().reject({
+                        failed: true,
+                        success: false,
+                        fatal: true
+                    });
+                });
             },
             edit: function(state) {
                 return state.current.$block.SMIFormPopup({
@@ -71,12 +109,12 @@
                     }
                 );
             },
-            move_validate: function(state) {
-                var block_cache = validation_cache[state.current.id];
+            movable: function(state) {
+                var block_cache = validation_move[state.current.id];
                 var slot_cache = undefined;
 
                 if (block_cache === undefined) {
-                    block_cache = validation_cache[state.current.id] = {};
+                    block_cache = validation_move[state.current.id] = {};
                 };
                 slot_cache = block_cache[state.slot.id];
                 if (slot_cache !== undefined && !slot_cache.isRejected()) {
@@ -92,7 +130,7 @@
                     });
                 };
                 return block_cache[state.slot.id] = smi.ajax.query(
-                    urls.actions.validate.expand({
+                    urls.actions.movable.expand({
                         path: path,
                         slot_id: state.slot.id,
                         block_id: state.current.id
@@ -238,28 +276,41 @@
 
 
     var AddMode = function(view, $component) {
-        var $placeholder = $('<div class="contentlayout-block-valid-placeholder"></div>');
+        var $placeholder = $('<div class="contentlayout-add contentlayout-valid-placeholder"></div>');
         var block = Block($('<div class="edit-block" />'));
         var slot = null;
+        var validator = null;
 
         var save = function(event) {
-            finish(false);
+            finish(event, false);
             event.stopPropagation();
             event.preventDefault();
         };
 
         var cancel = function(event) {
-            finish(true);
+            finish(event, true);
             event.stopPropagation();
             event.preventDefault();
         };
 
-        var finish = function(failed) {
+        var finish = function(event, failed) {
             view.$body.unbind('click', save);
             view.shortcuts.remove('editor', 'adding');
 
-            return $.Deferred().reject().always(function() {
+            return (validator !== null && failed !== true
+             ?  validator.done(function() {
+                 $placeholder.attr('class', 'contentlayout-add contentlayout-placeholder');
+             }).pipe(view.editor.add, function() {
+                 return $.Deferred().reject();
+             })
+             : $.Deferred().reject({
+                 success: true,
+                 slot: slot,
+                 current: block})
+            ).always(function() {
                 block.placeholder_clear();
+            }).done(function(data) {
+                block.block_set(data);
             }).fail(function() {
                 if (slot !== null) {
                     slot.remove(block);
@@ -267,7 +318,7 @@
                 block.destroy();
             }).always(function() {
                 view.slots.update();
-                view.slots.events.restore();
+                view.slots.events.restore(event);
                 view.$body.css('cursor', 'inherit');
             });
         };
@@ -301,6 +352,26 @@
                 slot = info.slot;
                 block.deplace(position);
                 view.slots.update();
+                validator = view.editor.addable({
+                    slot: slot,
+                    block: block,
+                    name: $component.data('block-name'),
+                    index: index
+                }).pipe(function(data) {
+                    var result = $.Deferred();
+
+                    if (data.success) {
+                        $placeholder.attr('class', 'contentlayout-add contentlayout-valid-placeholder');
+                        result.resolve(data);
+                    } else {
+                        $placeholder.attr('class', 'contentlayout-add contentlayout-invalid-placeholder');
+                        result.reject(data);
+                    };
+                    return result;
+                }, function(data) {
+                    finish(true);
+                });
+
             };
         };
 
@@ -327,7 +398,7 @@
     };
 
     var MoveMode = function(view, original) {
-        var $placeholder = $('<div class="contentlayout-block-valid-placeholder"></div>');
+        var $placeholder = $('<div class="contentlayout-valid-placeholder"></div>');
         var $helper = null;
         var slot = original.slot;
         var block = original.current;
@@ -350,9 +421,10 @@
         var finish = function(event, failed) {
             view.$body.unbind('click', save);
             view.shortcuts.remove('editor', 'moving');
+
             return (validator !== null && failed !== true
              ?  validator.done(function() {
-                 $placeholder.attr('class', 'contentlayout-block-placeholder');
+                 $placeholder.attr('class', 'contentlayout-placeholder');
              }).pipe(view.editor.move, function() {
                  return $.Deferred().reject();
              })
@@ -404,7 +476,7 @@
                 slot = info.slot;
                 block.deplace(position);
                 view.slots.update();
-                validator = view.editor.move_validate({
+                validator = view.editor.movable({
                     slot: slot,
                     current: block,
                     index: index
@@ -412,10 +484,10 @@
                     var result = $.Deferred();
 
                     if (data.success) {
-                        $placeholder.attr('class', 'contentlayout-block-valid-placeholder');
+                        $placeholder.attr('class', 'contentlayout-valid-placeholder');
                         result.resolve(data);
                     } else {
-                        $placeholder.attr('class', 'contentlayout-block-invalid-placeholder');
+                        $placeholder.attr('class', 'contentlayout-invalid-placeholder');
                         result.reject(data);
                     };
                     return result;
@@ -549,7 +621,15 @@
         var position = Element($block);
         $.extend(api, position, {
             id: $block.data('block-id'),
-            $block: $block
+            $block: $block,
+            block_set: function(data) {
+                this.id = data.block_id,
+                this.$block.attr('data-block-id', data.block_id);
+                this.$block.html(data.block_data);
+                if (data.block_editable) {
+                    this.$block.attr('data-block-editable', 'true');
+                };
+            }
         });
         return api;
     };
@@ -697,7 +777,11 @@
                     for (var name in events) {
                         events[name].pop();
                     };
-                    lookup(event);
+                    if (!lookup(event)) {
+                        if (current !== null) {
+                            events.onenter.invoke(SlotEvent(), [event]);
+                        };
+                    };
                 }
             },
             update: function() {

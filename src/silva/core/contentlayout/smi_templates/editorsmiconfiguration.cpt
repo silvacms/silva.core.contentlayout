@@ -3,10 +3,11 @@ contentlayout: {
   layer: "${view.root_url}/++rest++silva.core.contentlayout.layer",
   url:  "${view.root_url}/{path}/edit",
   actions : {
-    add: "${view.root_url}/{path}/++rest++silva.contentlayout/add/{slot_id}",
+    add: "${view.root_url}/{path}/++rest++silva.contentlayout/add/{slot_id}/{block_name}",
+    addable: "${view.root_url}/{path}/++rest++silva.contentlayout/addable/{slot_id}/{block_name}",
     edit: "${view.root_url}/{path}/++rest++silva.contentlayout/edit/{slot_id}/{block_id}",
     move: "${view.root_url}/{path}/++rest++silva.contentlayout/move/{slot_id}/{block_id}",
-    validate: "${view.root_url}/{path}/++rest++silva.contentlayout/move/{slot_id}/{block_id}/validate",
+    movable: "${view.root_url}/{path}/++rest++silva.contentlayout/movable/{slot_id}/{block_id}",
     remove: "${view.root_url}/{path}/++rest++silva.contentlayout/delete/{slot_id}/{block_id}"
   }
 },
