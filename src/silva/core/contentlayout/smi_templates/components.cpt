@@ -1,4 +1,4 @@
-<div title="Components"
+<div title="Components" class="contentlayout-components"
      i18n:domain="silva"
      i18n:attributes="title">
   <tal:block tal:repeat="block view.blocks">
@@ -9,7 +9,8 @@
              tal:attributes="data-block-name component.name">
         <img src="${component.icon}" alt="${component.title}"
              tal:condition="component.icon is not None" />
-        <span tal:content="component.title" />
+        <span class="component-name" tal:content="component.title" />
+        <div clear="both" />
       </div>
     </div>
   </tal:block>

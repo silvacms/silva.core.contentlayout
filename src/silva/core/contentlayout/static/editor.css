@@ -10,6 +10,12 @@
 .contentlayout-add {
   padding: 2em;
 }
+.contentlayout-add span {
+  padding-left: 0.5em;
+}
+.contentlayout-add img {
+  float: left;
+}
 
 .contentlayout-valid-placeholder {
   background: rgba(20, 200, 20, 0.5);

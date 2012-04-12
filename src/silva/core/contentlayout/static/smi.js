@@ -320,6 +320,7 @@
                 view.slots.update();
                 view.slots.events.restore(event);
                 view.$body.css('cursor', 'inherit');
+                $component.removeClass('selected');
             });
         };
 
@@ -352,6 +353,7 @@
                 slot = info.slot;
                 block.deplace(position);
                 view.slots.update();
+                $placeholder.attr('class', 'contentlayout-add contentlayout-placeholder');
                 validator = view.editor.addable({
                     slot: slot,
                     block: block,
@@ -377,6 +379,7 @@
 
         var bootstrap = function() {
             $placeholder.html($component.children().clone());
+            $component.addClass('selected');
             block.placeholder_set($placeholder, '1em', '100%');
             view.$body.css('cursor', 'move');
 
@@ -476,6 +479,7 @@
                 slot = info.slot;
                 block.deplace(position);
                 view.slots.update();
+                $placeholder.attr('class', 'contentlayout-placeholder');
                 validator = view.editor.movable({
                     slot: slot,
                     current: block,
