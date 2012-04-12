@@ -280,17 +280,22 @@
         var block = Block($('<div class="edit-block" />'));
         var slot = null;
         var validator = null;
+        var deferred = $.Deferred();
 
         var save = function(event) {
             finish(event, false);
-            event.stopPropagation();
-            event.preventDefault();
+            if (event !== undefined) {
+                event.stopPropagation();
+                event.preventDefault();
+            };
         };
 
         var cancel = function(event) {
             finish(event, true);
-            event.stopPropagation();
-            event.preventDefault();
+            if (event !== undefined) {
+                event.stopPropagation();
+                event.preventDefault();
+            };
         };
 
         var finish = function(event, failed) {
@@ -321,6 +326,7 @@
                 view.slots.events.restore(event);
                 view.$body.css('cursor', 'inherit');
                 $component.removeClass('selected');
+                deferred.resolve();
             });
         };
 
@@ -398,6 +404,11 @@
         };
 
         bootstrap();
+        return {
+            cancel: cancel,
+            save: save,
+            promise: deferred.promise
+        };
     };
 
     var MoveMode = function(view, original) {
@@ -406,19 +417,24 @@
         var slot = original.slot;
         var block = original.current;
         var validator = null;
+        var deferred = $.Deferred();
         // Save original index
         original.index = slot.index(block);
 
         var save = function(event) {
             finish(event, false);
-            event.stopPropagation();
-            event.preventDefault();
+            if (event !== undefined) {
+                event.stopPropagation();
+                event.preventDefault();
+            };
         };
 
         var cancel = function(event) {
             finish(event, true);
-            event.stopPropagation();
-            event.preventDefault();
+            if (event !== undefined) {
+                event.stopPropagation();
+                event.preventDefault();
+            };
         };
 
         var finish = function(event, failed) {
@@ -449,6 +465,7 @@
                 view.slots.update();
                 view.slots.events.restore(event);
                 view.$body.css('cursor', 'inherit');
+                deferred.resolve();
             });
         };
 
@@ -524,12 +541,19 @@
             view.shortcuts.bind('editor', 'moving', ['ctrl+s'], save);
             view.shortcuts.bind('editor', 'moving', ['esc'], cancel);
         };
+
         bootstrap();
+        return {
+            cancel: cancel,
+            save: save,
+            promise: deferred.promise
+        };
     };
 
 
     var NormalMode = function(view, $layer, $components) {
         var selected = null;
+        var delegated = null;
         var api = {
             update: function() {
                 if (selected !== null) {
@@ -575,11 +599,18 @@
             };
         });
         // Actions
+        var delegate = function(view) {
+            if (delegated !== null) {
+                delegated.cancel();
+            };
+            delegated = view.apply(this, [].splice.call(arguments, 1));
+            delegated.promise().always(function() { delegated = null });
+        };
         var add = function(event){
             if (selected !== null) {
                 api.disable();
             };
-            AddMode(view, $(this));
+            delegate(AddMode, view, $(this));
             event.stopPropagation();
             event.preventDefault();
         };
@@ -592,7 +623,7 @@
         };
         var move = function(event) {
             if (selected !== null && selected.current.$block !== undefined) {
-                MoveMode(view, selected);
+                delegate(MoveMode, view, selected);
                 api.disable();
             };
             event.stopPropagation();
@@ -781,8 +812,8 @@
                     for (var name in events) {
                         events[name].pop();
                     };
-                    if (!lookup(event)) {
-                        if (current !== null) {
+                    if (event !== undefined) {
+                        if (!lookup(event) && current !== null) {
                             events.onenter.invoke(SlotEvent(), [event]);
                         };
                     };
