@@ -9,12 +9,10 @@ from zeam.component import getComponent
 from ..interfaces import IBlock, IBlockFactories
 
 
-def get_block_factories(factory, context):
+def get_block_config(factory, context):
     component = getComponent(
         (implementedBy(factory), context),
-        IBlockFactories, default=None)
-    if component is None:
-        return []
+        IBlockFactories)
     return component(factory, context)
 
 
@@ -35,19 +33,27 @@ class BlockRegistry(object):
     def all_new(self, context):
         candidates = []
         for factory in self._blocks.itervalues():
-            candidates.extend(get_block_factories(factory, context))
+            candidates.extend(get_block_config(factory, context).get_all())
         return candidates
 
     def lookup(self, name):
-        return self._blocks.get(name)
+        parts = name.split(':', 1)
+        return self._blocks.get(parts[0])
 
     def lookup_factory(self, name, context):
-        factory = self._blocks.get(name)
-        if factory is None:
-            return None
+        factory = self.lookup(name)
         if self._check(factory, context):
             return factory
         return None
+
+    def lookup_factory_config(self, name, context):
+        factory = self.lookup(name)
+        if factory is None:
+            raise ValueError('invalid name: %s' % name)
+        parts = name.split(':', 1)
+        identifier = len(parts) > 1 and parts[1] or None
+        return get_block_config(
+            factory, context).get_by_identifier(identifier)
 
     def all(self, context=None):
         candidates = [

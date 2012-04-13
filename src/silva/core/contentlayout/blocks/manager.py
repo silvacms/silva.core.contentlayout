@@ -5,7 +5,7 @@ import logging
 from five import grok
 from zope.component import getMultiAdapter
 from zope.interface import Interface
-from zeam.component import component
+from zeam import component
 
 from Products.Silva.icon import registry as icon_registry
 
@@ -21,21 +21,32 @@ class Block(object):
     grok.implements(IBlock)
 
 
-@component(IBlock, Interface, provides=IBlockFactories)
-def block_factories(cls, context):
-    name = grok.name.bind().get(cls)
-    icon = None
-    try:
-        icon = icon_registry.get_icon_by_identifier(
-            ('silva.core.contentlayout.blocks', grok.name.bind().get(cls)))
-    except ValueError:
-        pass
-    return [{'name': name,
-             'add': name,
-             'title': grok.title.bind().get(cls),
-             'icon': icon,
-             'context': grok.context.bind(default=None).get(cls),
-             'block': cls},]
+class BlockConfig(component.Component):
+    component.provides(IBlockFactories)
+    grok.adapts(IBlock, Interface)
+
+    def __init__(self, factory, context):
+        self.factory = factory
+        self.context = context
+
+    def get_by_identifier(self, _):
+        name = grok.name.bind().get(self.factory)
+        icon = None
+        try:
+            icon = icon_registry.get_icon_by_identifier(
+                ('silva.core.contentlayout.blocks',
+                 grok.name.bind().get(self.factory)))
+        except ValueError:
+            pass
+        return {'name': name,
+                'add': name,
+                'title': grok.title.bind().get(self.factory),
+                'icon': icon,
+                'context': grok.context.bind(default=None).get(self.factory),
+                'block': self.factory}
+
+    def get_all(self):
+        return [self.get_by_identifier(None)]
 
 
 class BlockController(grok.MultiAdapter):

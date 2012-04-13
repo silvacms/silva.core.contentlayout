@@ -110,7 +110,7 @@ class AddTextBlock(silvaforms.RESTPopupForm):
         silvaforms.CancelAction(),
         AddTextBlockAction())
 
-    def __init__(self, context, request, restriction=None):
+    def __init__(self, context, request, identifier=None, restriction=None):
         super(AddTextBlock, self).__init__(context, request)
         self.restriction = restriction
 

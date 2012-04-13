@@ -111,11 +111,16 @@ class AddBlock(REST):
             return self
 
         if self.slot is not None:
+            parts = name.split(":", 1)
+            identifier = None
+            if len(parts) > 1:
+                identifier = parts[1]
+
             block, restriction = self.slot.get_block_type(name)
             if block is not None:
                 adder = queryRESTComponent(
                     (implementedBy(block), self.context),
-                    (self.context, request, restriction),
+                    (self.context, request, identifier, restriction),
                     name='add',
                     parent=self,
                     id=name)

@@ -11,10 +11,11 @@ from Products.SilvaExternalSources.interfaces import SourceError, source_source
 from Products.SilvaExternalSources.interfaces import availableSources
 
 from silva.translations import translate as _
-from silva.ui.rest.exceptions import RESTRedirectHandler
-from zeam.component import getWrapper, component
+from zeam import component
 from zeam.form import silva as silvaforms
 from zeam.form.ztk.interfaces import IFormSourceBinder
+
+from Products.SilvaExternalSources.interfaces import IExternalSource
 
 from . import Block
 from ..interfaces import IPage, IBlock, IBlockFactories
@@ -29,20 +30,39 @@ class SourceBlock(Block):
         self.identifier = identifier
 
 
-@component(SourceBlock, Interface, provides=IBlockFactories)
-def source_factories(cls, context):
-    name = grok.name.bind().get(cls)
-    for identifier, source in availableSources(context):
-        yield {'name': identifier,
-               'add': '/'.join((name, identifier)),
-               'title': source.get_title(),
-               'icon': None,
-               'context': None,
-               'block': cls}
+class SourceBlockLookup(component.Component):
+    component.provides(IBlockFactories)
+    grok.adapts(SourceBlock, Interface)
+
+    def __init__(self, factory, context):
+        self.factory = factory
+        self.context = context
+
+    def get_by_identifier(self, identifier):
+        name = grok.name.bind().get(self.factory)
+        source = getattr(self.context, identifier, None)
+        if source is not None and IExternalSource.providedBy(source):
+            return {'name': name + ":" + identifier,
+                    'title': source.get_title(),
+                    'icon': None,
+                    'context': None,
+                    'block': self.factory,
+                    'source': source}
+        return None
+
+    def get_all(self):
+        name = grok.name.bind().get(self.factory)
+        for identifier, source in availableSources(self.context):
+            yield {'name': name + ":" + identifier,
+                   'title': source.get_title(),
+                   'icon': None,
+                   'context': None,
+                   'block': self.factory,
+                   'source': source}
 
 
 def source_controller(block, context, request):
-    source = getWrapper(context, IExternalSourceManager)
+    source = component.getWrapper(context, IExternalSourceManager)
     return source(request, instance=block.identifier)
 
 
@@ -66,27 +86,6 @@ class IAddSourceSchema(Interface):
         title=_(u"Select an external source"),
         source=form_source_source,
         required=True)
-
-
-class AddSourceBlock(silvaforms.RESTPopupForm):
-    grok.adapts(SourceBlock, IPage)
-    grok.name('add')
-
-    label = _(u"Add a source block")
-    fields = silvaforms.Fields(IAddSourceSchema)
-    actions = silvaforms.Actions(silvaforms.CancelAction())
-
-    def __init__(self, context, request, restriction=None):
-        super(AddSourceBlock, self).__init__(context, request)
-        self.restriction = restriction
-
-    @silvaforms.action(_('Add'))
-    def add(self):
-        data, errors = self.extractData()
-        if errors:
-            return silvaforms.FAILURE
-        raise RESTRedirectHandler(
-            'parameters/' + data['source'].getId(), clear=True, relative=self)
 
 
 class AddSourceBlockAction(silvaforms.Action):
@@ -116,7 +115,7 @@ class AddSourceBlockAction(silvaforms.Action):
             return silvaforms.FAILURE
         manager = IBlockManager(form.context)
         self.block_id = manager.add(
-            form.__parent__.__parent__.slot_id,
+            form.__parent__.slot_id,
             SourceBlock(form.controller.getId()))
         notify(ObjectModifiedEvent(form.context))
         form.send_message(_(u"Added new block"))
@@ -124,13 +123,19 @@ class AddSourceBlockAction(silvaforms.Action):
 
 
 class AddSourceParameters(silvaforms.RESTPopupForm):
-    grok.adapts(AddSourceBlock, IPage)
-    grok.name('parameters')
+    grok.adapts(SourceBlock, IPage)
+    grok.name('add')
 
     source = None
     actions = silvaforms.Actions(
         silvaforms.CancelAction(),
         AddSourceBlockAction())
+
+    def __init__(self, context, request, identifier=None, restriction=None):
+        super(AddSourceParameters, self).__init__(context, request)
+        self.restriction = restriction
+        manager = component.getWrapper(self.context, IExternalSourceManager)
+        self.controller = manager(self.request, name=identifier)
 
     @property
     def label(self):
@@ -148,16 +153,6 @@ class AddSourceParameters(silvaforms.RESTPopupForm):
         super(AddSourceParameters, self).updateWidgets()
         if self.controller is not None:
             self.fieldWidgets.extend(self.controller.widgets())
-
-    def publishTraverse(self, request, name):
-        manager = getWrapper(self.context, IExternalSourceManager)
-        try:
-            self.controller = manager(self.request, name=name)
-        except SourceError:
-            parent = super(AddSourceParameters, self)
-            return parent.publishTraverse(request, name)
-        self.__name__ = '/'.join((self.__name__, name))
-        return self
 
 
 class EditSourceBlockAction(silvaforms.Action):
@@ -199,7 +194,7 @@ class EditSourceBlock(silvaforms.RESTPopupForm):
         super(EditSourceBlock, self).__init__(context, request)
         self.block = block
         self.restriction = restriction
-        manager = getWrapper(context, IExternalSourceManager)
+        manager = component.getWrapper(context, IExternalSourceManager)
         try:
             self.controller = manager(request, instance=block.identifier)
         except SourceError:

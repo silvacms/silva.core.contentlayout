@@ -136,7 +136,7 @@ class AddExternalBlock(silvaforms.RESTPopupForm):
         silvaforms.CancelAction(),
         AddExternalBlockAction())
 
-    def __init__(self, context, request, restriction=None):
+    def __init__(self, context, request, identifier=None, restriction=None):
         super(AddExternalBlock, self).__init__(context, request)
         self.restriction = restriction
 

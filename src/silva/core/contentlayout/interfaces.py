@@ -259,7 +259,7 @@ class IDesignLookup(interface.Interface):
 def block_factory_source(context):
    from silva.core.contentlayout.blocks.registry \
        import registry as block_registry
-   factories = block_registry.all_new(None)
+   factories = block_registry.all_new(context.get_root())
    return SimpleVocabulary(
       [SimpleTerm(value=f['name'], token=f['name'], title=f['title'])
        for f in factories])

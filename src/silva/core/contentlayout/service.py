@@ -23,8 +23,6 @@ from Products.Silva import roleinfo
 from . import interfaces
 from .designs.registry import registry
 from .blocks.registry import registry as block_registry
-from .blocks.registry import get_block_factories
-
 
 
 def get_content_class_from_content_type(content_type):
@@ -173,14 +171,13 @@ class ContentLayoutService(SilvaService):
     def lookup_block_groups(self, context):
         group_infos = []
         for group in self._block_groups:
-            group_info = {'title': group.title, 'components': []}
+            components = []
             for name in group.components:
-                factory = block_registry.lookup_factory(name, context)
-                if factory:
-                    group_info['components'].extend(
-                        get_block_factories(factory, context))
-            if group_info['components']:
-                group_infos.append(group_info)
+                components.append(
+                    block_registry.lookup_factory_config(name, context))
+            if components:
+                group_infos.append({'title': group.title,
+                                    'components': components})
         return group_infos
 
 
