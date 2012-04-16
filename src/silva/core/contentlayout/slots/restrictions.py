@@ -1,8 +1,6 @@
 from five import grok
 from zope.interface.interfaces import IInterface
 from zope.interface import Interface
-from zope.component import getUtility
-from silva.core.references.interfaces import IReferenceService
 
 from silva.core.contentlayout import interfaces
 from silva.core.contentlayout.blocks.source import SourceBlock
@@ -15,14 +13,11 @@ class SlotRestriction(object):
     grok.baseclass()
     grok.implements(interfaces.ISlotRestriction)
 
-    def allow_block_type(self, block_type):
+    def allow_configuration(self, configuration, slot, context):
         return True
 
-    def allow_name(self, name):
+    def allow_controller(self, controller, slot, context):
         return True
-
-    def allow_block(self, block, context, slot):
-        return self.allow_block_type(block.__class__)
 
     def apply_to(self, block_type):
         context_required = grok.context.bind().get(self)
@@ -39,7 +34,10 @@ class SlotRestriction(object):
 class BlockAll(SlotRestriction):
     grok.context(Interface)
 
-    def allow_block_type(self, _):
+    def allow_configuration(self, configuration, slot, context):
+        return False
+
+    def allow_controller(self, controller, slot, context):
         return False
 
 
@@ -50,13 +48,19 @@ class CodeSource(SlotRestriction):
 class CodeSourceName(CodeSource):
 
     def __init__(self, allowed=set(), disallowed=set()):
-        self._allowed = set(allowed)
-        self._disallowed = set(disallowed)
+        self.allowed = set(allowed)
+        self.disallowed = set(disallowed)
 
-    def allow_name(self, name):
-        if self._allowed:
-            return name in self._allowed
-        return name not in self._disallowed
+    def allow_configuration(self, configuration, slot, context):
+        return self._allow_identifier(configuration.source.id)
+
+    def allow_controller(self, controller, slot, context):
+        return self._allow_identifier(controller.source.id)
+
+    def _allow_identifier(self, identifier):
+        if self.allowed:
+            return identifier in self.allowed
+        return identifier not in self.disallowed
 
 
 class Content(SlotRestriction):
@@ -68,13 +72,7 @@ class Content(SlotRestriction):
     def __init__(self, schema=interfaces.IBlockable):
         self.schema = schema
 
-    def allow_block(self, block, context, slot):
-        if not super(Content, self).allow_block(block, context, slot):
-            return False
-
-        service = getUtility(IReferenceService)
-        reference = service.get_reference(context, name=block.identifier)
-
-        if self.schema.providedBy(reference.target):
+    def allow_controller(self, controller, context, slot):
+        if self.schema.providedBy(controller.content):
             return True
         return False

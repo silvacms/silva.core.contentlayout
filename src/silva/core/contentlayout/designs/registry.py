@@ -32,14 +32,14 @@ class DesignRegistry(object):
         factories = self._designs.setdefault(context, [])
         factories.append(factory)
 
-    def lookup(self, context):
+    def lookup_design(self, context):
         candidates = []
         for iface, factories in self._designs.iteritems():
             candidates.extend([factory for factory in factories
                                if self._is_allowed(factory, context)])
         return sort_components(candidates)
 
-    def lookup_by_name(self, name):
+    def lookup_design_by_name(self, name):
         return self._designs_by_name.get(name)
 
     def default_design(self, context):
@@ -49,7 +49,7 @@ class DesignRegistry(object):
         return None
 
     def lookup_by_content_type(self, content_type, parent):
-        return self.lookup(parent)
+        return self.lookup_design(parent)
 
     def _is_allowed(self, design, context):
         required_context = grok.context.bind().get(design)

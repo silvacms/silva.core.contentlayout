@@ -1,4 +1,6 @@
 
+from Acquisition import aq_parent
+
 from five import grok
 from zope import schema, interface
 from zope.schema.vocabulary import SimpleVocabulary, SimpleTerm
@@ -79,11 +81,12 @@ def registry_design_source(context):
                           token=design.get_identifier(),
                           title=design.get_title())
 
-    return SimpleVocabulary([make_term(t) for t in registry.lookup(context)])
+    return SimpleVocabulary(map(make_term, registry.lookup_design(context)))
 
 @grok.provider(IFormSourceBinder)
 def design_source(form):
    from zeam.form.silva.form.smi import SMIAddForm
+
    registry = getUtility(IDesignLookup)
    candidates = None
    if isinstance(form, SMIAddForm):
@@ -147,13 +150,32 @@ class IBlock(interface.Interface):
    """A block.
    """
 
+class IBlockConfiguration(interface.Interface):
+   identifier = interface.Attribute('Unique block identifier')
+   title = interface.Attribute('Block configuration title')
+   block = interface.Attribute('Associated block class')
 
-class IBlockFactories(interface.Interface):
-   """Return block factories as a list of dictionnaries.
+   def get_icon(self, screen):
+      """Return the icon.
+      """
+
+   def is_available(self, screen):
+      """Return true if the configuration is available on this screen.
+      """
+
+
+class IBlockConfigurations(interface.Interface):
+   """Return available block configuration (i.e. different scenarios
+   in which the block can be used).
    """
 
-   def __call__():
-      pass
+   def get_by_identifier(identifier):
+       """Return associated configuration to the identifier.
+       """
+
+   def get_all(self):
+      """Return all associated configuration with the block.
+      """
 
 
 class IBlockController(interface.Interface):
@@ -200,6 +222,11 @@ class IBlockManager(interface.Interface):
        """
 
 
+class IBoundBlockManager(interface.Interface):
+   pass
+
+
+
 class IEditionMode(IDefaultBrowserLayer):
    """Mark the edition mode.
 
@@ -236,21 +263,24 @@ class ITextBlock(interface.Interface):
 class IDesignLookup(interface.Interface):
     """Defines how to lookup a design
     """
-    def lookup(context):
+
+    def lookup_design(context):
       """Lookup and return a list of available design.
       """
-    def lookup_by_content_type(content_type, parent):
+
+    def lookup_design_by_type(content_type, parent):
       """Same as lookup but accept a silva content type as argument.
       """
 
-    def lookup_by_name(name):
+    def lookup_desgin_by_name(name):
        """Lookup a design by its grok name
        """
 
     def default_design(context):
        """Try to find a default design for this context or None.
        """
-    def default_design_by_content_type(content_type, parent):
+
+    def default_design_by_type(content_type, parent):
        """Same as default_design but accept a silva content type as argument.
        """
 
@@ -259,39 +289,58 @@ class IDesignLookup(interface.Interface):
 def block_factory_source(context):
    from silva.core.contentlayout.blocks.registry \
        import registry as block_registry
-   factories = block_registry.all_new(context.get_root())
+   factories = block_registry.lookup_block(aq_parent(context))
    return SimpleVocabulary(
-      [SimpleTerm(value=f['name'], token=f['name'], title=f['title'])
-       for f in factories])
+      [SimpleTerm(value=b.identifier, token=b.identifier, title=b.title)
+       for b in factories])
 
 
 class IBlockLookup(interface.Interface):
+   """Lookup blocks.
+   """
 
-   def lookup_block_groups(context):
-      """ Return a list of group with block factory informations
+   def lookup_block(context):
+      """Return all available block configurations.
+      """
+
+   def lookup_block_by_name(context, name):
+      """Return the block configuration identified by the given name.
+      """
+
+
+class IBlockGroupLookup(interface.Interface):
+
+   def lookup_block_by_name(view, name):
+      """Lookup a group available for a view by its name.
+      """
+
+   def lookup_block_groups(view):
+      """ Return a list of group with block configuration usuable in
+      the given view.
       """
 
 
 class IBlockGroup(interface.Interface):
-
-   title = schema.TextLine(title=_(u"Title"),
-                           required=True)
+   title = schema.TextLine(
+      title=_(u"Title"),
+      required=True)
    components = schema.List(
       title=_(u"Components"),
-      value_type=schema.Choice(title=_(u"Block type"),
-                              required=True,
-                              source=block_factory_source),
+      value_type=schema.Choice(
+         title=_(u"Block type"),
+         required=True,
+         source=block_factory_source),
       required=True)
 
 
 class IBlockGroupsFields(interface.Interface):
-
    _block_groups = schema.List(
       title=_(u"Groups"),
       value_type=schema.Object(IBlockGroup))
 
 
-class IContentLayoutService(ISilvaLocalService, IDesignLookup, IBlockLookup):
+class IContentLayoutService(
+   ISilvaLocalService, IDesignLookup, IBlockGroupLookup):
     """ContentLayout Service for Silva
     """
 
@@ -322,28 +371,33 @@ def content_type_source(context):
 class IDesignContentRule(interface.Interface):
    """Rules bind together a design and a content
    """
-   design = schema.Choice(title=_(u"Design"),
-                            source=registry_design_source)
-   content_type = schema.Choice(title=_(u"Content type"),
-                                source=content_type_source)
+   design = schema.Choice(
+      title=_(u"Design"),
+      source=registry_design_source)
+   content_type = schema.Choice(
+      title=_(u"Content type"),
+      source=content_type_source)
 
 
 class IDesignRestriction(IDesignContentRule):
     """A design access rule limit the use of a design and a content type
     to a minimal role.
     """
-    role = schema.Choice(title=_(u"Role"),
-                         source=editor_roles_source)
+    role = schema.Choice(
+       title=_(u"Role"),
+       source=editor_roles_source)
 
 
 class IDefaultDesignRule(IDesignContentRule):
    """Default design per content type
    """
    # same fields as parent class but in reverse order
-   content_type = schema.Choice(title=_(u"Content type"),
-                                source=content_type_source)
-   design = schema.Choice(title=_(u"Design"),
-                            source=registry_design_source)
+   content_type = schema.Choice(
+      title=_(u"Content type"),
+      source=content_type_source)
+   design = schema.Choice(
+      title=_(u"Design"),
+      source=registry_design_source)
 
 
 class IDesignRestrictions(interface.Interface):
@@ -379,7 +433,6 @@ class IDesignDeassociatedEvent(IDesignEvent):
 
 
 class DesignEvent(ObjectEvent):
-
    interface.implements(IDesignEvent)
 
    def __init__(self, object, design):
@@ -388,11 +441,9 @@ class DesignEvent(ObjectEvent):
 
 
 class DesignAssociatedEvent(DesignEvent):
-
    interface.implements(IDesignAssociatedEvent)
 
 
 class DesignDeassociatedEvent(DesignEvent):
-
    interface.implements(IDesignDeassociatedEvent)
 

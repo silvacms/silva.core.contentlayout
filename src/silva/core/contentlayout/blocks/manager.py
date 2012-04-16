@@ -4,13 +4,14 @@ import logging
 
 from five import grok
 from zope.component import getMultiAdapter
-from zope.interface import Interface
+from zope.interface import Interface, implementedBy
+from zope.interface.interfaces import ISpecification
 from zeam import component
 
 from Products.Silva.icon import registry as icon_registry
 
-from ..interfaces import IBlockManager, IBlockController
-from ..interfaces import IBlockFactories, IBlock
+from ..interfaces import IBlockManager, IBoundBlockManager, IBlockController
+from ..interfaces import IBlockConfigurations, IBlockConfiguration, IBlock
 
 _marker = object()
 logger = logging.getLogger('silva.core.contentlayout')
@@ -21,32 +22,45 @@ class Block(object):
     grok.implements(IBlock)
 
 
-class BlockConfig(component.Component):
-    component.provides(IBlockFactories)
-    grok.adapts(IBlock, Interface)
+class BlockConfiguration(object):
+    grok.provides(IBlockConfiguration)
 
-    def __init__(self, factory, context):
-        self.factory = factory
-        self.context = context
+    def __init__(self, block):
+        self.identifier = grok.name.bind().get(block)
+        self.title = grok.title.bind().get(block)
+        self.block = block
 
-    def get_by_identifier(self, _):
-        name = grok.name.bind().get(self.factory)
+    def get_icon(self, view):
         icon = None
         try:
             icon = icon_registry.get_icon_by_identifier(
-                ('silva.core.contentlayout.blocks',
-                 grok.name.bind().get(self.factory)))
+                ('silva.core.contentlayout.blocks', self.identifier))
         except ValueError:
-            pass
-        return {'name': name,
-                'add': name,
-                'title': grok.title.bind().get(self.factory),
-                'icon': icon,
-                'context': grok.context.bind(default=None).get(self.factory),
-                'block': self.factory}
+            return None
+        return '/'.join((view.root_url, icon))
+
+    def is_available(self, view):
+        context = grok.context.bind(default=None).get(self.block)
+        if context is not None:
+            if not ISpecification.providedBy(context):
+                context = implementedBy(context)
+            return context.providedBy(view.context)
+        return True
+
+
+class BlockConfigurations(component.Component):
+    grok.provides(IBlockConfigurations)
+    grok.adapts(IBlock, Interface)
+
+    def __init__(self, block, context):
+        self.block = block
+        self.context = context
+
+    def get_by_identifier(self, identifier=None):
+        return BlockConfiguration(self.block)
 
     def get_all(self):
-        return [self.get_by_identifier(None)]
+        return [self.get_by_identifier()]
 
 
 class BlockController(grok.MultiAdapter):
@@ -74,6 +88,62 @@ class BlockController(grok.MultiAdapter):
         raise NotImplementedError
 
 
+class BoundBlockManager(grok.MultiAdapter):
+    grok.adapts(Interface, Interface)
+    grok.provides(IBoundBlockManager)
+
+    def __init__(self, context, request):
+        self.manager = IBlockManager(context)
+        self.context = context
+        self.request = request
+
+    def add(self, slot_id, block, index=0):
+        return self.manager.add(slot_id, block, index=index)
+
+    def move(self, slot_id, block_id, index=0):
+        return self.manager.move(slot_id, block_id, index=index)
+
+    def remove(self, block_id):
+        block, controller = self.get(block_id)
+        if block is None:
+            return False
+        controller.remove()
+        return self.manager.remove(block_id)
+
+    def replace(self, block_id, new_block):
+        block, controller = self.get(block_id)
+        if block is None:
+            return False
+        controller.remove()
+        return self.manager.replace(block_id, new_block)
+
+    def get(self, block_id):
+        block = self.manager.get_block(block_id)
+        if block is not None:
+            return block, getMultiAdapter(
+                (block, self.context, self.request),
+                IBlockController)
+        return None, None
+
+    def visit(self, function):
+        for block_id, block in self.manager.get_all():
+            controller = getMultiAdapter(
+                (block, self.context, self.request), IBlockController)
+            function(block_id, controller)
+
+    def render(self, slot_id):
+        for block_id, block in self.manager.get_slot(slot_id):
+            if block is not None:
+                controller = getMultiAdapter(
+                    (block, self.context, self.request), IBlockController)
+                yield {"block_id": block_id,
+                       "block_editable": controller.editable() and 'true',
+                       "block_data": controller.render()}
+            else:
+                logger.error(u'Missing block %s in document.' % block_id)
+
+
+
 class BlockManager(grok.Annotation):
     grok.context(Interface)
     grok.implements(IBlockManager)
@@ -85,14 +155,6 @@ class BlockManager(grok.Annotation):
         self._slot_to_block = {}
         self._block_to_slot = {}
 
-    def addable(self, slot_id, block_name, content):
-        design = content.get_design()
-        slot = design.slot[slot_id]
-        factory, restriction = slot.get_block_type(block_name)
-        if factory is not None:
-            return True
-        return False
-
     def add(self, slot_id, block, index=0):
         if slot_id not in self._slot_to_block:
             self._slot_to_block[slot_id] = []
@@ -103,20 +165,7 @@ class BlockManager(grok.Annotation):
         self._p_changed = True
         return block_id
 
-    def movable(self, block_id, slot_id, content):
-        block = self._blocks.get(block_id)
-        design = content.get_design()
-        slot = design.slots[slot_id]
-        return slot.is_block_allowed(block, content)
-
-    def move(self, block_id, slot_id, index, content):
-        if not self.movable(block_id, slot_id, content):
-            raise ValueError('Cannot move this block in this slot')
-        block = self._blocks.get(block_id)
-        if block is None or slot_id is None or index is None:
-            raise ValueError("Invalid block id `%s`, slot `%s` "
-                             "or index `%s`" %
-                             (block_id, slot_id, index))
+    def move(self, slot_id, block_id, index):
         previous_slot_id = self._block_to_slot[block_id]
         self._block_to_slot[block_id] = slot_id
         self._slot_to_block[previous_slot_id].remove(block_id)
@@ -126,12 +175,7 @@ class BlockManager(grok.Annotation):
         self._p_changed = True
         return previous_slot_id
 
-    def remove(self, block_id, content, request):
-        block = self.get(block_id)
-        if block is None:
-            return False
-        bound = getMultiAdapter((block, content, request), IBlockController)
-        bound.remove()
+    def remove(self, block_id):
         slot_id = self._block_to_slot.get(block_id, _marker)
         if slot_id is not _marker:
             self._slot_to_block[slot_id].remove(block_id)
@@ -140,33 +184,17 @@ class BlockManager(grok.Annotation):
         self._p_changed = True
         return True
 
-    def replace(self, block_id, new_block, content, request):
-        block = self.get(block_id)
-        if block is None:
-            return False
-        bound = getMultiAdapter((block, content, request), IBlockController)
-        bound.remove()
+    def replace(self, block_id, new_block):
         self._blocks[block_id] = new_block
         self._p_changed = True
         return True
 
-    def get(self, block_id):
+    def get_block(self, block_id):
         return self._blocks.get(block_id)
 
-    def visit(self, function, content, request):
-        for block_id, block in self._blocks.iteritems():
-            controller = getMultiAdapter(
-                (block, content, request), IBlockController)
-            function(block_id, controller)
+    def get_slot(self, slot_id):
+        return map(lambda block_id: (block_id, self._blocks.get(block_id)),
+                   self._slot_to_block.get(slot_id, []))
 
-    def render(self, slot_id, content, request):
-        for block_id in self._slot_to_block.get(slot_id, []):
-            block = self.get(block_id)
-            if block is not None:
-                controller = getMultiAdapter(
-                    (block, content, request), IBlockController)
-                yield {"block_id": block_id,
-                       "block_editable": controller.editable() and 'true',
-                       "block_data": controller.render()}
-            else:
-                logger.error(u'Missing block %s in document.' % block_id)
+    def get_all(self):
+        return list(self._blocks.iteritems())

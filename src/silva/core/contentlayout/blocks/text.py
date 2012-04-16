@@ -110,9 +110,10 @@ class AddTextBlock(silvaforms.RESTPopupForm):
         silvaforms.CancelAction(),
         AddTextBlockAction())
 
-    def __init__(self, context, request, identifier=None, restriction=None):
+    def __init__(self, context, request, configuration, restriction):
         super(AddTextBlock, self).__init__(context, request)
         self.restriction = restriction
+        self.configuration = configuration
 
 
 class EditTextBlockAction(silvaforms.Action):
@@ -149,12 +150,11 @@ class EditTextBlock(silvaforms.RESTPopupForm):
         silvaforms.CancelAction())
     ignoreContent = False
 
-    def __init__(self, block, context, request, restriction=None):
+    def __init__(self, block, context, request, controller, restriction):
         super(EditTextBlock, self).__init__(context, request)
         self.block = block
         self.restriction = restriction
-        self.setContentData(
-            getMultiAdapter((block, context, request), IBlockController))
+        self.setContentData(controller)
 
     @silvaforms.action(_('Convert'))
     def convert(self):

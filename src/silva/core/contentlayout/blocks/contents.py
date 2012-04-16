@@ -4,25 +4,23 @@ import uuid
 from Acquisition import aq_base
 
 from five import grok
-from zope.component import getMultiAdapter
 from zope.component import getUtility, queryMultiAdapter
 from zope.event import notify
 from zope.interface import Interface
 from zope.lifecycleevent import ObjectModifiedEvent
 from zope.publisher.interfaces.http import IHTTPRequest
 
-from silva.core.contentlayout.blocks import Block, BlockController
-from silva.core.contentlayout.interfaces import IBlockController
-from silva.core.contentlayout.interfaces import IBlockView, IBlockable
-from silva.core.contentlayout.interfaces import IContentSlotRestriction
-from silva.core.contentlayout.interfaces import IReferenceBlock, IPage
+from silva.core import conf as silvaconf
 from silva.core.interfaces.adapters import IIndexEntries
 from silva.core.references.interfaces import IReferenceService
 from silva.core.references.reference import Reference
 from silva.translations import translate as _
 from zeam.form import silva as silvaforms
 
-from silva.core import conf as silvaconf
+from silva.core.contentlayout.blocks import Block, BlockController
+from silva.core.contentlayout.interfaces import IBlockView, IBlockable
+from silva.core.contentlayout.interfaces import IContentSlotRestriction
+from silva.core.contentlayout.interfaces import IReferenceBlock, IPage
 
 
 class ReferenceBlock(Block):
@@ -136,9 +134,10 @@ class AddExternalBlock(silvaforms.RESTPopupForm):
         silvaforms.CancelAction(),
         AddExternalBlockAction())
 
-    def __init__(self, context, request, identifier=None, restriction=None):
+    def __init__(self, context, request, configuration, restriction):
         super(AddExternalBlock, self).__init__(context, request)
         self.restriction = restriction
+        self.configuration = configuration
 
     def update(self):
         field = self.baseFields['content'].clone()
@@ -181,11 +180,11 @@ class EditExternalBlock(AddExternalBlock):
         EditExternalBlockAction())
     ignoreContent = False
 
-    def __init__(self, block, context, request, restriction=None):
-        super(EditExternalBlock, self).__init__(context, request, restriction)
+    def __init__(self, block, context, request, controller, restriction):
+        super(AddExternalBlock, self).__init__(context, request)
+        self.restriction = restriction
         self.block = block
-        self.setContentData(
-            getMultiAdapter((block, context, request), IBlockController))
+        self.setContentData(controller)
 
 
 class BlockView(object):

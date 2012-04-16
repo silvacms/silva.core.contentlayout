@@ -1,10 +1,9 @@
+
 from five import grok
+from zope.component import getMultiAdapter
 from grokcore.chameleon.components import ChameleonPageTemplate
 
-from silva.core.contentlayout.interfaces import ISlot
-from silva.core.contentlayout.interfaces import IEditionMode
-from silva.core.contentlayout.interfaces import IBlockManager
-from silva.core.contentlayout.blocks.registry import registry
+from ..interfaces import IBoundBlockManager, ISlot, IEditionMode
 
 
 class Slot(object):
@@ -15,41 +14,27 @@ class Slot(object):
         self.css_class = css_class
         self._restrictions = restrictions or []
 
-    def available_block_types(self, context):
-        candidates = registry.all(context)
-        factories = []
-        for name, block_type in candidates:
-            for restriction in self._restrictions:
-                if restriction.apply_to(block_type):
-                    if restriction.allow_block_type(block_type):
-                        factories.append((name, block_type))
-                    break
-            else:
-                factories.append((name, block_type))
-        return factories
-
-    def get_block_type(self, name):
-        factory = registry.lookup(name)
-        if factory is None:
-            return None, None
-
-        for restriction in self._restrictions:
-            if restriction.apply_to(factory):
-                if restriction.allow_block_type(factory):
-                    return factory, restriction
-                return None, restriction
-
-        return factory, None
-
-    def is_block_allowed(self, block, context):
-        for restriction in self._restrictions:
-            if restriction.apply_to(block.__class__):
-                return restriction.allow_block(block, context, self)
+    def is_new_block_allowed(self, configuration, context):
+        restriction = self.get_new_restriction(configuration)
+        if restriction is not None:
+            return restriction.allow_configuration(configuration, self, context)
         return True
 
-    def get_block_restriction(self, block):
+    def is_existing_block_allowed(self, block, controller, context):
+        restriction = self.get_existing_restriction(block)
+        if restriction is not None:
+            return restriction.allow_controller(controller, self, context)
+        return True
+
+    def get_new_restriction(self, configuration):
+        return self._get_restriction(configuration.block)
+
+    def get_existing_restriction(self, block):
+        return self._get_restriction(block.__class__)
+
+    def _get_restriction(self, block_type):
         for restriction in self._restrictions:
-            if restriction.apply_to(block.__class__):
+            if restriction.apply_to(block_type):
                 return restriction
         return None
 
@@ -76,8 +61,9 @@ class SlotView(object):
         return {}
 
     def blocks(self):
-        return IBlockManager(self.content).render(
-            self.slot_id, self.content, self.request)
+        return getMultiAdapter(
+            (self.content, self.request),
+            IBoundBlockManager).render(self.slot_id)
 
     def __call__(self):
         template = self.view_template

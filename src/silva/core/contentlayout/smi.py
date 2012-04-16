@@ -8,13 +8,14 @@ from zope.component import getUtility, getMultiAdapter
 from zope.interface import alsoProvides, Interface, implementedBy
 
 from infrae.rest import queryRESTComponent
-from silva.core.contentlayout.interfaces import IBlockController
-from silva.core.contentlayout.interfaces import IBlockManager, IBlockLookup
-from silva.core.contentlayout.interfaces import IEditionMode, IPage
+from silva.core.views.interfaces import IVirtualSite
 from silva.core.views import views as silvaviews
 from silva.ui.interfaces import IJSView
 from silva.ui.rest import REST
 from silva.ui.smi import SMIConfiguration
+
+from .interfaces import IEditionMode, IPage
+from .interfaces import IBoundBlockManager, IBlockGroupLookup
 
 from zExceptions import BadRequest, NotFound
 
@@ -62,8 +63,10 @@ class EditorJSView(grok.MultiAdapter):
                 "target_language": self.screen.language}
 
     def __call__(self, screen, identifier=None):
+        service = getUtility(IBlockGroupLookup)
+        self.root_url = IVirtualSite(self.request).get_root_url()
         self.screen = screen
-        self.blocks = getUtility(IBlockLookup).lookup_block_groups(self.context)
+        self.blocks = service.lookup_block_groups(self)
         return {"ifaces": ["content-layout"],
                 "layer": self.layer.render(self),
                 "components": self.components.render(self),
@@ -86,17 +89,18 @@ class AddBlock(REST):
     block_id = None
     block_controller = None
 
+    @property
+    def manager(self):
+        return getMultiAdapter(
+            (self.context, self.request), IBoundBlockManager)
+
     def add(self, block):
         try:
             index = int(self.request.form.get('index', 0))
         except ValueError:
             index = 0
-        self.block = block
-        self.block_id = IBlockManager(self.context).add(
-            self.slot_id, block, index)
-        self.block_controller = getMultiAdapter(
-            (block, self.context, self.request),
-            IBlockController)
+        self.block_id = self.manager.add(self.slot_id, block, index)
+        self.block, self.block_controller = self.manager.get(self.block_id)
         return self.block_controller
 
     def publishTraverse(self, request, name):
@@ -111,16 +115,13 @@ class AddBlock(REST):
             return self
 
         if self.slot is not None:
-            parts = name.split(":", 1)
-            identifier = None
-            if len(parts) > 1:
-                identifier = parts[1]
-
-            block, restriction = self.slot.get_block_type(name)
-            if block is not None:
+            service = getUtility(IBlockGroupLookup)
+            configuration = service.lookup_block_by_name(self, name)
+            if configuration is not None:
+                restriction = self.slot.get_new_restriction(configuration)
                 adder = queryRESTComponent(
-                    (implementedBy(block), self.context),
-                    (self.context, request, identifier, restriction),
+                    (implementedBy(configuration.block), self.context),
+                    (self.context, request, configuration, restriction),
                     name='add',
                     parent=self,
                     id=name)
@@ -137,10 +138,6 @@ class AddableBlock(REST):
     slot = None
     slot_id = None
     block_name = None
-
-    @CachedProperty
-    def manager(self):
-        return IBlockManager(self.context)
 
     def publishTraverse(self, request, name):
         if self.slot is None:
@@ -165,10 +162,13 @@ class AddableBlock(REST):
         if self.block_name is None:
             raise BadRequest('missing block name')
 
-        success = False
-        block, restriction = self.slot.get_block_type(self.block_name)
-        if block is not None:
-            success = True
+        service = getUtility(IBlockGroupLookup)
+        configuration = service.lookup_block_by_name(self, self.block_name)
+        if configuration is not None:
+            success = self.slot.is_new_block_allowed(
+                configuration, self.context)
+        else:
+            success = False
         return self.json_response({'content': {'success': success}})
 
 
@@ -183,10 +183,12 @@ class BlockREST(REST):
     slot_id = None
     block = None
     block_id = None
+    block_controller = None
 
     @CachedProperty
     def manager(self):
-        return IBlockManager(self.context)
+        return getMultiAdapter(
+            (self.context, self.request), IBoundBlockManager)
 
     def publishTraverse(self, request, name):
         if self.slot is None:
@@ -201,16 +203,17 @@ class BlockREST(REST):
 
         if self.slot is not None and self.block is None:
             block_id = urllib.unquote(name)
-            block = self.manager.get(block_id)
+            block, block_controller = self.manager.get(block_id)
             if block is not None:
                 self.block = block
                 self.block_id = block_id
-                handler = self.publishBlock(name, request, block)
+                self.block_controller = block_controller
+                handler = self.publishBlock(name, request)
                 if handler is not None:
                     return handler
         return super(BlockREST, self).publishTraverse(request, name)
 
-    def publishBlock(self, name, request, block):
+    def publishBlock(self, name, request):
         self.__name__ = '/'.join((self.__name__, name))
         return self
 
@@ -218,11 +221,11 @@ class BlockREST(REST):
 class EditBlock(BlockREST):
     grok.name('edit')
 
-    def publishBlock(self, name, request, block):
-        restriction = self.slot.get_block_restriction(block)
+    def publishBlock(self, name, request):
+        restriction = self.slot.get_existing_restriction(self.block)
         return queryRESTComponent(
-            (block, self.context),
-            (block, self.context, request, restriction),
+            (self.block, self.context),
+            (self.block, self.context, request, self.block_controller, restriction),
             name='edit',
             parent=self,
             id=name)
@@ -240,17 +243,13 @@ class MoveBlock(BlockREST):
             raise BadRequest('missing block identifier')
         if index is None:
             raise BadRequest('missing index parameter')
-
-        message = None
         try:
-            self.manager.move(
-                self.block_id, self.slot_id, int(index), self.context)
-            success = True
-        except ValueError as e:
-            success = False
-            message = str(e)
-        return self.json_response({
-                'content': {'success': success, 'message': message}})
+            index = int(index)
+        except ValueError:
+            raise BadRequest('index is not a valid integer')
+
+        self.manager.move(self.slot_id, self.block_id, index)
+        return self.json_response({'content': {'success': True}})
 
 
 class MovableBlock(BlockREST):
@@ -264,15 +263,9 @@ class MovableBlock(BlockREST):
         if self.block_id is None:
             raise BadRequest('missing block identifier')
 
-        message = None
-        try:
-            success = self.manager.movable(
-                self.block_id, self.slot_id, self.context)
-        except ValueError as error:
-            success = False
-            message = str(error)
-        return self.json_response({
-                'content': {'success': success, 'message': message}})
+        success = self.slot.is_existing_block_allowed(
+            self.block, self.block_controller, self.context)
+        return self.json_response({'content': {'success': success}})
 
 
 class RemoveBlock(BlockREST):
@@ -281,6 +274,6 @@ class RemoveBlock(BlockREST):
     def GET(self):
         if self.block_id is None:
             raise BadRequest('missing block identifier')
-        self.manager.remove(self.block_id, self.context, self.request)
-        return self.json_response({'content': {'success': True}})
+        success = self.manager.remove(self.block_id)
+        return self.json_response({'content': {'success': success}})
 

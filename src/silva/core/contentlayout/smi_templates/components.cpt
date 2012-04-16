@@ -6,9 +6,10 @@
     <div>
       <div class="contentlayout-component"
            tal:repeat="component block.components"
-             tal:attributes="data-block-name component.name">
-        <img src="${component.icon}" alt="${component.title}"
-             tal:condition="component.icon is not None" />
+             tal:attributes="data-block-name component.identifier">
+        <img src="${icon}" alt="${component.title}"
+             tal:condition="icon is not None"
+             tal:define="icon component.get_icon(view)"/>
         <span class="component-name" tal:content="component.title" />
         <div clear="both" />
       </div>

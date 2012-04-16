@@ -113,7 +113,7 @@ class RegistryBlockGrokker(martian.ClassGrokker):
     def execute(self, factory, name, icon, config=None, **kw):
         if icon is not None and config is not None:
             self.register_icon(config, factory, name, icon)
-        block_registry.register(name, factory)
+        block_registry.register_block(name, factory)
         return True
 
 

@@ -10,6 +10,7 @@ from zope.interface import Interface
 from five import grok
 from AccessControl import ClassSecurityInfo
 from App.class_init import InitializeClass
+from Acquisition import aq_parent
 
 from silva.core import conf as silvaconf
 from silva.core.interfaces import IAuthorizationManager
@@ -21,7 +22,7 @@ from Products.Silva.ExtensionRegistry import extensionRegistry
 from Products.Silva import roleinfo
 
 from . import interfaces
-from .designs.registry import registry
+from .designs.registry import registry as design_registry
 from .blocks.registry import registry as block_registry
 
 
@@ -31,23 +32,6 @@ def get_content_class_from_content_type(content_type):
     if addable is None:
         raise ValueError('Unknow content type %s' % content_type)
     return addable['instance']
-
-
-class BlockGroup(object):
-
-    title = None
-    components = None
-
-    def __init__(self, title, components):
-        self.title = title
-        self.components = components
-
-
-grok.global_utility(
-    BlockGroup,
-    provides=IFactory,
-    name=interfaces.IBlockGroup.__identifier__,
-    direct=True)
 
 
 class ContentLayoutService(SilvaService):
@@ -78,9 +62,9 @@ class ContentLayoutService(SilvaService):
         return set(self._default_designs_index.itervalues())
 
     security.declareProtected(
-        'View Management Screens', 'lookup')
-    def lookup(self, context):
-        candidates = registry.lookup(context)
+        'View Management Screens', 'lookup_design')
+    def lookup_design(self, context):
+        candidates = design_registry.lookup_design(context)
         return filter(
             lambda t: self._design_allowed_in_context(t, context),
             candidates)
@@ -88,7 +72,8 @@ class ContentLayoutService(SilvaService):
     security.declareProtected(
         'View Management Screens', 'lookup_by_content_type')
     def lookup_by_content_type(self, content_type, parent):
-        candidates = registry.lookup_by_content_type(content_type, parent)
+        candidates = design_registry.lookup_by_content_type(
+            content_type, parent)
         object_class = get_content_class_from_content_type(content_type)
         return filter(
             lambda t: self._design_allowed_in_context(
@@ -96,9 +81,9 @@ class ContentLayoutService(SilvaService):
             candidates)
 
     security.declareProtected(
-        'View Management Screens', 'lookup_by_name')
-    def lookup_by_name(self, name):
-        return registry.lookup_by_name(name)
+        'View Management Screens', 'lookup_design_by_name')
+    def lookup_design_by_name(self, name):
+        return design_registry.lookup_design_by_name(name)
 
     security.declareProtected(
         'View Management Screens', 'default_design')
@@ -167,18 +152,29 @@ class ContentLayoutService(SilvaService):
         self._block_groups = groups
 
     security.declareProtected(
+        'View Management Screens', 'lookup_block_by_name')
+    def lookup_block_by_name(self, view, name):
+        context = aq_parent(self)
+        block = block_registry.lookup_block_by_name(context, name)
+        if block is not None and block.is_available(view):
+            return block
+        return None
+
+    security.declareProtected(
         'View Management Screens', 'lookup_block_groups')
-    def lookup_block_groups(self, context):
-        group_infos = []
+    def lookup_block_groups(self, view):
+        context = aq_parent(self)
+        groups = []
         for group in self._block_groups:
             components = []
             for name in group.components:
-                components.append(
-                    block_registry.lookup_factory_config(name, context))
+                block = block_registry.lookup_block_by_name(context, name)
+                if block is not None and block.is_available(view):
+                    components.append(block)
             if components:
-                group_infos.append({'title': group.title,
-                                    'components': components})
-        return group_infos
+                groups.append({'title': group.title,
+                               'components': components})
+        return groups
 
 
 InitializeClass(ContentLayoutService)
@@ -231,6 +227,7 @@ class DesignContentRule(object):
 class DesignRestriction(DesignContentRule):
     """ Require a minimal role to set a design on a content.
     """
+    grok.implements(interfaces.IDesignRestriction)
 
     def __init__(self, design, content_type, role):
         super(DesignRestriction, self).__init__(design, content_type)
@@ -307,6 +304,25 @@ class ContentDefaultDesignSettings(silvaforms.ZMISubForm):
             self.status = e.args[0]
             return silvaforms.FAILURE
         return silvaforms.SUCCESS
+
+
+class BlockGroup(object):
+    """Group of blocks
+    """
+    grok.implements(interfaces.IBlockGroup)
+    title = None
+    components = None
+
+    def __init__(self, title, components):
+        self.title = title
+        self.components = components
+
+
+grok.global_utility(
+    BlockGroup,
+    provides=IFactory,
+    name=interfaces.IBlockGroup.__identifier__,
+    direct=True)
 
 
 class ContentLayoutServiceManageBlocks(silvaforms.ZMIForm):

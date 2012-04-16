@@ -1,24 +1,24 @@
 
 from five import grok
-from zope import schema
 from zope.event import notify
 from zope.interface import Interface
 from zope.lifecycleevent import ObjectModifiedEvent
-from zope.schema.vocabulary import SimpleVocabulary
+from zope.traversing.browser import absoluteURL
 
+from Acquisition import aq_base
+
+from Products.SilvaExternalSources.interfaces import IExternalSource
 from Products.SilvaExternalSources.interfaces import IExternalSourceManager
-from Products.SilvaExternalSources.interfaces import SourceError, source_source
+from Products.SilvaExternalSources.interfaces import SourceError
 from Products.SilvaExternalSources.interfaces import availableSources
 
 from silva.translations import translate as _
 from zeam import component
 from zeam.form import silva as silvaforms
-from zeam.form.ztk.interfaces import IFormSourceBinder
-
-from Products.SilvaExternalSources.interfaces import IExternalSource
 
 from . import Block
-from ..interfaces import IPage, IBlock, IBlockFactories
+from ..interfaces import IPage, IBlock
+from ..interfaces import IBlockConfiguration, IBlockConfigurations
 from ..interfaces import IBlockManager, IBlockController
 
 
@@ -30,35 +30,44 @@ class SourceBlock(Block):
         self.identifier = identifier
 
 
-class SourceBlockLookup(component.Component):
-    component.provides(IBlockFactories)
+class SourceBlockConfiguration(object):
+    grok.implements(IBlockConfiguration)
+
+    def __init__(self, prefix, source, block):
+        self.identifier = ':'.join((prefix, source.getId()))
+        self.title = source.get_title()
+        self.block = block
+        self.source = source
+
+    def get_icon(self, view):
+        icon = self.source._getOb('icon.png', None)
+        if icon is not None:
+            return absoluteURL(icon, view.request)
+        return None
+
+    def is_available(self, view):
+        found_source = getattr(view.context, self.source.getId(), None)
+        return aq_base(found_source) is aq_base(self.source)
+
+
+class SourceBlockConfigurations(component.Component):
+    grok.provides(IBlockConfigurations)
     grok.adapts(SourceBlock, Interface)
 
-    def __init__(self, factory, context):
-        self.factory = factory
+    def __init__(self, block, context):
+        self.block = block
         self.context = context
+        self.prefix = grok.name.bind().get(block)
 
     def get_by_identifier(self, identifier):
-        name = grok.name.bind().get(self.factory)
         source = getattr(self.context, identifier, None)
         if source is not None and IExternalSource.providedBy(source):
-            return {'name': name + ":" + identifier,
-                    'title': source.get_title(),
-                    'icon': None,
-                    'context': None,
-                    'block': self.factory,
-                    'source': source}
+            return SourceBlockConfiguration(self.prefix, source, self.block)
         return None
 
     def get_all(self):
-        name = grok.name.bind().get(self.factory)
         for identifier, source in availableSources(self.context):
-            yield {'name': name + ":" + identifier,
-                   'title': source.get_title(),
-                   'icon': None,
-                   'context': None,
-                   'block': self.factory,
-                   'source': source}
+            yield SourceBlockConfiguration(self.prefix, source, self.block)
 
 
 def source_controller(block, context, request):
@@ -70,22 +79,6 @@ grok.global_adapter(
     source_controller,
     (SourceBlock, Interface, Interface),
     IBlockController)
-
-
-@grok.provider(IFormSourceBinder)
-def form_source_source(form):
-    if form.restriction is None:
-        return source_source(form.context)
-
-    return SimpleVocabulary([term for term in source_source(form.context)
-                             if form.restriction.allow_name(term.token)])
-
-
-class IAddSourceSchema(Interface):
-    source = schema.Choice(
-        title=_(u"Select an external source"),
-        source=form_source_source,
-        required=True)
 
 
 class AddSourceBlockAction(silvaforms.Action):
@@ -131,11 +124,12 @@ class AddSourceParameters(silvaforms.RESTPopupForm):
         silvaforms.CancelAction(),
         AddSourceBlockAction())
 
-    def __init__(self, context, request, identifier=None, restriction=None):
+    def __init__(self, context, request, configuration, restriction):
         super(AddSourceParameters, self).__init__(context, request)
         self.restriction = restriction
+        self.configuration = configuration
         manager = component.getWrapper(self.context, IExternalSourceManager)
-        self.controller = manager(self.request, name=identifier)
+        self.controller = manager(self.request, name=configuration.source.id)
 
     @property
     def label(self):
@@ -190,15 +184,11 @@ class EditSourceBlock(silvaforms.RESTPopupForm):
         silvaforms.CancelAction(),
         EditSourceBlockAction())
 
-    def __init__(self, block, context, request, restriction=None):
+    def __init__(self, block, context, request, controller, restriction):
         super(EditSourceBlock, self).__init__(context, request)
         self.block = block
         self.restriction = restriction
-        manager = component.getWrapper(context, IExternalSourceManager)
-        try:
-            self.controller = manager(request, instance=block.identifier)
-        except SourceError:
-            self.controller = None
+        self.controller = controller
 
     @property
     def label(self):
