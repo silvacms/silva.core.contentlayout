@@ -274,6 +274,6 @@ class RemoveBlock(BlockREST):
     def GET(self):
         if self.block_id is None:
             raise BadRequest('missing block identifier')
-        success = self.manager.remove(self.block_id)
-        return self.json_response({'content': {'success': success}})
+        self.manager.remove(self.block_id)
+        return self.json_response({'content': {'success': True}})
 

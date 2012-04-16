@@ -182,12 +182,12 @@ class BlockManager(grok.Annotation):
             del self._block_to_slot[block_id]
         del self._blocks[block_id]
         self._p_changed = True
-        return True
+        return block_id
 
     def replace(self, block_id, new_block):
         self._blocks[block_id] = new_block
         self._p_changed = True
-        return True
+        return block_id
 
     def get_block(self, block_id):
         return self._blocks.get(block_id)

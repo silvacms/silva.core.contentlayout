@@ -2,7 +2,6 @@
 import uuid
 
 from five import grok
-from zope.component import getMultiAdapter
 from zope.event import notify
 from zope.interface import Interface
 from zope.lifecycleevent import ObjectModifiedEvent
@@ -12,7 +11,6 @@ from silva.core.conf import schema as silvaschema
 from silva.core.conf.interfaces import ITitledContent
 from silva.core.contentlayout.blocks import Block, BlockController
 from silva.core.contentlayout.blocks.contents import ReferenceBlock
-from silva.core.contentlayout.interfaces import IBlockManager, IBlockController
 from silva.core.contentlayout.interfaces import ITextBlock, IPage
 from silva.core.editor.interfaces import ITextIndexEntries
 from silva.core.editor.text import Text
@@ -171,9 +169,13 @@ class ConvertTextBlockAction(silvaforms.Action):
         silvaforms.IRESTCloseOnSuccessAction)
     title = _('Convert')
 
+    block = None
+    block_id = None
+    block_controller = None
+
     def get_extra_payload(self, form):
         return {
-            'block_id': form.__name__,
+            'block_id': self.block_id,
             'block_data': self.block_controller.render(),
             'block_editable': True}
 
@@ -181,9 +183,7 @@ class ConvertTextBlockAction(silvaforms.Action):
         data, errors = form.extractData()
         if errors:
             return silvaforms.FAILURE
-        current = getMultiAdapter(
-            (form.__parent__.block, form.context, form.request),
-            IBlockController)
+        api = form.__parent__.__parent__
         container = form.context.get_container()
         factory = container.manage_addProduct['silva.app.document']
         factory.manage_addDocument(data['id'], data['title'])
@@ -192,15 +192,11 @@ class ConvertTextBlockAction(silvaforms.Action):
         version.body.save(
             version,
             form.request,
-            current.text,
+            api.block_controller.text,
             type=ISaveEditorFilter)
-        new_block = ReferenceBlock()
-        self.block_controller = getMultiAdapter(
-            (new_block, form.context, form.request), IBlockController)
+        self.block_id = api.manager.replace(api.block_id, ReferenceBlock())
+        self.block, self.block_controller = api.manager.get(self.block_id)
         self.block_controller.content = document
-        IBlockManager(form.context).replace(
-            form.__parent__.__parent__.block_id, new_block,
-            form.context, form.request)
         notify(ObjectModifiedEvent(version))
         return silvaforms.SUCCESS
 
