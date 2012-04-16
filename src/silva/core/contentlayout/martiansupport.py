@@ -38,7 +38,7 @@ class RegisterDesignGrokker(martian.ClassGrokker):
         if factory.template is None:
             self.associate_template(factory)
 
-        design_registry.register(factory)
+        design_registry.register_design(factory)
         return True
 
     def associate_template(self, factory):

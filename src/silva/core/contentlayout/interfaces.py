@@ -90,10 +90,10 @@ def design_source(form):
    registry = getUtility(IDesignLookup)
    candidates = None
    if isinstance(form, SMIAddForm):
-      candidates = registry.lookup_by_content_type(
+      candidates = registry.lookup_design_by_type(
          form._content_type, form.context)
    else:
-      candidates = registry.lookup(form.context)
+      candidates = registry.lookup_design(form.context)
    return SimpleVocabulary([
          SimpleTerm(value=design,
                     token=design.get_identifier(),
@@ -115,7 +115,7 @@ def default_designs(form):
    registry = getUtility(IDesignLookup)
    design = None
    if isinstance(form, SMIAddForm):
-      design = registry.default_design_by_content_type(
+      design = registry.default_design_by_type(
          form._content_type, form.context)
    else:
       design = registry.default_design(form.context)

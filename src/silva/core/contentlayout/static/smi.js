@@ -315,7 +315,9 @@
              : $.Deferred().reject({
                  success: true,
                  slot: slot,
-                 current: block})
+                 current: block}).always(function() {
+                     $helper.remove();
+                 })
             ).always(function() {
                 block.placeholder_clear();
             }).done(function(data) {
@@ -325,7 +327,6 @@
                     slot.remove(block);
                 };
                 block.destroy();
-                $helper.remove();
             }).always(function() {
                 view.slots.update();
                 view.slots.events.restore(event);
@@ -754,7 +755,7 @@
         var api = {
             top: -1,
             left: -1,
-            threshold: 15,
+            threshold: 10,
             changed: false,
             direction: {
                 right: null,
@@ -914,9 +915,44 @@
 
         infrae.views.view({
             iface: 'content-layout',
+            name: 'toolbar',
+            factory: function($content, data, smi, view) {
+                return {
+                    html: '<div class="actions layout-actions"><ol>' +
+                        '<li class="last-action"><a class="ui-state-default component-action">' +
+                        '<div class="action-icon"><ins class="ui-icon ui-icon-newwin"></ins></div>' +
+                        '<span class="have-icon">Components</span></a></li></ol></div>',
+                    render: function() {
+                        var actions = data.menu.actions;
+                        var $component_action = $content.find('.component-action');
+
+                        $component_action.bind('click', function(event) {
+                            view.toggle();
+                            event.preventDefault();
+                            event.stopPropagation();
+                        });
+
+                        if (actions && actions.entries.length) {
+                            var $menu = $('<div class="actions content-actions"><ol></ol></div>');
+                            $menu.find('ol').render({data: actions});
+                            $content.prepend($menu);
+                        };
+                        infrae.ui.selection.disable($content);
+                    },
+                    cleanup: function() {
+                        $content.empty();
+                        infrae.ui.selection.enable($content);
+                    }
+                };
+            }
+        });
+
+        infrae.views.view({
+            iface: 'content-layout',
             name: 'content',
             factory: function($content, data, smi) {
                 var path = smi.opened.path + (data.identifier ? '/' + data.identifier : '');
+                var opened = false;
                 var $components = $(data.components);
                 var $layer = $(data.layer);
 
@@ -926,6 +962,25 @@
                     nocache: true,
                     editor: Editor(smi, urls, path),
                     shortcuts: smi.shortcuts,
+                    open: function() {
+                        if (opened === false) {
+                            $components.dialog('open');
+                            $components.accordion();
+                            opened = true;
+                        };
+                    },
+                    close: function() {
+                        if (opened === true) {
+                            $components.dialog('close');
+                        };
+                    },
+                    toggle: function() {
+                        if (opened === false) {
+                            this.open();
+                        } else {
+                            this.close();
+                        };
+                    },
                     render: function($content) {
                         var timer = null;
 
@@ -946,13 +1001,15 @@
                             }, 50);
                         });
 
-                        $components.dialog({position: position, closeOnEscape: false});
-                        $components.accordion();
+                        $components.dialog({
+                            position: position,
+                            closeOnEscape: false,
+                            autoOpen: false});
                         $components.bind('dialogclose', function() {
                             position = $components.dialog('option', 'position');
-                            $components.remove();
-                            $components = null;
+                            opened = false;
                         });
+                        this.open();
 
                         // Disable links and selection
                         this.$body.delegate('a', 'click', function (event) {
@@ -962,10 +1019,9 @@
 
                     },
                     cleanup: function() {
-                        if ($components !== null) {
-                            $components.dialog('close');
-                        };
+                        this.close();
                         this.shortcuts.remove('editor');
+                        $components.remove();
                         $content.empty();
                     }
                 };

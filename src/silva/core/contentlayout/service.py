@@ -70,9 +70,9 @@ class ContentLayoutService(SilvaService):
             candidates)
 
     security.declareProtected(
-        'View Management Screens', 'lookup_by_content_type')
-    def lookup_by_content_type(self, content_type, parent):
-        candidates = design_registry.lookup_by_content_type(
+        'View Management Screens', 'lookup_design_by_type')
+    def lookup_design_by_type(self, content_type, parent):
+        candidates = design_registry.lookup_design_by_type(
             content_type, parent)
         object_class = get_content_class_from_content_type(content_type)
         return filter(
@@ -95,8 +95,8 @@ class ContentLayoutService(SilvaService):
         return None
 
     security.declareProtected(
-        'View Management Screens', 'default_design_by_content_type')
-    def default_design_by_content_type(self, content_type, parent):
+        'View Management Screens', 'default_design_by_type')
+    def default_design_by_type(self, content_type, parent):
         rule = self._default_designs_index.get(content_type)
         content_class = get_content_class_from_content_type(content_type)
         if rule is not None and self._design_allowed_in_context(
