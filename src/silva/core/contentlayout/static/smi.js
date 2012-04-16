@@ -307,6 +307,8 @@
             return (validator !== null && failed !== true
              ?  validator.done(function() {
                  $placeholder.attr('class', 'contentlayout-component contentlayout-placeholder');
+             }).always(function() {
+                 $helper.remove();
              }).pipe(view.editor.add, function() {
                  return $.Deferred().reject();
              })
@@ -323,12 +325,12 @@
                     slot.remove(block);
                 };
                 block.destroy();
+                $helper.remove();
             }).always(function() {
                 view.slots.update();
                 view.slots.events.restore(event);
                 view.$body.css('cursor', 'inherit');
                 $component.removeClass('selected');
-                $helper.remove();
                 deferred.resolve();
             });
         };

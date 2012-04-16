@@ -1,4 +1,4 @@
-<div title="Components" class="contentlayout-components"
+<div title="Place components" class="contentlayout-components"
      i18n:domain="silva"
      i18n:attributes="title">
   <tal:block tal:repeat="block view.blocks">

@@ -7,12 +7,16 @@ from zope.traversing.browser import absoluteURL
 
 from Acquisition import aq_base
 
+from Products.Silva.icon import registry as icon_registry
 from Products.SilvaExternalSources.interfaces import IExternalSource
 from Products.SilvaExternalSources.interfaces import IExternalSourceManager
 from Products.SilvaExternalSources.interfaces import SourceError
 from Products.SilvaExternalSources.interfaces import availableSources
 
+from silva.core import conf as silvaconf
+from silva.core.conf.interfaces import ITitledContent
 from silva.translations import translate as _
+from silva.ui.rest.exceptions import RESTRedirectHandler
 from zeam import component
 from zeam.form import silva as silvaforms
 
@@ -25,6 +29,7 @@ from ..interfaces import IBlockManager, IBlockController
 class SourceBlock(Block):
     grok.implements(IBlock)
     grok.name('source')
+    silvaconf.icon('source.png')
 
     def __init__(self, identifier):
         self.identifier = identifier
@@ -34,7 +39,8 @@ class SourceBlockConfiguration(object):
     grok.implements(IBlockConfiguration)
 
     def __init__(self, prefix, source, block):
-        self.identifier = ':'.join((prefix, source.getId()))
+        self.prefix = prefix
+        self.identifier = ':'.join((prefix, source.id))
         self.title = source.get_title()
         self.block = block
         self.source = source
@@ -43,7 +49,12 @@ class SourceBlockConfiguration(object):
         icon = self.source._getOb('icon.png', None)
         if icon is not None:
             return absoluteURL(icon, view.request)
-        return None
+        try:
+            icon = icon_registry.get_icon_by_identifier(
+                ('silva.core.contentlayout.blocks', self.prefix))
+        except ValueError:
+            return None
+        return '/'.join((view.root_url, icon))
 
     def is_available(self, view):
         found_source = getattr(view.context, self.source.getId(), None)
@@ -180,9 +191,7 @@ class EditSourceBlock(silvaforms.RESTPopupForm):
 
     label = _(u"Edit an external block ")
     fields = silvaforms.Fields()
-    actions = silvaforms.Actions(
-        silvaforms.CancelAction(),
-        EditSourceBlockAction())
+    actions = silvaforms.Actions(silvaforms.CancelAction())
 
     def __init__(self, block, context, request, controller, restriction):
         super(EditSourceBlock, self).__init__(context, request)
@@ -206,3 +215,20 @@ class EditSourceBlock(silvaforms.RESTPopupForm):
         super(EditSourceBlock, self).updateWidgets()
         if self.controller is not None:
             self.fieldWidgets.extend(self.controller.widgets())
+
+
+    @silvaforms.action(_('Convert'))
+    def convert(self):
+        raise RESTRedirectHandler('convert', relative=self, clear=True)
+
+    actions += EditSourceBlockAction()
+
+
+class ConvertSourceBlock(silvaforms.RESTPopupForm):
+    grok.adapts(EditSourceBlock, IPage)
+    grok.name('convert')
+
+    label = _(u"Convert existing source to asset")
+    fields = silvaforms.Fields(ITitledContent)
+    actions = silvaforms.Actions(
+        silvaforms.CancelAction())

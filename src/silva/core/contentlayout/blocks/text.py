@@ -7,6 +7,7 @@ from zope.interface import Interface
 from zope.lifecycleevent import ObjectModifiedEvent
 from zope.publisher.interfaces.http import IHTTPRequest
 
+from silva.core import conf as silvaconf
 from silva.core.conf import schema as silvaschema
 from silva.core.conf.interfaces import ITitledContent
 from silva.core.contentlayout.blocks import Block, BlockController
@@ -25,6 +26,7 @@ class TextBlock(Text, Block):
     grok.implements(ITextBlock)
     grok.name('text')
     grok.title(_(u"Rich text"))
+    silvaconf.icon('text.png')
 
     def __init__(self):
         self.identifier = u'text block %s' % uuid.uuid1()
@@ -205,7 +207,7 @@ class ConvertTextBlock(silvaforms.RESTPopupForm):
     grok.adapts(EditTextBlock, IPage)
     grok.name('convert')
 
-    label = _(u"Convert block to document")
+    label = _(u"Convert text to document")
     fields = silvaforms.Fields(ITitledContent)
     actions = silvaforms.Actions(
         silvaforms.CancelAction(),
