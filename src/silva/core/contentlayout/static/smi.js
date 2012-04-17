@@ -1012,7 +1012,13 @@
                             dragStart: function() {
                                 $('body').append($cover);
                             },
+                            resizeStart: function() {
+                                $('body').append($cover);
+                            },
                             dragStop: function() {
+                                $cover.detach();
+                            },
+                            resizeStop: function() {
                                 $cover.detach();
                             }
                         });
