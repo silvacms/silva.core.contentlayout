@@ -46,7 +46,7 @@ class SourceBlockConfiguration(object):
         self.source = source
 
     def get_icon(self, view):
-        icon = self.source._getOb('icon.png', None)
+        icon = self.source.get_icon()
         if icon is not None:
             return absoluteURL(icon, view.request)
         try:

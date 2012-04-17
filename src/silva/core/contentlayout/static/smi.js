@@ -570,6 +570,7 @@
         var selected = null;
         var delegated = null;
         var $actions = $layer.find('#contentlayout-actions');
+        var $edit = $actions.find('#contentlayout-edit-block');
 
         var api = {
             update: function() {
@@ -583,12 +584,14 @@
             enable: function(other) {
                 var $block = other.current.$block;
 
-                $actions.toggle($block !== undefined);
-                if (selected === null) {
-                    $layer.appendTo(view.$body);
+                if ($block !== undefined){
+                    $edit.toggle(other.current.editable);
+                    if (selected === null) {
+                        $layer.appendTo(view.$body);
+                    };
+                    selected = other;
+                    api.update();
                 };
-                selected = other;
-                api.update();
             },
             disable: function() {
                 if (selected !== null) {
@@ -678,9 +681,11 @@
         var position = Element($block);
         $.extend(api, position, {
             id: $block.data('block-id'),
+            editable: $block.data('block-editable'),
             $block: $block,
             block_set: function(data) {
                 this.id = data.block_id,
+                this.editable = data.block_editable;
                 this.$block.attr('data-block-id', data.block_id);
                 this.$block.html(data.block_data);
                 if (data.block_editable) {
@@ -953,6 +958,7 @@
             factory: function($content, data, smi) {
                 var path = smi.opened.path + (data.identifier ? '/' + data.identifier : '');
                 var opened = false;
+                var first_opening = true;
                 var $components = $(data.components);
                 var $layer = $(data.layer);
 
@@ -965,7 +971,14 @@
                     open: function() {
                         if (opened === false) {
                             $components.dialog('open');
-                            $components.accordion();
+                            if (first_opening === true) {
+                                $components.accordion();
+                                $components.dialog(
+                                    'option',
+                                    'minHeight',
+                                    $components.dialog('widget').outerHeight());
+                                first_opening = false;
+                            };
                             opened = true;
                         };
                     },
@@ -1009,6 +1022,8 @@
                             position: position,
                             closeOnEscape: false,
                             autoOpen: false,
+                            width: 250,
+                            minWidth: 250,
                             dragStart: function() {
                                 $('body').append($cover);
                             },
