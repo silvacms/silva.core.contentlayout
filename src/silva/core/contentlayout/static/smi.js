@@ -986,7 +986,7 @@
 
                         this.$body = this.$document.find('body');
                         this.shortcuts.create('editor', $content, true);
-                        this.slots = Slots(this.$body, this.$body.find('div.edit-slot'), '> div.edit-block');
+                        this.slots = Slots(this.$document, this.$body.find('div.edit-slot'), '> div.edit-block');
 
                         var mode = NormalMode(this, $layer, $components);
 
@@ -1001,10 +1001,21 @@
                             }, 50);
                         });
 
+                        // The purpose of the cover is to prevent the
+                        // iframe to catch the movements of the
+                        // components dialog.
+                        var $cover = $('<div id="smi-cover">');
                         $components.dialog({
                             position: position,
                             closeOnEscape: false,
-                            autoOpen: false});
+                            autoOpen: false,
+                            dragStart: function() {
+                                $('body').append($cover);
+                            },
+                            dragStop: function() {
+                                $cover.detach();
+                            }
+                        });
                         $components.bind('dialogclose', function() {
                             position = $components.dialog('option', 'position');
                             opened = false;
