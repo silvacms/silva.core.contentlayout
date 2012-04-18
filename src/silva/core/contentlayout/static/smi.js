@@ -207,44 +207,71 @@
         var $current = $element;
         var placeholding = null;
         var api = {
-            placeholder_set: function($placeholder, heigth, width) {
-                if (placeholding === null) {
-                    placeholding = {
-                        container: $current.parent(),
-                        item: $current.prev(),
-                        direction: "after"
-                        };
+            placeholder: {
+                active: function() {
+                    return false;
+                }
+            },
+            placehold: function($placeholder, height, width, fill_in) {
+                if (!this.placeholder.active()) {
+                    this.placeholder = {
+                        $container: $current.parent(),
+                        $item: $current.prev(),
+                        direction: "after",
+                        $placeholder: $placeholder,
+                        width: width || this.width,
+                        height: height || this.height,
+                        active: function() {
+                            return this.$placeholder !== null;
+                        },
+                        resize: function(fill_in) {
+                            if (this.$placeholder !== null) {
+                                if (fill_in !== undefined) {
+                                    if (fill_in === true) {
+                                        this.$placeholder.height(this.height);
+                                        this.$placeholder.width(this.width);
+                                    } else {
+                                        this.$placeholder.height(this.height);
+                                        this.$placeholder.width('100%');
+                                    }
+                                } else {
+                                    this.$placeholder.width(this.width);
+                                    this.$placeholder.height(this.height);
+                                };
+                            };
+                        },
+                        revert: function() {
+                            this.$placeholder.remove();
+                            this.$placeholder = null;
+                            $current = $element;
+                            api.deplace(this);
+                        },
+                        clear: function() {
+                            $current.before($element);
+                            $current.remove();
+                            this.$placeholder.remove();
+                            this.$placeholder = null;
+                            $current = $element;
+                        }
+                    };
                     $placeholder.hide();
                     $current = $placeholder;
                     $element.before($placeholder);
                     $element.detach();
-                    $placeholder.width(width || this.width);
-                    $placeholder.height(heigth || this.height);
+                    this.placeholder.resize(fill_in);
                     $placeholder.show();
                 };
+                return this.placeholder;
             },
-            placeholder_clear: function() {
-                if (placeholding !== null) {
-                    $current.before($element);
-                    $current.remove();
-                    $current = $element;
-                    placeholding = null;
-                };
-            },
-            placeholder_revert: function() {
-                if (placeholding !== null) {
-                    $current.remove();
-                    $current = $element;
-                    this.deplace(placeholding);
-                    placeholding = null;
-                };
-            },
-            deplace: function(position) {
-                if (position.item.length) {
-                    position.item[position.direction]($current);
+            deplace: function(position, fill_in) {
+                if (position.$item.length) {
+                    position.$item[position.direction]($current);
                 } else {
-                    position.container.prepend($current);
-                }
+                    position.$container.prepend($current);
+                };
+                if (this.placeholder.active()) {
+                    this.placeholder.resize(fill_in);
+                };
             },
             destroy: function() {
                 if (placeholding !== null) {
@@ -319,7 +346,7 @@
                      $helper.remove();
                  })
             ).always(function() {
-                block.placeholder_clear();
+                block.placeholder.clear();
             }).done(function(data) {
                 block.block_set(data);
             }).fail(function() {
@@ -338,10 +365,10 @@
 
         var reorder = function(info) {
             var index = 0;
-            var position = {container: info.slot.$slot, item: []};
+            var position = {$container: info.slot.$slot, $item: []};
 
             if (info.current.$block !== undefined) {
-                position.item = info.current.$block;
+                position.$item = info.current.$block;
                 index = info.slot.index(info.current);
                 if ((!info.slot.horizontal && info.mouse.direction.bottom) ||
                     (info.slot.horizontal && info.mouse.direction.right)) {
@@ -352,6 +379,7 @@
                 };
                 if (info.slot === slot) {
                     var current = slot.index(block);
+
                     if (current < index) {
                         index -= 1;
                     };
@@ -363,7 +391,7 @@
                 };
                 info.slot.add(block, index);
                 slot = info.slot;
-                block.deplace(position);
+                block.deplace(position, slot.horizontal);
                 view.slots.update();
                 $placeholder.attr('class', 'contentlayout-component contentlayout-placeholder');
                 validator = view.editor.addable({
@@ -392,7 +420,7 @@
         var bootstrap = function() {
             $placeholder.html($component.children().clone());
             $component.addClass('selected');
-            block.placeholder_set($placeholder, '1em', '100%');
+            block.placehold($placeholder, '1em', '8em');
             view.$body.css('cursor', 'move');
 
             view.slots.events.snapshot();
@@ -467,14 +495,14 @@
                  slot: slot,
                  current: block})
             ).done(function() {
-                block.placeholder_clear();
+                block.placeholder.clear();
             }).fail(function() {
                 if (original.slot !== slot ||
                     original.index !== slot.index(block)) {
                     slot.remove(block);
                     original.slot.add(block, original.index);
                 };
-                block.placeholder_revert();
+                block.placeholder.revert();
             }).always(function() {
                 $helper.remove();
                 view.slots.update();
@@ -486,10 +514,10 @@
 
         var reorder = function(info) {
             var index = 0;
-            var position = {container: info.slot.$slot, item: []};
+            var position = {$container: info.slot.$slot, $item: []};
 
             if (info.current.$block !== undefined) {
-                position.item = info.current.$block;
+                position.$item = info.current.$block;
                 index = info.slot.index(info.current);
                 if ((!info.slot.horizontal && info.mouse.direction.bottom) ||
                     (info.slot.horizontal && info.mouse.direction.right)) {
@@ -509,7 +537,7 @@
                 slot.remove(block);
                 info.slot.add(block, index);
                 slot = info.slot;
-                block.deplace(position);
+                block.deplace(position, slot.horizontal);
                 view.slots.update();
                 $placeholder.attr('class', 'contentlayout-placeholder');
                 validator = view.editor.movable({
@@ -540,7 +568,7 @@
             $helper.offset(original.mouse);
             view.$body.append($helper);
             view.$body.css('cursor', 'move');
-            block.placeholder_set($placeholder);
+            block.placehold($placeholder);
 
             view.slots.events.snapshot();
             view.slots.events.onenter(function(event) {
@@ -624,11 +652,11 @@
             };
         });
         // Actions
-        var delegate = function(view) {
+        var delegate = function(mode) {
             if (delegated !== null) {
                 delegated.cancel();
             };
-            delegated = view.apply(this, [].splice.call(arguments, 1));
+            delegated = mode.apply(this, [].splice.call(arguments, 1));
             delegated.promise().always(function() { delegated = null });
         };
         var add = function(event){
@@ -715,10 +743,15 @@
                     blocks[i].update();
                 };
                 position.update();
-                api.horizontal = blocks.length ?
-                    (/left|right/).test(blocks[0].$block.css('float')) ||
-                    (/inline|table-cell/).test(blocks[0].$block.css('display'))
-                    : false;
+                api.horizontal = false;
+
+                $.each(blocks, function() {
+                    if (!this.placeholder.active()) {
+                        api.horizontal = ((/left|right/).test(this.$block.css('float')) ||
+                                          (/inline|table-cell/).test(this.$block.css('display')));
+                        return false;
+                    };
+                });
             },
             over: function(event) {
                 var current_slot = position.over(event);
@@ -931,12 +964,14 @@
                     render: function() {
                         var actions = data.menu.actions;
                         var $component = $content.find('.component-action');
-
-                        $component.bind('click', function(event) {
+                        var toggle = function(event) {
                             view.components.toggle();
                             event.preventDefault();
                             event.stopPropagation();
-                        });
+                        };
+
+                        $component.bind('click', toggle);
+                        view.shortcuts.bind('editor', null, ['ctrl+t'], toggle);
                         if (view.components.opened()) {
                             $component.addClass('active');
                         };
