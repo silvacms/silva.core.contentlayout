@@ -113,7 +113,12 @@ class AddSourceBlockAction(silvaforms.Action):
             'block_data': data,
             'block_editable': form.controller.editable()}
 
+    def available(self, form):
+        return form.controller is not None
+
     def __call__(self, form):
+        if form.controller is None:
+            return silvaforms.FAILURE
         status = form.controller.create()
         if status is silvaforms.FAILURE:
             return silvaforms.FAILURE
@@ -154,10 +159,18 @@ class AddSourceParameters(silvaforms.RESTPopupForm):
         if self.controller is not None:
             return self.controller.description
 
+    @property
+    def formErrors(self):
+        if self.controller is not None:
+            return self.controller.formErrors
+        return []
+
     def updateWidgets(self):
         super(AddSourceParameters, self).updateWidgets()
         if self.controller is not None:
-            self.fieldWidgets.extend(self.controller.widgets())
+            self.fieldWidgets.extend(
+                self.controller.fieldWidgets(
+                    ignoreRequest=False, ignoreContent=True))
 
 
 class EditSourceBlockAction(silvaforms.Action):
@@ -174,6 +187,9 @@ class EditSourceBlockAction(silvaforms.Action):
             'block_id': form.__name__,
             'block_data': form.controller.render(),
             'block_editable': form.controller.editable()}
+
+    def available(self, form):
+        return form.controller is not None
 
     def __call__(self, form):
         if form.controller is None:
@@ -211,11 +227,18 @@ class EditSourceBlock(silvaforms.RESTPopupForm):
         if self.controller is not None:
             return self.controller.description
 
+    @property
+    def formErrors(self):
+        if self.controller is not None:
+            return self.controller.formErrors
+        return []
+
     def updateWidgets(self):
         super(EditSourceBlock, self).updateWidgets()
         if self.controller is not None:
-            self.fieldWidgets.extend(self.controller.widgets())
-
+            self.fieldWidgets.extend(
+                self.controller.fieldWidgets(
+                    ignoreRequest=False, ignoreContent=False))
 
     @silvaforms.action(_('Convert'))
     def convert(self):
