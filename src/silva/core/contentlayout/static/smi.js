@@ -19,12 +19,12 @@
         var validation_move = {};
         var validation_add = {};
         var events = {
-            onchange: infrae.deferred.Callbacks()
+            change: infrae.deferred.Callbacks()
         };
         var api = {
             events: {
                 onchange: function(callback) {
-                    events.onchange.add(callback);
+                    events.change.add(callback);
                 }
             },
             add: function(state) {
@@ -101,7 +101,7 @@
                         if (data.extra !== undefined) {
                             state.current.$block.empty();
                             state.current.$block.append(data.extra.block_data);
-                            events.onchange.invoke({
+                            events.change.invoke({
                                 modified: true,
                                 current: state.current,
                                 slot: state.slot
@@ -189,7 +189,7 @@
                     function(data) {
                         if (data.success) {
                             state.slot.remove(state.current);
-                            events.onchange.invoke({
+                            events.change.invoke({
                                 removed: true,
                                 current: state.current,
                                 slot: state.slot
@@ -403,7 +403,7 @@
                 if ($helper === null) {
                     $helper = $component.clone();
                     $helper.css('position', 'absolute');
-                    $helper.css('opacity', '0.5');
+                    $helper.css('opacity', '0.6');
                     $helper.offset(this.mouse);
                     view.$body.append($helper);
                 } else {
@@ -536,7 +536,7 @@
         var bootstrap = function() {
             $helper = block.$block.clone();
             $helper.css('position', 'absolute');
-            $helper.css('opacity', '0.5');
+            $helper.css('opacity', '0.6');
             $helper.offset(original.mouse);
             view.$body.append($helper);
             view.$body.css('cursor', 'move');
@@ -609,7 +609,7 @@
         view.slots.events.onenter(function () {
             api.enable(this);
         });
-        view.slots.events.onswitch(function () {
+        view.slots.events.onchange(function () {
             api.enable(this);
         });
         view.slots.events.onleave(function () {
@@ -731,8 +731,9 @@
                             return current_item;
                         };
                     };
+                    return this;
                 };
-                return current_slot;
+                return null;
             },
             get: function(index) {
                 return blocks[index];
@@ -811,24 +812,24 @@
         var timer = null;
         var mouse = Mouse();
         var events = {
-            onenter: infrae.deferred.Callbacks(),
-            onswitch: infrae.deferred.Callbacks(),
-            onleave: infrae.deferred.Callbacks(),
-            onmove: infrae.deferred.Callbacks()
+            enter: infrae.deferred.Callbacks(),
+            change: infrae.deferred.Callbacks(),
+            leave: infrae.deferred.Callbacks(),
+            move: infrae.deferred.Callbacks()
         };
         var api = {
             events: {
                 onenter: function(callback) {
-                    events.onenter.add(callback);
+                    events.enter.add(callback);
                 },
-                onswitch: function(callback) {
-                    events.onswitch.add(callback);
+                onchange: function(callback) {
+                    events.change.add(callback);
                 },
                 onleave: function(callback) {
-                    events.onleave.add(callback);
+                    events.leave.add(callback);
                 },
                 onmove: function(callback) {
-                    events.onmove.add(callback);
+                    events.move.add(callback);
                 },
                 snapshot: function() {
                     for (var name in events) {
@@ -841,7 +842,7 @@
                     };
                     if (event !== undefined) {
                         if (!lookup(event) && current !== null) {
-                            events.onenter.invoke(SlotEvent(), [event]);
+                            events.enter.invoke(SlotEvent(), [event]);
                         };
                     };
                 }
@@ -872,9 +873,9 @@
                     if (new_current !== current) {
                         current = new_current;
                         if (previous_current === null) {
-                            events.onenter.invoke(SlotEvent(), [event]);
+                            events.enter.invoke(SlotEvent(), [event]);
                         } else {
-                            events.onswitch.invoke(SlotEvent(), [event]);
+                            events.change.invoke(SlotEvent(), [event]);
                         };
                         return true;
                     };
@@ -882,7 +883,7 @@
                 };
             };
             if (current !== null) {
-                events.onleave.invoke(SlotEvent(), [event]);
+                events.leave.invoke(SlotEvent(), [event]);
                 current = null;
                 slot = null;
                 return true;
@@ -905,7 +906,7 @@
                 };
 
                 if (!lookup(event)) {
-                    events.onmove.invoke(SlotEvent(), [event]);
+                    events.move.invoke(SlotEvent(), [event]);
                 };
                 mouse.finish(event);
                 timer = null;
@@ -929,12 +930,18 @@
                         '<span class="have-icon">Components</span></a></li></ol></div>',
                     render: function() {
                         var actions = data.menu.actions;
-                        var $component_action = $content.find('.component-action');
+                        var $component = $content.find('.component-action');
 
-                        $component_action.bind('click', function(event) {
-                            view.toggle();
+                        $component.bind('click', function(event) {
+                            view.components.toggle();
                             event.preventDefault();
                             event.stopPropagation();
+                        });
+                        if (view.components.opened()) {
+                            $component.addClass('active');
+                        };
+                        view.events.oncomponents(function() {
+                            $component.toggleClass('active');
                         });
 
                         if (actions && actions.entries.length) {
@@ -961,6 +968,10 @@
                 var first_opening = true;
                 var $components = $(data.components);
                 var $layer = $(data.layer);
+                var events = {
+                    components: infrae.deferred.Callbacks(),
+                    viewchange: infrae.deferred.Callbacks()
+                };
 
                 return {
                     html_url: urls.url.expand({path: path}),
@@ -968,31 +979,45 @@
                     nocache: true,
                     editor: Editor(smi, urls, path),
                     shortcuts: smi.shortcuts,
-                    open: function() {
-                        if (opened === false) {
-                            $components.dialog('open');
-                            if (first_opening === true) {
-                                $components.accordion();
-                                $components.dialog(
-                                    'option',
-                                    'minHeight',
-                                    $components.dialog('widget').outerHeight());
-                                first_opening = false;
+                    events: {
+                        oncomponents: function(callback) {
+                            events.components.add(callback);
+                        },
+                        onviewchange: function(callback) {
+                            events.viewchange.add(callback);
+                        }
+                    },
+                    components: {
+                        open: function() {
+                            if (opened === false) {
+                                $components.dialog('open');
+                                if (first_opening === true) {
+                                    $components.accordion();
+                                    $components.dialog(
+                                        'option',
+                                        'minHeight',
+                                        $components.dialog('widget').outerHeight());
+                                    first_opening = false;
+                                };
+                                opened = true;
+                                events.components.invoke({active: true});
                             };
-                            opened = true;
-                        };
-                    },
-                    close: function() {
-                        if (opened === true) {
-                            $components.dialog('close');
-                        };
-                    },
-                    toggle: function() {
-                        if (opened === false) {
-                            this.open();
-                        } else {
-                            this.close();
-                        };
+                        },
+                        opened: function() {
+                            return opened;
+                        },
+                        close: function() {
+                            if (opened === true) {
+                                $components.dialog('close');
+                            };
+                        },
+                        toggle: function() {
+                            if (opened === false) {
+                                this.open();
+                            } else {
+                                this.close();
+                            };
+                        }
                     },
                     render: function($content) {
                         var timer = null;
@@ -1040,8 +1065,9 @@
                         $components.bind('dialogclose', function() {
                             position = $components.dialog('option', 'position');
                             opened = false;
+                            events.components.invoke({active: false});
                         });
-                        this.open();
+                        this.components.open();
 
                         // Disable links and selection
                         this.$body.delegate('a', 'click', function (event) {
@@ -1051,7 +1077,7 @@
 
                     },
                     cleanup: function() {
-                        this.close();
+                        this.components.close();
                         this.shortcuts.remove('editor');
                         $components.remove();
                         $content.empty();
