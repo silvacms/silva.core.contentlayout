@@ -91,6 +91,8 @@ class ContentLayoutService(SilvaService):
     security.declareProtected(
         'View Management Screens', 'lookup_design_by_type')
     def lookup_design_by_type(self, content_type, parent):
+        if self._page_models is None:
+            self._page_models = {}
         candidates = design_registry.lookup_design_by_type(
             content_type, parent)
         object_class = get_content_class_from_content_type(content_type)
@@ -106,6 +108,8 @@ class ContentLayoutService(SilvaService):
     security.declareProtected(
         'View Management Screens', 'lookup_design_by_name')
     def lookup_design_by_name(self, name):
+        if self._page_models is None:
+            self._page_models = {}
         model = self._page_models.get(name)
         if model:
             return model
