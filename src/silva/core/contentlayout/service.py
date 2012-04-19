@@ -106,7 +106,6 @@ class ContentLayoutService(SilvaService):
     security.declareProtected(
         'View Management Screens', 'lookup_design_by_name')
     def lookup_design_by_name(self, name):
-        import pdb; pdb.set_trace()
         model = self._page_models.get(name)
         if model:
             return model
