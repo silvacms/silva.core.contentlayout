@@ -115,7 +115,8 @@ class PageModelDesign(object):
     grok.implements(IDesign)
 
     def __init__(self, page_model_version, content, request):
-        super(PageModelDesign, self).__init__(content, request)
+        self.content = content
+        self.request = request
         self.page_model_version = page_model_version
         self.design = self.page_model_version.get_design()
         self.template = self.design.template
