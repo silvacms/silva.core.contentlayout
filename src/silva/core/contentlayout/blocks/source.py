@@ -131,7 +131,7 @@ class AddSourceBlockAction(silvaforms.Action):
         return silvaforms.SUCCESS
 
 
-class AddSourceParameters(silvaforms.RESTPopupForm):
+class AddSourceBlock(silvaforms.RESTPopupForm):
     grok.adapts(SourceBlock, IPage)
     grok.name('add')
 
@@ -141,7 +141,7 @@ class AddSourceParameters(silvaforms.RESTPopupForm):
         AddSourceBlockAction())
 
     def __init__(self, context, request, configuration, restriction):
-        super(AddSourceParameters, self).__init__(context, request)
+        super(AddSourceBlock, self).__init__(context, request)
         self.restriction = restriction
         self.configuration = configuration
         manager = component.getWrapper(self.context, IExternalSourceManager)
@@ -166,11 +166,20 @@ class AddSourceParameters(silvaforms.RESTPopupForm):
         return []
 
     def updateWidgets(self):
-        super(AddSourceParameters, self).updateWidgets()
+        super(AddSourceBlock, self).updateWidgets()
         if self.controller is not None:
             self.fieldWidgets.extend(
                 self.controller.fieldWidgets(
                     ignoreRequest=False, ignoreContent=True))
+
+
+class AddSourceBlockLookup(silvaforms.DefaultFormLookup):
+    grok.context(AddSourceBlock)
+
+    def fields(self):
+        if self.form.controller is not None:
+            return self.form.controller.fields
+        return silvaforms.Fields()
 
 
 class EditSourceBlockAction(silvaforms.Action):
@@ -246,6 +255,14 @@ class EditSourceBlock(silvaforms.RESTPopupForm):
 
     actions += EditSourceBlockAction()
 
+
+class EditSourceBlockLookup(silvaforms.DefaultFormLookup):
+    grok.context(EditSourceBlock)
+
+    def fields(self):
+        if self.form.controller is not None:
+            return self.form.controller.fields
+        return silvaforms.Fields()
 
 class ConvertSourceBlock(silvaforms.RESTPopupForm):
     grok.adapts(EditSourceBlock, IPage)
