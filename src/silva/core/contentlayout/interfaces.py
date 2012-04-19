@@ -13,6 +13,7 @@ from zope.component.interfaces import IObjectEvent, ObjectEvent
 from silva.core import conf as silvaconf
 from silva.core.interfaces import IViewableObject, ISilvaLocalService
 from silva.core.interfaces import IAddableContents
+from silva.core.interfaces import IVersion,  IVersionedContent
 from silva.core.conf.interfaces import ITitledContent
 from silva.translations import translate as _
 from silva.ui.interfaces import ISilvaUIDependencies
@@ -149,6 +150,7 @@ class IPage(IAttributeAnnotatable):
 class IBlock(interface.Interface):
    """A block.
    """
+
 
 class IBlockConfiguration(interface.Interface):
    identifier = interface.Attribute('Unique block identifier')
@@ -367,6 +369,17 @@ def content_type_source(context):
                               title=addable))
    return SimpleVocabulary(terms)
 
+@grok.provider(IContextSourceBinder)
+def content_type_source_without_placeholder(context):
+   terms = []
+   addables = IAddableContents(
+      context.get_root()).get_all_addables(require=IPageAware)
+   for addable in addables:
+      terms.append(SimpleTerm(value=addable,
+                              token=addable,
+                              title=addable))
+   return SimpleVocabulary(terms)
+
 
 class IDesignContentRule(interface.Interface):
    """Rules bind together a design and a content
@@ -414,6 +427,42 @@ class IContentDefaultDesigns(interface.Interface):
       title=_(u"Default designs"),
       value_type=schema.Object(schema=IDefaultDesignRule),
       required=False)
+
+
+class IPageModel(IVersionedContent):
+   """ A page model
+   """
+
+
+class IPageModelVersion(IVersion, IPage):
+   """ A page model version
+   """
+
+
+class IPageModelFields(ITitledContent):
+    """Interface defining an add schema for a page model.
+    """
+    design = schema.Choice(
+       title=_(u"Design"),
+       description=_(u"Select a design for your document."),
+       source=design_source)
+
+    allowed_content_types = schema.Set(
+       title=_(u"Allowed Content Types"),
+       description=_(u"Only the selected content types will accept "
+                     u"it as a design"),
+       required=True,
+       value_type=schema.Choice(
+          source=content_type_source_without_placeholder))
+
+
+def all_page_content_types(form):
+   addables = IAddableContents(
+      form.context.get_root()).get_all_addables(require=IPageAware)
+   return set(addables)
+
+PageModelFields = silvaforms.Fields(IPageModelFields)
+PageModelFields['allowed_content_types'].defaultValue = all_page_content_types
 
 
 class IDesignEvent(IObjectEvent):

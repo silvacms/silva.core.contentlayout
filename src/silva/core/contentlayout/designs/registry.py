@@ -32,6 +32,9 @@ class DesignRegistry(object):
         factories = self._designs.setdefault(context, [])
         factories.append(factory)
 
+    def remove(self, factory):
+        self._designs
+
     def lookup_design(self, context):
         candidates = []
         for iface, factories in self._designs.iteritems():

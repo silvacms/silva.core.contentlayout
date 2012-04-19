@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# (c) 2011 Infrae. All rights reserved.
+# (c) 2012 Infrae. All rights reserved.
 # See also LICENSE.txt
 
 from itertools import chain
@@ -52,6 +52,7 @@ class ContentLayoutService(SilvaService):
     _restrictions_index = {}
     _default_designs_index = {}
     _block_groups = []
+    _page_models = None
 
     @property
     def _restrictions(self):
@@ -60,6 +61,24 @@ class ContentLayoutService(SilvaService):
     @property
     def _default_designs(self):
         return set(self._default_designs_index.itervalues())
+
+    security.declareProtected(
+        'View Management Screens', 'register_page_model')
+    def register_page_model(self, page_model):
+        if self._page_models is None:
+            self._page_models = {}
+        self._page_models[page_model.get_identifier()] = page_model
+        self._p_changed = True
+
+    security.declareProtected(
+        'View Management Screens', 'unregister_page_model')
+    def unregister_page_model(self, page_model):
+        if self._page_models is None:
+            self._page_models = {}
+        identifier = page_model.get_identifier()
+        if identifier in self._page_models:
+            del self._page_models[identifier]
+            self._p_changed = True
 
     security.declareProtected(
         'View Management Screens', 'lookup_design')
@@ -75,14 +94,22 @@ class ContentLayoutService(SilvaService):
         candidates = design_registry.lookup_by_content_type(
             content_type, parent)
         object_class = get_content_class_from_content_type(content_type)
-        return filter(
+        results = filter(
             lambda t: self._design_allowed_in_context(
                 t, parent, object_class=object_class),
             candidates)
+        results.extend([model for model in self._page_models.values()
+                        if content_type in
+                            model.get_viewable().get_allowed_content_types()])
+        return results
 
     security.declareProtected(
         'View Management Screens', 'lookup_design_by_name')
     def lookup_design_by_name(self, name):
+        import pdb; pdb.set_trace()
+        model = self._page_models.get(name)
+        if model:
+            return model
         return design_registry.lookup_design_by_name(name)
 
     security.declareProtected(
