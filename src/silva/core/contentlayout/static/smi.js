@@ -1000,8 +1000,8 @@
             factory: function($content, data, smi) {
                 var path = smi.opened.path + (data.identifier ? '/' + data.identifier : '');
                 var opened = false;
-                var first_opening = true;
                 var $components = $(data.components);
+                var $listing = $components.children('.contentlayout-components');
                 var $layer = $(data.layer);
                 var events = {
                     components: infrae.deferred.Callbacks(),
@@ -1025,15 +1025,9 @@
                     components: {
                         open: function() {
                             if (opened === false) {
-                                $components.dialog('open');
-                                if (first_opening === true) {
-                                    $components.accordion();
-                                    $components.dialog(
-                                        'option',
-                                        'minHeight',
-                                        $components.dialog('widget').outerHeight());
-                                    first_opening = false;
-                                };
+                                infrae.ui.ShowDialog(
+                                    $components,
+                                    {minWidth: 250, minHeight: 250, center: false});
                                 opened = true;
                                 events.components.invoke({active: true});
                             };
@@ -1083,7 +1077,10 @@
                             closeOnEscape: false,
                             autoOpen: false,
                             width: 250,
-                            minWidth: 250,
+                            height: 400,
+                            open: function() {
+                                $listing.accordion({fillSpace: true});
+                            },
                             dragStart: function() {
                                 $('body').append($cover);
                             },
@@ -1093,15 +1090,22 @@
                             dragStop: function() {
                                 $cover.detach();
                             },
+                            resize: function() {
+                                $listing.accordion('resize');
+                            },
                             resizeStop: function() {
                                 $cover.detach();
                             }
+                        });
+                        $components.bind('infrae-ui-dialog-resized', function() {
+                            $listing.accordion('resize');
                         });
                         $components.bind('dialogclose', function() {
                             position = $components.dialog('option', 'position');
                             opened = false;
                             events.components.invoke({active: false});
                         });
+                        infrae.ui.selection.disable($listing);
                         this.components.open();
 
                         // Disable links and selection

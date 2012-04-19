@@ -1,4 +1,10 @@
 
+div.contentlayout-components {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
 div.contentlayout-components .ui-accordion-content {
   padding: 0.5em 1em;
 }
