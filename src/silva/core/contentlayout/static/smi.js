@@ -950,7 +950,7 @@
 
     $(document).bind('load-smiplugins', function(event, smi) {
         var urls = prepare_urls(smi.options.contentlayout);
-        var position = [30, 200];
+        var settings = {minWidth: 250, minHeight: 250, position: [30, 'center']};
 
         infrae.views.view({
             iface: 'content-layout',
@@ -1025,9 +1025,7 @@
                     components: {
                         open: function() {
                             if (opened === false) {
-                                infrae.ui.ShowDialog(
-                                    $components,
-                                    {minWidth: 250, minHeight: 250, center: false});
+                                infrae.ui.ShowDialog($components, settings);
                                 opened = true;
                                 events.components.invoke({active: true});
                             };
@@ -1073,7 +1071,6 @@
                         // components dialog.
                         var $cover = $('<div id="smi-cover">');
                         $components.dialog({
-                            position: position,
                             closeOnEscape: false,
                             autoOpen: false,
                             width: 250,
@@ -1089,6 +1086,7 @@
                             },
                             dragStop: function() {
                                 $cover.detach();
+                                settings.position = $components.dialog('option', 'position');
                             },
                             resize: function() {
                                 $listing.accordion('resize');
@@ -1101,11 +1099,10 @@
                             $listing.accordion('resize');
                         });
                         $components.bind('dialogclose', function() {
-                            position = $components.dialog('option', 'position');
                             opened = false;
                             events.components.invoke({active: false});
                         });
-                        infrae.ui.selection.disable($listing);
+                        infrae.ui.selection.disable($components);
                         this.components.open();
 
                         // Disable links and selection
