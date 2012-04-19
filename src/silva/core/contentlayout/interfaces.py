@@ -152,6 +152,14 @@ class IBlock(interface.Interface):
    """
 
 
+class ISubSlotBlock(IBlock, ISlot):
+   """ A block usable as a slot for page models.
+   """
+   slot_id = interface.Attribute('Slot id on the design')
+   identifier = interface.Attribute('Reprensent the slot id '
+                                    'when used as a slot')
+
+
 class IBlockConfiguration(interface.Interface):
    identifier = interface.Attribute('Unique block identifier')
    title = interface.Attribute('Block configuration title')
