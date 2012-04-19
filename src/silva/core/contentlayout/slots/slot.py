@@ -3,7 +3,7 @@ from five import grok
 from zope.component import getMultiAdapter
 from grokcore.chameleon.components import ChameleonPageTemplate
 
-from ..interfaces import IBoundBlockManager, ISlot, IEditionMode
+from ..interfaces import IBoundBlockManager, ISlot
 
 
 class Slot(object):
@@ -65,8 +65,9 @@ class SlotView(object):
             (self.content, self.request),
             IBoundBlockManager).render(self.slot_id)
 
-    def __call__(self):
+    def __call__(self, edition=False):
         template = self.view_template
-        if IEditionMode.providedBy(self.request):
+        print self.slot_id, edition
+        if edition:
             template = self.edit_template
         return template.render(self)

@@ -27,7 +27,7 @@ from Products.Silva.Version import Version
 
 from .interfaces import IPageModel, IPageModelVersion, PageModelFields
 from .interfaces import IContentLayoutService, IDesign
-from .designs.design import Design, DesignAccessors
+from .designs.design import DesignAccessors
 
 
 class PageModelVersion(Version, DesignAccessors):
@@ -40,6 +40,9 @@ class PageModelVersion(Version, DesignAccessors):
     _description = None
     _title = None
     _allowed_content_types = None
+
+    def get_identifier(self):
+        return getUtility(IIntIds).register(self.get_content())
 
     def set_title(self, title):
         self._title = title
@@ -56,8 +59,9 @@ class PageModelVersion(Version, DesignAccessors):
 
     @property
     def markers(self):
-        if self.design is not None:
-            return self.design.markers
+        design = self.get_design()
+        if design is not None:
+            return design.markers
         return []
 
     def get_slots(self):
@@ -72,8 +76,8 @@ class PageModelVersion(Version, DesignAccessors):
     def set_description(self, value):
         self._description = value
 
-    def update(self):
-        pass
+    def __call__(self, content, request):
+        return PageModelRender(self, content, request)
 
 
 InitializeClass(PageModelVersion)
@@ -90,71 +94,23 @@ class PageModel(VersionedContent):
     meta_type = 'Silva Page Model'
     security = ClassSecurityInfo()
 
-    @property
-    def markers(self):
-        version = self.get_viewable()
-        if version is None:
-            return []
-        design = version.get_design()
-        if design is None:
-            return []
-        return design.markers
-
-    def get_identifier(self):
-        return getUtility(IIntIds).register(self)
-
-    def __call__(self, content, request):
-        return PageModelDesign(self.get_viewable(), content, request)
-
 
 InitializeClass(PageModel)
 
 
-class PageModelDesign(object):
-
+class PageModelRender(object):
     grok.implements(IDesign)
 
-    def __init__(self, page_model_version, content, request):
+    def __init__(self, model, content, request):
+        self.model = model
         self.content = content
         self.request = request
-        self.page_model_version = page_model_version
-        self.design = self.page_model_version.get_design()
-        self.template = self.design.template
 
-    @property
-    def slots(self):
-        pass
-
-    @property
-    def markers(self):
-        return self.design.markers
-
-    def get_identifier(self):
-        return self.page_model_version.get_content().get_indentifier()
-
-    def get_title(self):
-        return self.page_model_version.get_title()
-
-    def default_namespace(self):
-        namespace = {}
-        namespace['design'] = self
-        namespace['content'] = self.content
-        namespace['request'] = self.request
-        return namespace
-
-    def namespace(self):
-        return {}
-
-    def update(self):
-        pass
-
-    def __call__(self):
-        __info__ = 'Rendering design: inline'
-        self.update()
-        namespace = {}
-        namespace.update(self.default_namespace())
-        namespace.update(self.namespace())
-        return self.template(**namespace)
+    def __call__(self, edition=None):
+        __info__ = 'Rendering model: %s' % self.model
+        design = self.model.get_design()
+        render = design(self.model, self.request)
+        return render(edition=edition)
 
 
 class PageModelAddForm(silvaforms.SMIAddForm):
@@ -195,9 +151,10 @@ class PageModelView(silvaviews.View):
 @grok.subscribe(IPageModelVersion, IContentPublishedEvent)
 def register(version, event):
     service = getUtility(IContentLayoutService)
-    service.register_page_model(version.get_content())
+    service.register_page_model(version)
+
 
 @grok.subscribe(IPageModelVersion, IContentClosedEvent)
 def unregister(version, event):
     service = getUtility(IContentLayoutService)
-    service.unregister_page_model(version.get_content())
+    service.unregister_page_model(version)

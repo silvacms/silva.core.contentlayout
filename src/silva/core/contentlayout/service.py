@@ -6,6 +6,8 @@ from itertools import chain
 
 from zope.component import IFactory
 from zope.interface import Interface
+from zope.component import getUtility
+from zope.intid.interfaces import IIntIds
 
 from five import grok
 from AccessControl import ClassSecurityInfo
@@ -64,18 +66,18 @@ class ContentLayoutService(SilvaService):
 
     security.declareProtected(
         'View Management Screens', 'register_page_model')
-    def register_page_model(self, page_model):
+    def register_page_model(self, model):
         if self._page_models is None:
             self._page_models = {}
-        self._page_models[page_model.get_identifier()] = page_model
+        self._page_models[model.get_identifier()] = getUtility(IIntIds).register(model)
         self._p_changed = True
 
     security.declareProtected(
         'View Management Screens', 'unregister_page_model')
-    def unregister_page_model(self, page_model):
+    def unregister_page_model(self, model):
         if self._page_models is None:
             self._page_models = {}
-        identifier = page_model.get_identifier()
+        identifier = model.get_identifier()
         if identifier in self._page_models:
             del self._page_models[identifier]
             self._p_changed = True
@@ -100,9 +102,10 @@ class ContentLayoutService(SilvaService):
             lambda t: self._design_allowed_in_context(
                 t, parent, object_class=object_class),
             candidates)
-        results.extend([model for model in self._page_models.values()
-                        if content_type in
-                            model.get_viewable().get_allowed_content_types()])
+        results.extend([
+                model for model in map(
+                    getUtility(IIntIds).getObject, self._page_models.values())
+                if content_type in model.get_allowed_content_types()])
         return results
 
     security.declareProtected(
@@ -112,7 +115,7 @@ class ContentLayoutService(SilvaService):
             self._page_models = {}
         model = self._page_models.get(name)
         if model:
-            return model
+            return getUtility(IIntIds).getObject(model)
         return design_registry.lookup_design_by_name(name)
 
     security.declareProtected(

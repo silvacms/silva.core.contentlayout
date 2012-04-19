@@ -5,7 +5,7 @@ from five import grok
 from grokcore.chameleon.components import ChameleonPageTemplate
 from zope.cachedescriptors.property import CachedProperty
 from zope.component import getUtility, getMultiAdapter
-from zope.interface import alsoProvides, Interface, implementedBy
+from zope.interface import Interface, implementedBy
 
 from infrae.rest import queryRESTComponent
 from silva.core.views.interfaces import IVirtualSite
@@ -14,7 +14,7 @@ from silva.ui.interfaces import IJSView
 from silva.ui.rest import REST
 from silva.ui.smi import SMIConfiguration
 
-from .interfaces import IEditionMode, IPage
+from .interfaces import IPage
 from .interfaces import IBoundBlockManager, IBlockGroupLookup
 
 from zExceptions import BadRequest, NotFound
@@ -27,14 +27,11 @@ class EditPage(silvaviews.Page):
     grok.name('edit')
     grok.require('silva.ChangeSilvaContent')
 
-    def update(self):
-        alsoProvides(self.request, IEditionMode)
-
     def render(self):
         design = self.context.get_design()
         if design is not None:
             render = design(self.context, self.request)
-            return render()
+            return render(edition=[render])
         return u'<p>There is no design selected, please select one.</p>'
 
 

@@ -237,7 +237,7 @@ class IBoundBlockManager(interface.Interface):
 
 
 
-class IEditionMode(IDefaultBrowserLayer):
+class IEditionResources(IDefaultBrowserLayer):
    """Mark the edition mode.
 
    Include extra CSS for the document in edit mode.

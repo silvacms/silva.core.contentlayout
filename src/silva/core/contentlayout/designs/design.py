@@ -12,8 +12,9 @@ from zope.component import getUtility
 from zope.event import notify
 
 from silva.core.interfaces import IVersion
+from silva.fanstatic import need
 
-from ..interfaces import IDesign, IDesignLookup, IPage
+from ..interfaces import IDesign, IDesignLookup, IPage, IEditionResources
 from ..interfaces import IDesignAssociatedEvent, IDesignDeassociatedEvent
 from ..interfaces import DesignAssociatedEvent, DesignDeassociatedEvent
 from .expressions import SlotExpr
@@ -74,12 +75,15 @@ class Design(object):
     def update(self):
         pass
 
-    def __call__(self):
+    def __call__(self, edition=None):
         __info__ = 'Rendering design: %s' % self.__template_path__
         self.update()
         namespace = {}
         namespace.update(self.default_namespace())
         namespace.update(self.namespace())
+        if edition:
+            need(IEditionResources)
+            namespace['design_edition_mode'] = edition
         return self.template(**namespace)
 
 
