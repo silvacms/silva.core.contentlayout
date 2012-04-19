@@ -104,14 +104,13 @@ class PageModel(VersionedContent):
         return getUtility(IIntIds).register(self)
 
     def __call__(self, content, request):
-        design = self.get_viewable().get_design()
-        return design(content, request)
+        return PageModelDesign(self.get_viewable(), content, request)
 
 
 InitializeClass(PageModel)
 
 
-class PageModelDesign(Design):
+class PageModelDesign(object):
 
     grok.implements(IDesign)
 
@@ -134,6 +133,27 @@ class PageModelDesign(Design):
 
     def get_title(self):
         return self.page_model_version.get_title()
+
+    def default_namespace(self):
+        namespace = {}
+        namespace['design'] = self
+        namespace['content'] = self.content
+        namespace['request'] = self.request
+        return namespace
+
+    def namespace(self):
+        return {}
+
+    def update(self):
+        pass
+
+    def __call__(self):
+        __info__ = 'Rendering design: inline'
+        self.update()
+        namespace = {}
+        namespace.update(self.default_namespace())
+        namespace.update(self.namespace())
+        return self.template(**namespace)
 
 
 class PageModelAddForm(silvaforms.SMIAddForm):

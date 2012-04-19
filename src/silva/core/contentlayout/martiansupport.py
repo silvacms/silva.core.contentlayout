@@ -74,6 +74,7 @@ class RegisterBlockViewGrokker(martian.ClassGrokker):
             args=(factory, adapts, provides))
         return True
 
+
 import sys
 from Products.Silva.icon import registry as icon_registry
 from silva.core.conf.utils import IconResourceFactory
