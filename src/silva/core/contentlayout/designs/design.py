@@ -8,11 +8,14 @@ from chameleon.tales import ExistsExpr
 from chameleon.tales import StructureExpr
 from z3c.pt.expressions import PathExpr, ProviderExpr
 from zope.interface import Interface, alsoProvides, noLongerProvides
+from zope.component import getUtility
+from zope.event import notify
 
 from silva.core.interfaces import IVersion
 
-from ..interfaces import IDesign, IPage
+from ..interfaces import IDesign, IDesignLookup, IPage
 from ..interfaces import IDesignAssociatedEvent, IDesignDeassociatedEvent
+from ..interfaces import DesignAssociatedEvent, DesignDeassociatedEvent
 from .expressions import SlotExpr
 
 
@@ -78,6 +81,33 @@ class Design(object):
         namespace.update(self.default_namespace())
         namespace.update(self.namespace())
         return self.template(**namespace)
+
+
+class DesignAccessors(object):
+    """ A mixin class to provide get/set design methods
+    """
+
+    _design_name = None
+
+    def get_design(self):
+        service = getUtility(IDesignLookup)
+        if self._design_name is not None:
+            return service.lookup_design_by_name(self._design_name)
+        return None
+
+    def set_design(self, design):
+        previous = self.get_design()
+        if design is None:
+            identifier = None
+        else:
+            identifier = design.get_identifier()
+        self._design_name = identifier
+        if previous != design:
+            if previous is not None:
+                notify(DesignDeassociatedEvent(self, previous))
+            if design is not None:
+                notify(DesignAssociatedEvent(self, design))
+        return design
 
 
 @grok.subscribe(IPage, IDesignAssociatedEvent)
