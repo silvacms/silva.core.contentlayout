@@ -67,7 +67,6 @@ class SlotView(object):
 
     def __call__(self, edition=False):
         template = self.view_template
-        print self.slot_id, edition
         if edition:
             template = self.edit_template
         return template.render(self)
