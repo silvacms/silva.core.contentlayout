@@ -85,7 +85,6 @@ class ContentType(SlotRestriction):
         self.content_type = content_type
 
     def allow_controller(self, controller, context, slot):
-        import pdb; pdb.set_trace()
         if self.content_type == controller.content.get_content():
             return True
         return False
