@@ -11,6 +11,7 @@ from zope.schema.vocabulary import SimpleVocabulary, SimpleTerm
 from zeam.form.ztk import EditAction
 
 from silva.core.interfaces import IAddableContents
+from silva.core import conf as silvaconf
 from silva.translations import translate as _
 from zeam.form import silva as silvaforms
 from Products.SilvaExternalSources.interfaces import availableSources
@@ -26,6 +27,7 @@ class BlockSlot(Slot, Block):
     grok.name('slot')
     grok.title(_('Slot'))
     grok.context(IPageModelVersion)
+    silvaconf.icon('slot.png')
 
     def __init__(self, tag='div', css_class='', restrictions=None):
         Slot.__init__(self, tag=tag,
