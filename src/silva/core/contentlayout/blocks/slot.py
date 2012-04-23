@@ -1,6 +1,5 @@
 
 import uuid
-from xml.sax.saxutils import quoteattr
 from five import grok
 from zope.interface import Interface
 from zope.publisher.interfaces.http import IHTTPRequest
@@ -12,35 +11,39 @@ from silva.translations import translate as _
 from zeam.form import silva as silvaforms
 
 from .manager import Block, BlockController
-from ..interfaces import IPageModelVersion, ISubSlotBlock
+from ..interfaces import IPageModelVersion, IBlockSlot
+from ..slots.slot import SlotView
 
 
-class SubSlotBlock(Block):
-    grok.implements(ISubSlotBlock)
+class BlockSlot(Block):
+    grok.implements(IBlockSlot)
     grok.name('slot')
     grok.title(_('Sub Slot'))
     grok.context(IPageModelVersion)
 
-    def __init__(self, slot_id, css_class='', restriction=None):
-        self.slot_id = slot_id
+    def __init__(self, css_class='', restriction=None):
+        self.tag = 'div'
         self.css_class = css_class
         self.restriction = restriction
         self.identifier = unicode(uuid.uuid1())
 
+    def is_new_block_allowed(self, configuration, context):
+        return True
 
-class SubSlotBlockController(BlockController):
-    """ Controller when used on page model.
-    """
-    grok.adapts(ISubSlotBlock, IPageModelVersion, IHTTPRequest)
+    def is_existing_block_allowed(self, block, controller, context):
+        return True
 
-    def render(self):
-        return '<div class="subslot">This is a sub-slot</div>'
+    def get_new_restriction(self, configuration):
+        return None
+
+    def get_existing_restriction(self, block):
+        return None
 
 
 class SubSlotEditBlockController(BlockController):
     """ Controller when used on the page.
     """
-    grok.adapts(ISubSlotBlock, Interface, IHTTPRequest)
+    grok.adapts(IBlockSlot, Interface, IHTTPRequest)
 
     def editable(self):
         return False
@@ -48,13 +51,17 @@ class SubSlotEditBlockController(BlockController):
     def remove(self):
         return False
 
-    def render(self):
-        return ''
-        #return ('<div class=%s>This is a sub-slot</div>' %
-        #        quoteattr(subslot.css_class))
+    def render(self, view=None):
+        if view is not None and not view.final:
+            design = view.design
+            next_content = design.stack[design.stack.index(view.content) + 1]
+            next_view = SlotView(
+                self.block.identifier, self.block, design, next_content)
+            return next_view()
+        return '<div>This is a slot for pages using this model.</div>'
 
 
-class ISubSlotBlockFields(Interface):
+class IBlockSlotFields(Interface):
     css_class = schema.TextLine(
         title=_(u'CSS class(es)'),
         description=_((u'whitespace delimited CSS classes')),
@@ -62,7 +69,7 @@ class ISubSlotBlockFields(Interface):
         default=u'')
 
 
-class AddSubSlotBlockAction(silvaforms.Action):
+class AddBlockSlotAction(silvaforms.Action):
     grok.implements(
         silvaforms.IDefaultAction,
         silvaforms.IRESTExtraPayloadProvider,
@@ -83,24 +90,24 @@ class AddSubSlotBlockAction(silvaforms.Action):
         if errors:
             return silvaforms.FAILURE
         adding = form.__parent__
-        adding.add(SubSlotBlock(adding.slot_id, css_class=data['css_class']))
+        adding.add(BlockSlot(css_class=data['css_class']))
         notify(ObjectModifiedEvent(form.context))
-        form.send_message(_(u"New sub-slot block added."))
+        form.send_message(_(u"New slot added."))
         return silvaforms.SUCCESS
 
 
-class AddSubSlotBlock(silvaforms.RESTPopupForm):
-    grok.adapts(ISubSlotBlock, IPageModelVersion)
+class AddBlockSlot(silvaforms.RESTPopupForm):
+    grok.adapts(IBlockSlot, IPageModelVersion)
     grok.name('add')
 
     label = _(u'Add a sub-slot')
     description = _(u'You should be able to configure restrictions here.')
-    fields = silvaforms.Fields(ISubSlotBlockFields)
+    fields = silvaforms.Fields(IBlockSlotFields)
     actions = silvaforms.Actions(
         silvaforms.CancelAction(),
-        AddSubSlotBlockAction())
+        AddBlockSlotAction())
 
     def __init__(self, context, request, configuration, restriction):
-        super(AddSubSlotBlock, self).__init__(context, request)
+        super(AddBlockSlot, self).__init__(context, request)
         self.configuration = configuration
         self.restriction = restriction

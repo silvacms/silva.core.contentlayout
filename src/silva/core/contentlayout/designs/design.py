@@ -50,6 +50,12 @@ class Design(object):
     markers = []
     __template_path__ = 'inline'
 
+    def __init__(self, content, request, stack):
+        self.content = content
+        self.request = request
+        self.stack = stack
+        self.edition = False
+
     @classmethod
     def get_identifier(cls):
         return grok.name.bind().get(cls)
@@ -57,10 +63,6 @@ class Design(object):
     @classmethod
     def get_title(cls):
         return grok.title.bind().get(cls)
-
-    def __init__(self, content, request):
-        self.content = content
-        self.request = request
 
     def default_namespace(self):
         namespace = {}
@@ -75,7 +77,7 @@ class Design(object):
     def update(self):
         pass
 
-    def __call__(self, edition=None):
+    def __call__(self, edition=False):
         __info__ = 'Rendering design: %s' % self.__template_path__
         self.update()
         namespace = {}
@@ -83,7 +85,7 @@ class Design(object):
         namespace.update(self.namespace())
         if edition:
             need(IEditionResources)
-            namespace['design_edition_mode'] = edition
+            self.edition = True
         return self.template(**namespace)
 
 

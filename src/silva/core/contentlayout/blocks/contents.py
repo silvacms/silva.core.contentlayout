@@ -79,14 +79,14 @@ class ReferenceBlockController(BlockController):
             return content.fulltext()
         return []
 
-    def render(self):
+    def render(self, view=None):
         content = self.content
         if content is None:
-            return u'<p>Reference is broken or missing</p>'
-        view = queryMultiAdapter((content, self.request), IBlockView)
-        if view is None:
-            return u'<p>block content is not viewable</p>'
-        return view()
+            return _(u'Reference is broken or missing.')
+        block_view = queryMultiAdapter((content, self.request), IBlockView)
+        if block_view is None:
+            return _(u'Block content is not viewable.')
+        return block_view()
 
 
 class IExternalBlockFields(Interface):
