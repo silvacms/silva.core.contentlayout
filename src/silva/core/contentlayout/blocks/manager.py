@@ -143,7 +143,6 @@ class BoundBlockManager(grok.MultiAdapter):
                 logger.error(u'Missing block %s in document.' % block_id)
 
 
-
 class BlockManager(grok.Annotation):
     grok.context(Interface)
     grok.implements(IBlockManager)
