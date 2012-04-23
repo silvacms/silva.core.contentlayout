@@ -48,10 +48,25 @@ class SlotView(object):
         self.slot_id = name
         self.tag = slot.tag
         self.css_id = 'slot-' + name
-        self.css_class = slot.css_class
+        self.css_class = slot.css_class or ''
         self.content = content
         self.design = design
         self.final = content is design.stack[-1]
+        self.edition = self.design.edition and self.final
+
+    def opening_tag(self):
+        # This sucks a bit but this ain't doable in a template.
+        if self.edition:
+            return ''.join([
+                    '<', self.tag, ' id="', self.css_id,
+                    '" class="contentlayout-edit-slot ', self.css_class,
+                    '" data-slot-id="', self.slot_id, '">'])
+        return ''.join([
+                '<', self.tag, ' id="', self.css_id,
+                '" class="', self.css_class, '">'])
+
+    def closing_tag(self):
+        return ''.join(['</', self.tag, '>'])
 
     def default_namespace(self):
         return {'slot': self,
@@ -68,8 +83,6 @@ class SlotView(object):
 
     def __call__(self):
         template = self.view_template
-        # If we are in edit mode, and rendering the last content of
-        # the stack, use the edit template.
-        if self.design.edition and self.final:
+        if self.edition:
             template = self.edit_template
         return template.render(self)

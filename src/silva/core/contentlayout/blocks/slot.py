@@ -7,6 +7,7 @@ from zope import schema
 from zope.event import notify
 from zope.lifecycleevent import ObjectModifiedEvent
 
+from silva.core import conf as silvaconf
 from silva.translations import translate as _
 from zeam.form import silva as silvaforms
 
@@ -20,6 +21,7 @@ class BlockSlot(Block):
     grok.name('slot')
     grok.title(_('Slot'))
     grok.context(IPageModelVersion)
+    silvaconf.icon('slot.png')
 
     def __init__(self, css_class='', restriction=None):
         self.tag = 'div'

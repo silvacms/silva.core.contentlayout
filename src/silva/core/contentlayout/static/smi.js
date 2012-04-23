@@ -226,14 +226,9 @@
                         },
                         resize: function(fill_in) {
                             if (this.$placeholder !== null) {
-                                if (fill_in !== undefined) {
-                                    if (fill_in === true) {
-                                        this.$placeholder.height(this.height);
-                                        this.$placeholder.width(this.width);
-                                    } else {
-                                        this.$placeholder.height(this.height);
-                                        this.$placeholder.width('100%');
-                                    }
+                                if (fill_in === false) {
+                                    this.$placeholder.height(this.height);
+                                    this.$placeholder.width('100%');
                                 } else {
                                     this.$placeholder.width(this.width);
                                     this.$placeholder.height(this.height);
@@ -305,7 +300,7 @@
 
     var AddMode = function(view, $component) {
         var $placeholder = $('<div class="contentlayout-component contentlayout-valid-placeholder"></div>');
-        var block = Block($('<div class="edit-block" />'));
+        var block = Block($('<div class="contentlayout-edit-block" />'));
         var slot = null;
         var validator = null;
         var $helper = null;
@@ -709,7 +704,7 @@
         var position = Element($block);
         $.extend(api, position, {
             id: $block.data('block-id'),
-            editable: $block.data('block-editable'),
+            editable: $block.data('block-editable') === true,
             $block: $block,
             block_set: function(data) {
                 this.id = data.block_id,
@@ -1051,7 +1046,7 @@
 
                         this.$body = this.$document.find('body');
                         this.shortcuts.create('editor', $content, true);
-                        this.slots = Slots(this.$document, this.$body.find('div.edit-slot'), '> div.edit-block');
+                        this.slots = Slots(this.$document, this.$body.find('div.contentlayout-edit-slot'), '> div.contentlayout-edit-block');
 
                         var mode = NormalMode(this, $layer, $components);
 

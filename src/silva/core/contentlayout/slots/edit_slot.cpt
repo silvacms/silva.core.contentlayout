@@ -1,11 +1,10 @@
-<div id="${slot.css_id}"
-     class="edit-slot ${slot.css_class}"
-     data-slot-id="${slot.slot_id}"
-     i18n:domain="silva">
-  <div class="edit-block"
+<tal:block i18n:domain="silva">
+  <tal:tag tal:replace="structure slot.opening_tag()" />
+  <div class="contentlayout-edit-block"
        data-block-id="${block.block_id}"
        data-block-editable="${block.block_editable}"
        tal:repeat="block slot.blocks()"
        tal:content="structure block.block_data">
   </div>
-</div>
+  <tal:tag tal:replace="structure slot.closing_tag()" />
+</tal:block>

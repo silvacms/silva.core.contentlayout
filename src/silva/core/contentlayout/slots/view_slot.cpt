@@ -1,5 +1,7 @@
-<div id="${slot.css_id}" class="${slot.css_class}">
+<tal:block i18n:domain="silva">
+  <tal:tag tal:replace="structure slot.opening_tag()" />
   <div tal:repeat="block slot.blocks()"
        tal:content="structure block.block_data">
   </div>
-</div>
+  <tal:tag tal:replace="structure slot.closing_tag()" />
+</tal:block>
