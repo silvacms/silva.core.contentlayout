@@ -30,8 +30,9 @@ class EditPage(silvaviews.Page):
     def render(self):
         design = self.context.get_design()
         if design is not None:
-            render = design(self.context, self.request)
-            return render(edition=[render])
+            render = design(self.context, self.request, [self.context])
+            if render is not None:
+                return render(edition=True)
         return u'<p>There is no design selected, please select one.</p>'
 
 

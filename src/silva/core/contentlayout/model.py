@@ -2,6 +2,8 @@
 # (c) 2012 Infrae. All rights reserved.
 # See also LICENSE.txt
 
+import operator
+
 from five import grok
 from zope.component import getUtility
 from zope.intid.interfaces import IIntIds
@@ -11,6 +13,7 @@ from zope.i18n import translate
 from AccessControl import ClassSecurityInfo
 from AccessControl.security import checkPermission
 from App.class_init import InitializeClass
+from OFS.interfaces import IObjectWillBeRemovedEvent
 
 from zeam.form import silva as silvaforms
 from silva.core import conf as silvaconf
@@ -26,7 +29,7 @@ from Products.Silva.VersionedContent import VersionedContent
 from Products.Silva.Version import Version
 
 from .interfaces import IPageModel, IPageModelVersion, PageModelFields
-from .interfaces import IContentLayoutService, IDesign
+from .interfaces import IContentLayoutService, IBlockSlot, IBlockManager
 from .designs.design import DesignAccessors
 
 
@@ -58,17 +61,20 @@ class PageModelVersion(Version, DesignAccessors):
         return self._allowed_content_types
 
     @property
+    def slots(self):
+        # XXX We can cache this on publication.
+        return dict(
+            map(lambda block: (block.identifier, block),
+                filter(lambda block: IBlockSlot.providedBy(block),
+                       map(operator.itemgetter(1),
+                           IBlockManager(self).get_all()))))
+
+    @property
     def markers(self):
         design = self.get_design()
         if design is not None:
             return design.markers
         return []
-
-    def get_slots(self):
-        pass
-
-    def set_slots(self):
-        pass
 
     def get_description(self):
         return self._description
@@ -76,8 +82,11 @@ class PageModelVersion(Version, DesignAccessors):
     def set_description(self, value):
         self._description = value
 
-    def __call__(self, content, request):
-        return PageModelRender(self, content, request)
+    def __call__(self, content, request, stack):
+        design = self.get_design()
+        if design is not None:
+            return design(self, request, [self,] + stack)
+        return None
 
 
 InitializeClass(PageModelVersion)
@@ -96,21 +105,6 @@ class PageModel(VersionedContent):
 
 
 InitializeClass(PageModel)
-
-
-class PageModelRender(object):
-    grok.implements(IDesign)
-
-    def __init__(self, model, content, request):
-        self.model = model
-        self.content = content
-        self.request = request
-
-    def __call__(self, edition=None):
-        __info__ = 'Rendering model: %s' % self.model
-        design = self.model.get_design()
-        render = design(self.model, self.request)
-        return render(edition=edition)
 
 
 class PageModelAddForm(silvaforms.SMIAddForm):
@@ -143,6 +137,11 @@ class PageModelView(silvaviews.View):
     grok.context(IPageModel)
 
     def render(self):
+        design = self.content.get_design()
+        if design is not None:
+            render = design(self.content, self.request, [self.content])
+            if render is not None:
+                return render()
         msg = _('Sorry, this ${meta_type} is not viewable.',
                 mapping={'meta_type': self.context.meta_type})
         return '<p>%s</p>' % translate(msg, context=self.request)
@@ -154,6 +153,7 @@ def register(version, event):
     service.register_page_model(version)
 
 
+@grok.subscribe(IPageModelVersion, IObjectWillBeRemovedEvent)
 @grok.subscribe(IPageModelVersion, IContentClosedEvent)
 def unregister(version, event):
     service = getUtility(IContentLayoutService)

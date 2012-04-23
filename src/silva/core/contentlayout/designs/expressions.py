@@ -10,15 +10,13 @@ from silva.core.contentlayout.interfaces import InvalidDesign, InvalidSlot
 
 def slot_renderer(econtext, name):
     content = econtext.get('content')
-    request = econtext.get('request')
     design = econtext.get('design')
-    edit_slot = econtext.get('design_edition_mode')
     if not IDesign.providedBy(design):
         raise InvalidDesign(design)
     if name not in design.slots:
         raise InvalidSlot(name)
-    edition = edit_slot and design in edit_slot
-    return SlotView(design.slots[name], name, content, request)(edition)
+    slot = design.slots[name]
+    return SlotView(name, slot, design, content)()
 
 
 class SlotExpr(StringExpr):

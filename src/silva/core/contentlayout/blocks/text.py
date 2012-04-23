@@ -63,7 +63,7 @@ class TextBlockController(BlockController):
     def fulltext(self):
         return [unicode(self.block)]
 
-    def render(self):
+    def render(self, view=None):
         return self.block.render(self.context, self.request)
 
 

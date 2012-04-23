@@ -84,7 +84,7 @@ class BlockController(grok.MultiAdapter):
     def remove(self):
         pass
 
-    def render(self):
+    def render(self, view):
         raise NotImplementedError
 
 
@@ -131,14 +131,14 @@ class BoundBlockManager(grok.MultiAdapter):
                 (block, self.context, self.request), IBlockController)
             function(block_id, controller)
 
-    def render(self, slot_id):
-        for block_id, block in self.manager.get_slot(slot_id):
+    def render(self, view):
+        for block_id, block in self.manager.get_slot(view.slot_id):
             if block is not None:
                 controller = getMultiAdapter(
                     (block, self.context, self.request), IBlockController)
                 yield {"block_id": block_id,
                        "block_editable": controller.editable() and 'true',
-                       "block_data": controller.render()}
+                       "block_data": controller.render(view)}
             else:
                 logger.error(u'Missing block %s in document.' % block_id)
 

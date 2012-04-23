@@ -43,18 +43,19 @@ class SlotView(object):
     edit_template = ChameleonPageTemplate(filename='edit_slot.cpt')
     view_template = ChameleonPageTemplate(filename='view_slot.cpt')
 
-    def __init__(self, slot, name, content, request):
+    def __init__(self, name, slot, design, content):
         self.slot = slot
         self.slot_id = name
         self.tag = slot.tag
         self.css_id = 'slot-' + name
         self.css_class = slot.css_class
         self.content = content
-        self.request = request
+        self.design = design
+        self.final = content is design.stack[-1]
 
     def default_namespace(self):
         return {'slot': self,
-                'request': self.request,
+                'request': self.design.request,
                 'content': self.content}
 
     def namespace(self):
@@ -62,11 +63,13 @@ class SlotView(object):
 
     def blocks(self):
         return getMultiAdapter(
-            (self.content, self.request),
-            IBoundBlockManager).render(self.slot_id)
+            (self.content, self.design.request),
+            IBoundBlockManager).render(self)
 
-    def __call__(self, edition=False):
+    def __call__(self):
         template = self.view_template
-        if edition:
+        # If we are in edit mode, and rendering the last content of
+        # the stack, use the edit template.
+        if self.design.edition and self.final:
             template = self.edit_template
         return template.render(self)
