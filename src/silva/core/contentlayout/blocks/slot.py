@@ -18,7 +18,7 @@ from ..slots.slot import SlotView
 class BlockSlot(Block):
     grok.implements(IBlockSlot)
     grok.name('slot')
-    grok.title(_('Sub Slot'))
+    grok.title(_('Slot'))
     grok.context(IPageModelVersion)
 
     def __init__(self, css_class='', restriction=None):
@@ -40,7 +40,7 @@ class BlockSlot(Block):
         return None
 
 
-class SubSlotEditBlockController(BlockController):
+class SlotBlockEditController(BlockController):
     """ Controller when used on the page.
     """
     grok.adapts(IBlockSlot, Interface, IHTTPRequest)
@@ -83,7 +83,7 @@ class AddBlockSlotAction(silvaforms.Action):
         return {
             'block_id': adding.block_id,
             'block_data': adding.block_controller.render(),
-            'block_editable': True}
+            'block_editable': False}
 
     def __call__(self, form):
         data, errors = form.extractData()
