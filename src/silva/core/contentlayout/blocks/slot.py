@@ -92,7 +92,7 @@ class AddBlockSlotAction(silvaforms.Action):
         if errors:
             return silvaforms.FAILURE
         adding = form.__parent__
-        adding.add(BlockSlot(css_class=data['css_class']))
+        adding.add(BlockSlot(css_class=data.getWithDefault('css_class')))
         notify(ObjectModifiedEvent(form.context))
         form.send_message(_(u"New slot added."))
         return silvaforms.SUCCESS
