@@ -100,7 +100,46 @@ class AddSubSlotBlock(silvaforms.RESTPopupForm):
         silvaforms.CancelAction(),
         AddSubSlotBlockAction())
 
-    def __init__(self, context, request, configuration, restriction):
+    def __init__(self, context, request, configuration, _):
         super(AddSubSlotBlock, self).__init__(context, request)
         self.configuration = configuration
-        self.restriction = restriction
+
+
+class EditExternalBlockAction(silvaforms.Action):
+    grok.implements(
+        silvaforms.IDefaultAction,
+        silvaforms.IRESTExtraPayloadProvider,
+        silvaforms.IRESTCloseOnSuccessAction)
+    title = _('Edit')
+
+    def get_extra_payload(self, form):
+        return {
+            'block_id': form.__name__,
+            'block_data': form.getContent().render(),
+            'block_editable': True}
+
+    def __call__(self, form):
+        data, errors = form.extractData()
+        if errors:
+            return silvaforms.FAILURE
+        #XXX: fixme
+        manager = form.getContentData()
+        manager.set('content', data.getWithDefault('content'))
+        form.send_message(_(u"Content block modified."))
+        notify(ObjectModifiedEvent(form.context))
+        return silvaforms.SUCCESS
+
+
+class EditSubSlotBlock(AddSubSlotBlock):
+    grok.name('edit')
+
+    label = _(u"Edit an content block")
+    actions = silvaforms.Actions(
+        silvaforms.CancelAction(),
+        EditExternalBlockAction())
+    ignoreContent = False
+
+    def __init__(self, block, context, request, controller, _):
+        super(AddSubSlotBlock, self).__init__(context, request)
+        self.block = block
+        self.setContentData(controller)
