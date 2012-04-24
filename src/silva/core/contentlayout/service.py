@@ -74,19 +74,17 @@ class ContentLayoutService(SilvaService):
         'View Management Screens', 'set_restrictions')
     def set_restrictions(self, rules):
         for rule in rules:
-            rule.validate()
+            rule.validate(self)
         self._restrictions_index = {}
         for rule in rules:
-            identifier = rule.design.get_identifier()
-            if identifier not in self._restrictions_index:
-                self._restrictions_index[identifier] = set()
-            self._restrictions_index[identifier].add(rule)
+            rules = self._restrictions_index.setdefault(rule.design, set())
+            rules.add(rule)
 
     security.declareProtected(
         'View Management Screens', 'set_default_designs')
     def set_default_designs(self, rules):
         for rule in rules:
-            rule.validate()
+            rule.validate(self)
         self._default_designs_index = {}
         for rule in rules:
             self._default_designs_index[rule.content_type] = rule
@@ -168,8 +166,10 @@ class ContentLayoutService(SilvaService):
     def _default_design(self, context, meta_type):
         rule = self._default_designs_index.get(meta_type)
         if rule is not None:
-            if self._design_allowed(rule.design, context, meta_type):
-                return rule.design
+            design = self.lookup_design_by_name(rule.design)
+            if design is not None:
+                if self._design_allowed(design, context, meta_type):
+                    return design
         return None
 
     security.declareProtected(
@@ -244,25 +244,30 @@ class DesignContentRule(object):
         self.content_type = content_type
 
     def __hash__(self):
-        return hash((self.content_type, self.design.get_identifier()))
+        # self.design is the design.get_identifier()
+        return hash((self.content_type, self.design))
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
-        return (self.design.get_identifier(), self.content_type) == \
-            (other.design.get_identifier(), other.content_type)
-        return (self.content_type, self.design.get_identifier())
+        return (self.design, self.content_type) == \
+            (other.design, other.content_type)
 
-    def validate(self):
-        comply, require = verify_context(
-            self.design,
-            get_content_class(self.content_type),
-            implements=True)
+    def validate(self, service):
+        design = service.lookup_design_by_name(self.design)
+        if design is None:
+            raise ValueError(
+                _(u"Design ${design} is not available.",
+                  mapping=dict(design=self.design)))
+        addable = get_content_class(self.content_type)
+        comply, require = verify_context(design, addable, True)
         if not comply:
             raise ValueError(
-                _(u'Design %s restricts its usage to %s objects'
-                  u', however %s do not comply.') %
-                (self.design.get_title(), require.__name__, self.content_type))
+                _(u'Design ${design} restricts its usage to ${require} objects'
+                  u', however ${content} do not comply.',
+                  mapping=dict(design=design.get_title(),
+                               require=require.__name__,
+                               content=self.content_type)))
 
 
 class DesignRestriction(DesignContentRule):

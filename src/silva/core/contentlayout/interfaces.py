@@ -76,13 +76,11 @@ class InvalidDesign(ValueError):
 
 
 @grok.provider(IContextSourceBinder)
-def registry_design_source(context):
-    from silva.core.contentlayout.designs.registry import registry
-
-    #registry = getUtility(IDesignLookup)
+def design_identifier_source(context):
+    registry = getUtility(IDesignLookup)
 
     def make_term(design):
-        return SimpleTerm(value=design,
+        return SimpleTerm(value=design.get_identifier(),
                           token=design.get_identifier(),
                           title=design.get_title())
 
@@ -395,7 +393,7 @@ class IDesignContentRule(interface.Interface):
    """
    design = schema.Choice(
       title=_(u"Design"),
-      source=registry_design_source)
+      source=design_identifier_source)
    content_type = schema.Choice(
       title=_(u"Content type"),
       source=all_content_type_source)
@@ -419,7 +417,7 @@ class IDefaultDesignRule(IDesignContentRule):
       source=all_content_type_source)
    design = schema.Choice(
       title=_(u"Design"),
-      source=registry_design_source)
+      source=design_identifier_source)
 
 
 class IDesignRestrictions(interface.Interface):
