@@ -4,14 +4,14 @@ import logging
 
 from five import grok
 from zope.component import getMultiAdapter
-from zope.interface import Interface, implementedBy
-from zope.interface.interfaces import ISpecification
+from zope.interface import Interface
 from zeam import component
 
 from Products.Silva.icon import registry as icon_registry
 
 from ..interfaces import IBlockManager, IBoundBlockManager, IBlockController
 from ..interfaces import IBlockConfigurations, IBlockConfiguration, IBlock
+from ..utils import verify_context
 
 _marker = object()
 logger = logging.getLogger('silva.core.contentlayout')
@@ -40,12 +40,8 @@ class BlockConfiguration(object):
         return '/'.join((view.root_url, icon))
 
     def is_available(self, view):
-        context = grok.context.bind(default=None).get(self.block)
-        if context is not None:
-            if not ISpecification.providedBy(context):
-                context = implementedBy(context)
-            return context.providedBy(view.context)
-        return True
+        comply, require = verify_context(self.block, view.context)
+        return comply
 
 
 class BlockConfigurations(component.Component):

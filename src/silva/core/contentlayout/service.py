@@ -5,8 +5,6 @@
 from itertools import chain
 
 from zope.component import IFactory
-from zope.interface import implementedBy
-from zope.interface.interfaces import ISpecification
 from zope.component import getUtility
 from zope.intid.interfaces import IIntIds
 
@@ -25,8 +23,9 @@ from Products.Silva.ExtensionRegistry import extensionRegistry
 from Products.Silva import roleinfo
 
 from . import interfaces
-from .designs.registry import registry as design_registry
 from .blocks.registry import registry as block_registry
+from .designs.registry import registry as design_registry
+from .utils import verify_context
 
 
 def get_content_class(content_type):
@@ -255,11 +254,11 @@ class DesignContentRule(object):
         return (self.content_type, self.design.get_identifier())
 
     def validate(self):
-        require = specification = grok.context.bind().get(self.design)
-        if not ISpecification.providedBy(specification):
-            specification = implementedBy(specification)
-        if not specification.implementedBy(
-            get_content_class(self.content_type)):
+        comply, require = verify_context(
+            self.design,
+            get_content_class(self.content_type),
+            implements=True)
+        if not comply:
             raise ValueError(
                 _(u'Design %s restricts its usage to %s objects'
                   u', however %s do not comply.') %

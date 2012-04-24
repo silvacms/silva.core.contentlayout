@@ -77,9 +77,9 @@ class InvalidDesign(ValueError):
 
 @grok.provider(IContextSourceBinder)
 def registry_design_source(context):
-    #from silva.core.contentlayout.designs.registry import registry
+    from silva.core.contentlayout.designs.registry import registry
 
-    registry = getUtility(IDesignLookup)
+    #registry = getUtility(IDesignLookup)
 
     def make_term(design):
         return SimpleTerm(value=design,

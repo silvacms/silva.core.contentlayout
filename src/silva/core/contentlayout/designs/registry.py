@@ -2,12 +2,11 @@
 from five import grok
 from grokcore.component.util import sort_components
 from zope.testing import cleanup
-from zope.interface import implementedBy
-from zope.interface.interfaces import ISpecification
 
 from AccessControl.security import checkPermission
 
-from silva.core.contentlayout.interfaces import IDesignLookup
+from ..interfaces import IDesignLookup
+from ..utils import verify_context
 
 
 class Validator(object):
@@ -21,15 +20,13 @@ class Validator(object):
 
     def __call__(self, design):
         if self.context is not None:
-            required = grok.context.bind().get(design)
-            if not ISpecification.providedBy(required):
-                required = implementedBy(required)
-
-            # If an addable is provided, we check the require on it.
+            obj = self.context
+            implements = False
             if self.addable is not None:
-                if not required.implementedBy(self.addable):
-                    return False
-            elif not required.providedBy(self.context):
+                obj = self.addable
+                implements = True
+            comply, require = verify_context(design, obj, implements)
+            if not comply:
                 return False
 
             permission = grok.require.bind().get(design)
