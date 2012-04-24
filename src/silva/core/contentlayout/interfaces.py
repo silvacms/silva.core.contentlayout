@@ -128,6 +128,7 @@ def default_designs(form):
 
 PageFields = silvaforms.Fields(ITitledPage)
 PageFields['design'].defaultValue = default_designs
+PageFields['design'].mode = 'combobox'
 
 
 class IPageAware(IViewableObject):
@@ -470,6 +471,7 @@ def all_page_content_types(form):
 
 PageModelFields = silvaforms.Fields(IPageModelFields)
 PageModelFields['allowed_content_types'].defaultValue = all_page_content_types
+PageModelFields['design'].mode = 'combobox'
 
 
 class IDesignEvent(IObjectEvent):
