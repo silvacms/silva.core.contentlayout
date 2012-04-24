@@ -1,4 +1,5 @@
 
+import re
 import uuid
 from five import grok
 from zope.interface import Interface, implementedBy
@@ -60,11 +61,17 @@ def code_source_source(context):
 
 class IBlockSlotFields(Interface):
 
+    identifier = schema.TextLine(
+        title=_(u"Slot identifier"),
+        description=_(u"Only letters and numbers are allowed."),
+        required=True)
+
     tag = schema.TextLine(
         title=_(u'HTML tag'),
         description=_(u"HTML tag to use to create the slot."),
         required=True,
         default=u'div')
+
     css_class = schema.TextLine(
         title=_(u'CSS class(es)'),
         description=_(
@@ -79,6 +86,7 @@ class IBlockSlotFields(Interface):
                                  source=code_source_source),
         required=False,
         default=set())
+
     cs_blacklist = schema.Set(
         title=_(u"Code source blacklist"),
         value_type=schema.Choice(title=_(u'name'),
@@ -115,6 +123,12 @@ class BlockSlotController(BlockController):
                 self.block.identifier, self.block, design, next_content)
             return next_view()
         return '<div>This is a slot for pages using this model.</div>'
+
+    def get_identifier(self):
+        return self.block.identifier
+
+    def set_identifier(self, value):
+        self.block.identifier = value
 
     def get_tag(self):
         return self.block.tag
@@ -157,18 +171,18 @@ class BlockSlotController(BlockController):
             restriction.disallowed = blacklist
 
     def get_content_restriction(self):
-        restriction = self._find_restriction_with_type(restrict.ContentType)
+        restriction = self._find_restriction_with_type(restrict.Content)
         if restriction is None:
             return None
-        return restriction.content_type
+        return restriction.schema
 
-    def set_content_restriction(self, content_type):
-        restriction = self._find_restriction_with_type(restrict.ContentType)
+    def set_content_restriction(self, schema):
+        restriction = self._find_restriction_with_type(restrict.Content)
         if restriction is None:
             self.block._restrictions.insert(
-                0, restrict.ContentType(content_type))
+                0, restrict.Content(schema))
         else:
-            restriction.content_type = content_type
+            restriction.schema = schema
 
     def get_block_all(self):
         restriction = self._find_restriction_with_type(restrict.BlockAll)
@@ -217,6 +231,21 @@ class AddBlockSlotAction(EditAction):
         return silvaforms.SUCCESS
 
 
+VALIDATE_SLOT_ID_RE = re.compile(r'^[a-z0-9A-Z]{3,}$')
+
+def validate_slot_identifier(value, form):
+    if value is silvaforms.NO_VALUE:
+        return _(u'Identifier required.')
+    if not VALIDATE_SLOT_ID_RE.match(value):
+        return _(u'Invalid identifier.')
+    slots = form.context.slots
+    if value in slots:
+        current_slot = form.getContentData().getContent().block
+        if current_slot != slots[value]:
+            return _(u'A slot with that identifier already exists.')
+    return None
+
+
 class AddBlockSlot(silvaforms.RESTPopupForm):
     grok.adapts(IBlockSlot, IPageModelVersion)
     grok.name('add')
@@ -237,6 +266,9 @@ class AddBlockSlot(silvaforms.RESTPopupForm):
         self.setContentData(controller)
         self.configuration = configuration
         self.restriction = restriction
+
+    def update(self):
+        self.fields['identifier'].validate = validate_slot_identifier
 
 
 class EditBlockSlotAction(EditAction):

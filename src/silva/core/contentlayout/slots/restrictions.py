@@ -76,15 +76,3 @@ class Content(SlotRestriction):
         if self.schema.providedBy(controller.content):
             return True
         return False
-
-
-class ContentType(SlotRestriction):
-    grok.context(ReferenceBlock)
-
-    def __init__(self, content_type):
-        self.content_type = content_type
-
-    def allow_controller(self, controller, context, slot):
-        if self.content_type == controller.content.get_content():
-            return True
-        return False
