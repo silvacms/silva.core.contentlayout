@@ -1,7 +1,7 @@
 
 import uuid
 from five import grok
-from zope.interface import Interface
+from zope.interface import Interface, implementedBy
 from zope.publisher.interfaces.http import IHTTPRequest
 from zope import schema
 from zope.event import notify
@@ -10,14 +10,15 @@ from zope.schema.interfaces import IContextSourceBinder
 from zope.schema.vocabulary import SimpleVocabulary, SimpleTerm
 from zeam.form.ztk import EditAction
 
-from silva.core.interfaces import IAddableContents
 from silva.core import conf as silvaconf
 from silva.translations import translate as _
 from zeam.form import silva as silvaforms
+
 from Products.SilvaExternalSources.interfaces import availableSources
+from Products.Silva.ExtensionRegistry import extensionRegistry
 
 from .manager import Block, BlockController
-from ..interfaces import IPageModelVersion, IBlockSlot
+from ..interfaces import IPageModelVersion, IBlockSlot, IBlockable
 from ..slots.slot import Slot, SlotView
 from ..slots import restrictions as restrict
 
@@ -40,14 +41,11 @@ class BlockSlot(Slot, Block):
 def content_type_source(context):
    terms = [SimpleTerm(value=None,
                        token='',
-                       title=_(u"-- Choose a content type --"))]
-   addables = IAddableContents(
-      context.get_root()).get_all_addables()
-   # XXX: SHOULD BE INTERFACES
-   for addable in addables:
-      terms.append(SimpleTerm(value=addable,
-                              token=addable,
-                              title=addable))
+                       title=_(u"No restriction"))]
+   for addable in extensionRegistry.get_addables(requires=[IBlockable,]):
+      terms.append(SimpleTerm(value=implementedBy(addable['instance']),
+                              token=addable['name'],
+                              title=addable['name']))
    return SimpleVocabulary(terms)
 
 @grok.provider(IContextSourceBinder)
@@ -62,9 +60,15 @@ def code_source_source(context):
 
 class IBlockSlotFields(Interface):
 
+    tag = schema.TextLine(
+        title=_(u'HTML tag'),
+        description=_(u"HTML tag to use to create the slot."),
+        required=True,
+        default=u'div')
     css_class = schema.TextLine(
         title=_(u'CSS class(es)'),
-        description=_((u'whitespace delimited CSS classes')),
+        description=_(
+            u'Whitespace delimited CSS classes to apply on the slot.'),
         required=False,
         default=u'')
 
@@ -75,7 +79,6 @@ class IBlockSlotFields(Interface):
                                  source=code_source_source),
         required=False,
         default=set())
-
     cs_blacklist = schema.Set(
         title=_(u"Code source blacklist"),
         value_type=schema.Choice(title=_(u'name'),
@@ -92,7 +95,8 @@ class IBlockSlotFields(Interface):
     # block all restriction
     block_all = schema.Bool(
         title=_(u"Block all others"),
-        description=_(u'Any block not allowed by restrictions is forbidden'),
+        description=_(
+            u'Any block not allowed previously is blocked with this option.'),
         required=False,
         default=False)
 
@@ -199,7 +203,7 @@ class AddBlockSlotAction(EditAction):
         return {
             'block_id': adding.block_id,
             'block_data': adding.block_controller.render(),
-            'block_editable': False}
+            'block_editable': True}
 
     def __call__(self, form):
         status = super(AddBlockSlotAction, self).__call__(form)

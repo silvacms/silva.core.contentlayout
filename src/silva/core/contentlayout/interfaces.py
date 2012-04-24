@@ -19,8 +19,10 @@ from silva.translations import translate as _
 from silva.ui.interfaces import ISilvaUIDependencies
 from zeam.form import silva as silvaforms
 from zeam.form.ztk.interfaces import IFormSourceBinder
+from zeam.form.silva.form.smi import SMIAddForm
 
 from Products.Silva import roleinfo
+from Products.Silva.ExtensionRegistry import extensionRegistry
 
 
 class ISlotRestriction(interface.Interface):
@@ -75,24 +77,25 @@ class InvalidDesign(ValueError):
 
 @grok.provider(IContextSourceBinder)
 def registry_design_source(context):
-    from silva.core.contentlayout.designs.registry import registry
+    #from silva.core.contentlayout.designs.registry import registry
+
+    registry = getUtility(IDesignLookup)
 
     def make_term(design):
         return SimpleTerm(value=design,
                           token=design.get_identifier(),
                           title=design.get_title())
 
-    return SimpleVocabulary(map(make_term, registry.lookup_design(context)))
+    return SimpleVocabulary(map(make_term, registry.lookup_design(None)))
 
 @grok.provider(IFormSourceBinder)
 def design_source(form):
-   from zeam.form.silva.form.smi import SMIAddForm
-
    registry = getUtility(IDesignLookup)
    candidates = None
+
    if isinstance(form, SMIAddForm):
-      candidates = registry.lookup_design_by_type(
-         form._content_type, form.context)
+      candidates = registry.lookup_design_by_addable(
+         form.context, extensionRegistry.get_addable(form._content_type))
    else:
       candidates = registry.lookup_design(form.context)
    return SimpleVocabulary([
@@ -112,12 +115,12 @@ class ITitledPage(ITitledContent):
 
 
 def default_designs(form):
-   from zeam.form.silva.form.smi import SMIAddForm
    registry = getUtility(IDesignLookup)
    design = None
+
    if isinstance(form, SMIAddForm):
-      design = registry.default_design_by_type(
-         form._content_type, form.context)
+      design = registry.default_design_by_addable(
+         form.context, extensionRegistry.get_addable(form._content_type))
    else:
       design = registry.default_design(form.context)
 
@@ -278,7 +281,7 @@ class IDesignLookup(interface.Interface):
       """Lookup and return a list of available design.
       """
 
-    def lookup_design_by_type(content_type, parent):
+    def lookup_design_by_addable(context, addable):
       """Same as lookup but accept a silva content type as argument.
       """
 
@@ -290,7 +293,7 @@ class IDesignLookup(interface.Interface):
        """Try to find a default design for this context or None.
        """
 
-    def default_design_by_type(content_type, parent):
+    def default_design_by_addable(context, addable):
        """Same as default_design but accept a silva content type as argument.
        """
 
@@ -344,7 +347,7 @@ class IBlockGroup(interface.Interface):
 
 
 class IBlockGroupsFields(interface.Interface):
-   _block_groups = schema.List(
+   block_groups = schema.List(
       title=_(u"Groups"),
       value_type=schema.Object(IBlockGroup))
 
@@ -365,16 +368,14 @@ def editor_roles_source():
     return SimpleVocabulary(roles)
 
 @grok.provider(IContextSourceBinder)
-def content_type_source(context):
+def all_content_type_source(context):
    terms = [SimpleTerm(value=None,
                        token='',
                        title=_(u"-- Choose a content type --"))]
-   addables = IAddableContents(
-      context.get_root()).get_all_addables(require=IPageAware)
-   for addable in addables:
-      terms.append(SimpleTerm(value=addable,
-                              token=addable,
-                              title=addable))
+   for addable in extensionRegistry.get_addables(requires=[IPageAware,]):
+      terms.append(SimpleTerm(value=addable['name'],
+                              token=addable['name'],
+                              title=addable['name']))
    return SimpleVocabulary(terms)
 
 @grok.provider(IContextSourceBinder)
@@ -397,7 +398,7 @@ class IDesignContentRule(interface.Interface):
       source=registry_design_source)
    content_type = schema.Choice(
       title=_(u"Content type"),
-      source=content_type_source)
+      source=all_content_type_source)
 
 
 class IDesignRestriction(IDesignContentRule):
@@ -415,7 +416,7 @@ class IDefaultDesignRule(IDesignContentRule):
    # same fields as parent class but in reverse order
    content_type = schema.Choice(
       title=_(u"Content type"),
-      source=content_type_source)
+      source=all_content_type_source)
    design = schema.Choice(
       title=_(u"Design"),
       source=registry_design_source)
@@ -423,7 +424,7 @@ class IDefaultDesignRule(IDesignContentRule):
 
 class IDesignRestrictions(interface.Interface):
 
-   _restrictions = schema.Set(
+   restrictions = schema.Set(
       title=_(u"Restrictions"),
       value_type=schema.Object(schema=IDesignRestriction),
       required=False)
@@ -431,7 +432,7 @@ class IDesignRestrictions(interface.Interface):
 
 class IContentDefaultDesigns(interface.Interface):
 
-   _default_designs = schema.Set(
+   default_designs = schema.Set(
       title=_(u"Default designs"),
       value_type=schema.Object(schema=IDefaultDesignRule),
       required=False)

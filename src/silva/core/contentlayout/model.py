@@ -15,16 +15,19 @@ from AccessControl.security import checkPermission
 from App.class_init import InitializeClass
 from OFS.interfaces import IObjectWillBeRemovedEvent
 
-from zeam.form import silva as silvaforms
 from silva.core import conf as silvaconf
-from silva.core.smi.content import IEditScreen
-from silva.core.interfaces.events import IContentPublishedEvent
 from silva.core.interfaces.events import IContentClosedEvent
-from silva.ui.interfaces import IJSView
-from silva.ui.rest.base import Screen, PageREST
-from silva.core.views.interfaces import ISilvaURL
+from silva.core.interfaces.events import IContentPublishedEvent
+from silva.core.smi.content import ContentEditMenu
+from silva.core.smi.content import IEditScreen
 from silva.core.views import views as silvaviews
+from silva.core.views.interfaces import ISilvaURL
 from silva.translations import translate as _
+from silva.ui.interfaces import IJSView
+from silva.ui.menu import MenuItem
+from silva.ui.rest.base import Screen, PageREST
+from zeam.form import silva as silvaforms
+
 from Products.Silva.VersionedContent import VersionedContent
 from Products.Silva.Version import Version
 
@@ -40,7 +43,6 @@ class PageModelVersion(Version, DesignAccessors):
     security = ClassSecurityInfo()
     meta_type = 'Silva Page Model Version'
 
-    _description = None
     _title = None
     _allowed_content_types = None
 
@@ -75,12 +77,6 @@ class PageModelVersion(Version, DesignAccessors):
         if design is not None:
             return design.markers
         return []
-
-    def get_description(self):
-        return self._description
-
-    def set_description(self, value):
-        self._description = value
 
     def __call__(self, content, request, stack):
         design = self.get_design()
@@ -131,6 +127,23 @@ class PageModelEdit(PageREST):
         url = getMultiAdapter((self.context, self.request), ISilvaURL).preview()
         return {"ifaces": ["preview"],
                 "html_url": url}
+
+
+class PageModelDesignForm(silvaforms.SMIEditForm):
+    grok.context(IPageModel)
+    grok.name('design')
+
+    label = _(u"Page design")
+    fields = PageModelFields.omit('id')
+
+
+class PageModelDesignMenu(MenuItem):
+    grok.adapts(ContentEditMenu, IPageModel)
+    grok.require('silva.ChangeSilvaContent')
+    grok.order(15)
+
+    name = _('Design')
+    screen = PageModelDesignForm
 
 
 class PageModelView(silvaviews.View):

@@ -20,13 +20,13 @@ class SlotRestriction(object):
         return True
 
     def apply_to(self, block_type):
-        context_required = grok.context.bind().get(self)
-        if context_required is None:
+        requires = grok.context.bind(default=None).get(self)
+        if requires is None:
             return False
-        if IInterface.providedBy(context_required):
-            if context_required.implementedBy(block_type):
+        if IInterface.providedBy(requires):
+            if requires.implementedBy(block_type):
                 return True
-        elif issubclass(block_type, context_required):
+        elif issubclass(block_type, requires):
             return True
         return False
 

@@ -5,7 +5,8 @@
 from itertools import chain
 
 from zope.component import IFactory
-from zope.interface import Interface
+from zope.interface import implementedBy
+from zope.interface.interfaces import ISpecification
 from zope.component import getUtility
 from zope.intid.interfaces import IIntIds
 
@@ -28,7 +29,7 @@ from .designs.registry import registry as design_registry
 from .blocks.registry import registry as block_registry
 
 
-def get_content_class_from_content_type(content_type):
+def get_content_class(content_type):
     #XXX: is this the correct way
     addable = extensionRegistry.get_addable(content_type)
     if addable is None:
@@ -47,99 +48,32 @@ class ContentLayoutService(SilvaService):
 
     security = ClassSecurityInfo()
     manage_options = (
-        {'label': 'Templates', 'action': 'manage_templates'},
         {'label': 'Blocks', 'action': 'manage_blocks'},
+        {'label': 'Templates', 'action': 'manage_templates'},
         ) + SilvaService.manage_options
 
-    _restrictions_index = {}
-    _default_designs_index = {}
-    _block_groups = []
-    _page_models = None
+    def __init__(self, id, title=None):
+        super(ContentLayoutService, self).__init__(id, title)
+        self._restrictions_index = {}
+        self._default_designs_index = {}
+        self._page_models = {}
+        self._block_groups = [
+            BlockGroup('Generic', ['text', 'site-content', 'source:cs_toc']),
+            BlockGroup('Model', ['slot'])]
 
-    @property
-    def _restrictions(self):
+    security.declareProtected(
+        'View Management Screens', 'get_restrictions')
+    def get_restrictions(self):
         return set(chain.from_iterable(self._restrictions_index.itervalues()))
 
-    @property
-    def _default_designs(self):
+    security.declareProtected(
+        'View Management Screens', 'get_default_designs')
+    def get_default_designs(self):
         return set(self._default_designs_index.itervalues())
 
     security.declareProtected(
-        'View Management Screens', 'register_page_model')
-    def register_page_model(self, model):
-        if self._page_models is None:
-            self._page_models = {}
-        self._page_models[model.get_identifier()] = getUtility(IIntIds).register(model)
-        self._p_changed = True
-
-    security.declareProtected(
-        'View Management Screens', 'unregister_page_model')
-    def unregister_page_model(self, model):
-        if self._page_models is None:
-            self._page_models = {}
-        identifier = model.get_identifier()
-        if identifier in self._page_models:
-            del self._page_models[identifier]
-            self._p_changed = True
-
-    security.declareProtected(
-        'View Management Screens', 'lookup_design')
-    def lookup_design(self, context):
-        candidates = design_registry.lookup_design(context)
-        return filter(
-            lambda t: self._design_allowed_in_context(t, context),
-            candidates)
-
-    security.declareProtected(
-        'View Management Screens', 'lookup_design_by_type')
-    def lookup_design_by_type(self, content_type, parent):
-        if self._page_models is None:
-            self._page_models = {}
-        candidates = design_registry.lookup_design_by_type(
-            content_type, parent)
-        object_class = get_content_class_from_content_type(content_type)
-        results = filter(
-            lambda t: self._design_allowed_in_context(
-                t, parent, object_class=object_class),
-            candidates)
-        results.extend([
-                model for model in map(
-                    getUtility(IIntIds).getObject, self._page_models.values())
-                if content_type in model.get_allowed_content_types()])
-        return results
-
-    security.declareProtected(
-        'View Management Screens', 'lookup_design_by_name')
-    def lookup_design_by_name(self, name):
-        if self._page_models is None:
-            self._page_models = {}
-        model = self._page_models.get(name)
-        if model:
-            return getUtility(IIntIds).getObject(model)
-        return design_registry.lookup_design_by_name(name)
-
-    security.declareProtected(
-        'View Management Screens', 'default_design')
-    def default_design(self, context):
-        rule = self._default_designs_index.get(context.meta_type)
-        if rule is not None and \
-                self._design_allowed_in_context(rule.design, context):
-            return rule.design
-        return None
-
-    security.declareProtected(
-        'View Management Screens', 'default_design_by_type')
-    def default_design_by_type(self, content_type, parent):
-        rule = self._default_designs_index.get(content_type)
-        content_class = get_content_class_from_content_type(content_type)
-        if rule is not None and self._design_allowed_in_context(
-                rule.design, parent, object_class=content_class):
-            return rule.design
-        return None
-
-    security.declareProtected(
-        'View Management Screens', 'update_restrictions')
-    def update_restrictions(self, rules):
+        'View Management Screens', 'set_restrictions')
+    def set_restrictions(self, rules):
         for rule in rules:
             rule.validate()
         self._restrictions_index = {}
@@ -150,29 +84,106 @@ class ContentLayoutService(SilvaService):
             self._restrictions_index[identifier].add(rule)
 
     security.declareProtected(
-        'View Management Screens', 'update_default_designs')
-    def update_default_designs(self, rules):
+        'View Management Screens', 'set_default_designs')
+    def set_default_designs(self, rules):
         for rule in rules:
             rule.validate()
         self._default_designs_index = {}
         for rule in rules:
             self._default_designs_index[rule.content_type] = rule
 
-    def _design_allowed_in_context(self, design, context,
-                                     object_class=None):
-        if object_class is None:
-            object_class = context.__class__
+    security.declareProtected(
+        'View Management Screens', 'register_page_model')
+    def register_page_model(self, model):
+        int_id = getUtility(IIntIds).register(model)
+        self._page_models[model.get_identifier()] = int_id
+        self._p_changed = True
+
+    security.declareProtected(
+        'View Management Screens', 'unregister_page_model')
+    def unregister_page_model(self, model):
+        identifier = model.get_identifier()
+        if identifier in self._page_models:
+            del self._page_models[identifier]
+            self._p_changed = True
+
+    security.declareProtected(
+        'View Management Screens', 'list_page_model')
+    def list_page_model(self, meta_type):
+        models = []
+        resolve = getUtility(IIntIds).getObject
+        for int_id in self._page_models.values():
+            try:
+                model = resolve(int_id)
+            except KeyError:
+                continue
+            if (meta_type is None or
+                meta_type in model.get_allowed_content_types()):
+                models.append(model)
+        return models
+
+    def _design_allowed(self, design, context, meta_type):
         rules = self._restrictions_index.get(design.get_identifier())
         if rules is None:
             return True
         user_role = IAuthorizationManager(context).get_user_role()
         for rule in rules:
-            if object_class.meta_type != rule.content_type:
+            if meta_type is not None and meta_type != rule.content_type:
                 continue
             if roleinfo.isEqualToOrGreaterThan(user_role, rule.role):
                 continue
             return False
         return True
+
+    security.declareProtected(
+        'View Management Screens', 'lookup_design')
+    def lookup_design(self, context):
+        meta_type = None
+        results = design_registry.lookup_design(context)
+        if context is not None:
+            meta_type = context.meta_type
+            results = filter(
+                lambda design: self._design_allowed(design, context, meta_type),
+                results)
+        results += self.list_page_model(meta_type)
+        return results
+
+    security.declareProtected(
+        'View Management Screens', 'lookup_design_by_addable')
+    def lookup_design_by_addable(self, context, addable):
+        meta_type = addable['name']
+        results = filter(
+            lambda design: self._design_allowed(design, context, meta_type),
+            design_registry.lookup_design_by_addable(context, addable))
+        results += self.list_page_model(meta_type)
+        return results
+
+    security.declareProtected(
+        'View Management Screens', 'lookup_design_by_name')
+    def lookup_design_by_name(self, name):
+        model = self._page_models.get(name)
+        if model:
+            return getUtility(IIntIds).getObject(model)
+        return design_registry.lookup_design_by_name(name)
+
+    def _default_design(self, context, meta_type):
+        rule = self._default_designs_index.get(meta_type)
+        if rule is not None:
+            if self._design_allowed(rule.design, context, meta_type):
+                return rule.design
+        return None
+
+    security.declareProtected(
+        'View Management Screens', 'default_design')
+    def default_design(self, context):
+        return self._default_design(context, context.meta_type)
+
+    security.declareProtected(
+        'View Management Screens', 'default_design_by_addable')
+    def default_design_by_addable(self, context, addable):
+        return self._default_design(context, addable['name'])
+
+    # Blocks configuration
 
     security.declareProtected(
         'View Management Screens', 'get_block_groups')
@@ -244,17 +255,15 @@ class DesignContentRule(object):
         return (self.content_type, self.design.get_identifier())
 
     def validate(self):
-        design_context_restriction = grok.context.bind().get(self.design)
-        object_type = get_content_class_from_content_type(self.content_type)
-        verify = lambda x: issubclass(object_type, x)
-        if issubclass(design_context_restriction, Interface):
-            verify = design_context_restriction.implementedBy
-        if not verify(object_type):
-            raise ValueError(_(u'Design %s restricts its usage to %s objects'
-                               u', However %s do not comply') %
-                             (self.design.label,
-                              design_context_restriction.__name__,
-                              self.content_type))
+        require = specification = grok.context.bind().get(self.design)
+        if not ISpecification.providedBy(specification):
+            specification = implementedBy(specification)
+        if not specification.implementedBy(
+            get_content_class(self.content_type)):
+            raise ValueError(
+                _(u'Design %s restricts its usage to %s objects'
+                  u', however %s do not comply.') %
+                (self.design.get_title(), require.__name__, self.content_type))
 
 
 class DesignRestriction(DesignContentRule):
@@ -283,21 +292,9 @@ class DesignRestrictionsSettings(silvaforms.ZMISubForm):
 
     label = _(u"Define designs access restrictions")
     fields = silvaforms.Fields(interfaces.IDesignRestrictions)
+    actions = silvaforms.Actions(silvaforms.EditAction())
+    dataManager = silvaforms.SilvaDataManager
     ignoreContent = False
-    ignoreRequest = True
-
-    @silvaforms.action(_(u"Apply"))
-    def save(self):
-        data, errors = self.extractData()
-        if errors:
-            return silvaforms.FAILURE
-        try:
-            self.context.update_restrictions(data['_restrictions'])
-            self.status = _(u"Changes saved.")
-        except ValueError as e:
-            self.status = e.args[0]
-            return silvaforms.FAILURE
-        return silvaforms.SUCCESS
 
 
 class DefaultDesignRule(DesignContentRule):
@@ -322,22 +319,12 @@ class ContentDefaultDesignSettings(silvaforms.ZMISubForm):
 
     label = _(u"Define default design for content types")
     fields = silvaforms.Fields(interfaces.IContentDefaultDesigns)
+    actions = silvaforms.Actions(silvaforms.EditAction())
+    dataManager = silvaforms.SilvaDataManager
     ignoreContent = False
-    ignoreRequest = True
 
-    @silvaforms.action(_(u"Apply"))
-    def save(self):
-        data, errors = self.extractData()
-        if errors:
-            return silvaforms.FAILURE
-        try:
-            self.context.update_default_designs(data['_default_designs'])
-            self.status = _(u"Changes saved.")
-        except ValueError as e:
-            self.status = e.args[0]
-            return silvaforms.FAILURE
-        return silvaforms.SUCCESS
 
+# Block configuration
 
 class BlockGroup(object):
     """Group of blocks
@@ -365,17 +352,8 @@ class ContentLayoutServiceManageBlocks(silvaforms.ZMIForm):
     grok.context(ContentLayoutService)
 
     label = _(u"Blocks palette configuration")
-    description = _(u"Configure block groups")
+    description = _(u"Sort possible block into groups.")
     fields = silvaforms.Fields(interfaces.IBlockGroupsFields)
+    actions = silvaforms.Actions(silvaforms.EditAction())
+    dataManager = silvaforms.SilvaDataManager
     ignoreContent = False
-    ignoreRequest = True
-
-    @silvaforms.action(_("Save changes"))
-    def save(self):
-        data, errors = self.extractData()
-        if errors:
-            return silvaforms.FAILURE
-
-        self.context.set_block_groups(data['_block_groups'])
-        self.status = _(u"Changes saved.")
-        return silvaforms.SUCCESS
