@@ -3,7 +3,6 @@ from Acquisition import aq_parent
 
 from five import grok
 from zope import schema, interface
-from zope.schema.vocabulary import SimpleVocabulary, SimpleTerm
 from zope.schema.interfaces import IContextSourceBinder
 from zope.publisher.interfaces.browser import IDefaultBrowserLayer
 from zope.annotation import IAttributeAnnotatable
@@ -11,18 +10,21 @@ from zope.component import getUtility
 from zope.component.interfaces import IObjectEvent, ObjectEvent
 
 from silva.core import conf as silvaconf
-from silva.core.interfaces import IViewableObject, ISilvaLocalService
+from silva.core.conf.interfaces import ITitledContent
+from silva.core.conf.schema import Vocabulary, Term
 from silva.core.interfaces import IAddableContents
 from silva.core.interfaces import IVersion,  IVersionedContent
-from silva.core.conf.interfaces import ITitledContent
+from silva.core.interfaces import IViewableObject, ISilvaLocalService
+from silva.core.views.interfaces import IVirtualSite
 from silva.translations import translate as _
 from silva.ui.interfaces import ISilvaUIDependencies
 from zeam.form import silva as silvaforms
-from zeam.form.ztk.interfaces import IFormSourceBinder
 from zeam.form.silva.form.smi import SMIAddForm
+from zeam.form.ztk.interfaces import IFormSourceBinder
 
 from Products.Silva import roleinfo
 from Products.Silva.ExtensionRegistry import extensionRegistry
+from Products.Silva.icon import registry as iconRegistry
 
 
 class ISlotRestriction(interface.Interface):
@@ -80,27 +82,37 @@ def design_identifier_source(context):
     registry = getUtility(IDesignLookup)
 
     def make_term(design):
-        return SimpleTerm(value=design.get_identifier(),
-                          token=design.get_identifier(),
-                          title=design.get_title())
+        return Term(value=design.get_identifier(),
+                    token=design.get_identifier(),
+                    title=design.get_title())
 
-    return SimpleVocabulary(map(make_term, registry.lookup_design(None)))
+    return Vocabulary(map(make_term, registry.lookup_design(None)))
 
 @grok.provider(IFormSourceBinder)
 def design_source(form):
    registry = getUtility(IDesignLookup)
    candidates = None
+   base_url = IVirtualSite(form.request).get_root_url() + '/'
 
    if isinstance(form, SMIAddForm):
       candidates = registry.lookup_design_by_addable(
          form.context, extensionRegistry.get_addable(form._content_type))
    else:
       candidates = registry.lookup_design(form.context)
-   return SimpleVocabulary([
-         SimpleTerm(value=design,
-                    token=design.get_identifier(),
-                    title=design.get_title())
-         for design in candidates])
+
+   def make_term(design):
+      identifier = design.get_identifier()
+      try:
+         icon = base_url + iconRegistry.get_icon_by_identifier(
+            ('silva.core.contentlayout.designs', identifier))
+      except ValueError:
+         icon = None
+      return Term(value=design,
+                  token=identifier,
+                  title=design.get_title(),
+                  icon=icon)
+
+   return Vocabulary(map(make_term, candidates))
 
 
 class ITitledPage(ITitledContent):
@@ -302,8 +314,8 @@ def block_factory_source(context):
    from silva.core.contentlayout.blocks.registry \
        import registry as block_registry
    factories = block_registry.lookup_block(aq_parent(context))
-   return SimpleVocabulary(
-      [SimpleTerm(value=b.identifier, token=b.identifier, title=b.title)
+   return Vocabulary(
+      [Term(value=b.identifier, token=b.identifier, title=b.title)
        for b in factories])
 
 
@@ -359,23 +371,23 @@ class IContentLayoutService(
 
 @apply
 def editor_roles_source():
-    roles = [SimpleTerm(value=None,
+    roles = [Term(value=None,
                         token='',
                         title=_(u"-- Choose a role --"))]
     for role in roleinfo.AUTHOR_ROLES:
-        roles.append(SimpleTerm(value=role, token=role, title=_(role)))
-    return SimpleVocabulary(roles)
+        roles.append(Term(value=role, token=role, title=_(role)))
+    return Vocabulary(roles)
 
 @grok.provider(IContextSourceBinder)
 def all_content_type_source(context):
-   terms = [SimpleTerm(value=None,
+   terms = [Term(value=None,
                        token='',
                        title=_(u"-- Choose a content type --"))]
    for addable in extensionRegistry.get_addables(requires=[IPageAware,]):
-      terms.append(SimpleTerm(value=addable['name'],
+      terms.append(Term(value=addable['name'],
                               token=addable['name'],
                               title=addable['name']))
-   return SimpleVocabulary(terms)
+   return Vocabulary(terms)
 
 @grok.provider(IContextSourceBinder)
 def content_type_source_without_placeholder(context):
@@ -383,10 +395,10 @@ def content_type_source_without_placeholder(context):
    addables = IAddableContents(
       context.get_root()).get_all_addables(require=IPageAware)
    for addable in addables:
-      terms.append(SimpleTerm(value=addable,
+      terms.append(Term(value=addable,
                               token=addable,
                               title=addable))
-   return SimpleVocabulary(terms)
+   return Vocabulary(terms)
 
 
 class IDesignContentRule(interface.Interface):

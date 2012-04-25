@@ -1,15 +1,21 @@
 
+import sys
+import os
+
 import martian
 from martian.error import GrokError
 from martian.scan import module_info_from_dotted_name
-import os
 
 from five import grok
 from grokcore.view.meta.views import TemplateGrokker
 from grokcore.view.templatereg import file_template_registry
 from zope.component import provideAdapter
+from zope.interface import Interface
 from zope.publisher.interfaces.browser import IDefaultBrowserLayer
+from zope.publisher.interfaces.browser import IHTTPRequest
 
+from silva.core import conf as silvaconf
+from silva.core.conf.utils import IconResourceFactory
 from silva.core.contentlayout.interfaces import IBlockView
 from silva.core.contentlayout.blocks import BlockView, Block
 from silva.core.contentlayout.blocks.registry import \
@@ -17,16 +23,44 @@ from silva.core.contentlayout.blocks.registry import \
 from silva.core.contentlayout.designs.design import Design, TemplateFile
 from silva.core.contentlayout.designs.registry import \
     registry as design_registry
-from silva.core import conf as silvaconf
+
+from Products.Silva.icon import registry as icon_registry
 
 
 def default_name(component, module=None, **data):
     return component.__name__.lower()
 
+def register_icon(self, config, cls, name, icon_path):
+    """Register an icon.
+    """
+    if not icon_path:
+        return
+    base_dir = os.path.dirname(sys.modules[cls.__module__].__file__)
+    fs_path = os.path.join(base_dir, icon_path)
+    identifier = ''.join((
+            self.icon_prefix,
+            name.strip().replace(' ', '-'),
+            os.path.splitext(icon_path)[1] or '.png'))
+
+    factory = IconResourceFactory(name, fs_path)
+    config.action(
+        discriminator = ('resource', identifier, IHTTPRequest, Interface),
+        callable = provideAdapter,
+        args = (factory, (IHTTPRequest,), Interface, identifier))
+
+    resource_name = "++resource++" + identifier
+
+    icon_registry.register((self.icon_namespace, name), resource_name)
+    cls.icon = resource_name
+
 
 class RegisterDesignGrokker(martian.ClassGrokker):
     martian.component(Design)
+    martian.directive(silvaconf.icon)
     extension = '.upt'
+
+    icon_namespace = 'silva.core.contentlayout.designs'
+    icon_prefix = 'icon-designs-'
 
     def grok(self, name, factory, module_info, **kw):
         # Need to store the module info to look for a template
@@ -34,10 +68,11 @@ class RegisterDesignGrokker(martian.ClassGrokker):
         return super(RegisterDesignGrokker, self).grok(
             name, factory, module_info, **kw)
 
-    def execute(self, factory, **kw):
+    def execute(self, factory, icon, config, **kw):
         if factory.template is None:
             self.associate_template(factory)
-
+        if icon is not None:
+            register_icon(self, config, factory, factory.get_identifier(), icon)
         design_registry.register_design(factory)
         return True
 
@@ -75,45 +110,17 @@ class RegisterBlockViewGrokker(martian.ClassGrokker):
         return True
 
 
-import sys
-from Products.Silva.icon import registry as icon_registry
-from silva.core.conf.utils import IconResourceFactory
-from zope.interface import Interface
-from zope.publisher.interfaces.browser import IHTTPRequest
-
-
 class RegistryBlockGrokker(martian.ClassGrokker):
     martian.component(Block)
     martian.directive(grok.name, get_default=default_name)
     martian.directive(silvaconf.icon)
 
     icon_namespace = 'silva.core.contentlayout.blocks'
+    icon_prefix = 'icon-blocks-'
 
-    def register_icon(self, config, cls, block_name, icon_fs_path):
-        if not icon_fs_path:
-            return
-        base_dir = os.path.dirname(sys.modules[cls.__module__].__file__)
-        fs_path = os.path.join(base_dir, icon_fs_path)
-        name = ''.join((
-                'icon-blocks-',
-                block_name.strip().replace(' ', '-'),
-                os.path.splitext(icon_fs_path)[1] or '.png'))
-
-        factory = IconResourceFactory(name, fs_path)
-        config.action(
-            discriminator = ('resource', name, IHTTPRequest, Interface),
-            callable = provideAdapter,
-            args = (factory, (IHTTPRequest,), Interface, name))
-
-        resource_name = "++resource++" + name
-
-        icon_registry.register((self.icon_namespace, block_name),
-                               resource_name)
-        cls.icon = resource_name
-
-    def execute(self, factory, name, icon, config=None, **kw):
-        if icon is not None and config is not None:
-            self.register_icon(config, factory, name, icon)
+    def execute(self, factory, name, icon, config, **kw):
+        if icon is not None:
+            register_icon(self, config, factory, name, icon)
         block_registry.register_block(name, factory)
         return True
 
