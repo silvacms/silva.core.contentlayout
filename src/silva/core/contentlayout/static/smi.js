@@ -1079,26 +1079,33 @@
                         }
                     },
                     render: function($content) {
-                        var timer = null;
-
-                        this.$body = this.$document.find('body');
                         this.shortcuts.create('editor', $content, true);
-                        this.slots = Slots(
-                            this.$document,
-                            this.$body.find('.contentlayout-edit-slot'),
+
+                        this.ready.done(function(view) {
+                            view.$body = view.$document.find('body');
+                            view.slots = Slots(
+                                view.$document,
+                                view.$body.find('.contentlayout-edit-slot'),
                             '> .contentlayout-edit-block');
 
-                        var mode = NormalMode(this, $layer, $components);
+                            var mode = NormalMode(view, $layer, $components);
+                            var timer = null;
 
-                        // When the iframe is resize, positions need to be updated.
-                        this.$window.bind('resize', function() {
-                            if (timer !== null) {
-                                clearTimeout(timer);
-                            };
-                            timer = setTimeout(function() {
-                                mode.resize();
-                                timer = null;
-                            }, 50);
+                            // When the iframe is resize, positions need to be updated.
+                            view.$window.bind('resize', function() {
+                                if (timer !== null) {
+                                    clearTimeout(timer);
+                                };
+                                timer = setTimeout(function() {
+                                    mode.resize();
+                                    timer = null;
+                                }, 50);
+                            });
+                            // Disable links and selection
+                            view.$body.delegate('a', 'click', function (event) {
+                                event.preventDefault();
+                            });
+                            view.$body.disableSelection();
                         });
 
                         // The purpose of the cover is to prevent the
@@ -1139,13 +1146,6 @@
                         });
                         infrae.ui.selection.disable($components);
                         this.components.open();
-
-                        // Disable links and selection
-                        this.$body.delegate('a', 'click', function (event) {
-                            event.preventDefault();
-                        });
-                        this.$body.disableSelection();
-
                     },
                     cleanup: function() {
                         this.components.close();
