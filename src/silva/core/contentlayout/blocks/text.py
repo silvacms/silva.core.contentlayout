@@ -26,6 +26,7 @@ class TextBlock(Text, Block):
     grok.implements(ITextBlock)
     grok.name('text')
     grok.title(_(u"Rich text"))
+    grok.order(0)
     silvaconf.icon('text.png')
 
     def __init__(self):

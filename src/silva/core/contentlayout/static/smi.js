@@ -210,9 +210,13 @@
             placeholder: {
                 active: function() {
                     return false;
+                },
+                clear: function() {
+                },
+                revert: function() {
                 }
             },
-            placehold: function($placeholder, height, width, fill_in) {
+            placehold: function($placeholder, height, width, initial) {
                 if (!this.placeholder.active()) {
                     this.placeholder = {
                         $container: $current.parent(),
@@ -236,24 +240,29 @@
                             };
                         },
                         revert: function() {
-                            this.$placeholder.remove();
-                            this.$placeholder = null;
-                            $current = $element;
-                            api.deplace(this);
+                            if (this.$placeholder !== null) {
+                                this.$placeholder.remove();
+                                this.$placeholder = null;
+                                $current = $element;
+                                api.deplace(this);
+                            };
                         },
                         clear: function() {
-                            $current.before($element);
-                            $current.remove();
-                            this.$placeholder.remove();
-                            this.$placeholder = null;
-                            $current = $element;
+                            if (this.$placeholder !== null) {
+                                $current.before($element);
+                                $current.remove();
+                                this.$placeholder.remove();
+                                this.$placeholder = null;
+                                $current = $element;
+                            };
                         }
                     };
-                    $placeholder.hide();
                     $current = $placeholder;
-                    $element.before($placeholder);
-                    $element.detach();
-                    this.placeholder.resize(fill_in);
+                    if (initial === undefined) {
+                        $element.before($placeholder);
+                        $element.detach();
+                        this.placeholder.resize(undefined);
+                    };
                     $placeholder.show();
                 };
                 return this.placeholder;
@@ -293,17 +302,16 @@
                 this.right = this.left + this.width;
             }
         };
-        api.update();
         return api;
     };
 
 
     var AddMode = function(view, $component) {
         var $placeholder = $('<div class="contentlayout-component contentlayout-valid-placeholder"></div>');
+        var $helper = null;
         var block = Block($('<div class="contentlayout-edit-block" />'));
         var slot = null;
         var validator = null;
-        var $helper = null;
         var deferred = $.Deferred();
 
         var save = function(event) {
@@ -330,7 +338,9 @@
              ?  validator.done(function() {
                  $placeholder.attr('class', 'contentlayout-component contentlayout-placeholder');
              }).always(function() {
-                 $helper.remove();
+                 if ($helper !== null) {
+                     $helper.remove();
+                 };
              }).pipe(view.editor.add, function() {
                  return $.Deferred().reject();
              })
@@ -338,7 +348,9 @@
                  success: true,
                  slot: slot,
                  current: block}).always(function() {
-                     $helper.remove();
+                     if ($helper !== null) {
+                         $helper.remove();
+                     };
                  })
             ).always(function() {
                 block.placeholder.clear();
@@ -361,6 +373,7 @@
         var reorder = function(info) {
             var index = 0;
             var position = {$container: info.slot.$slot, $item: []};
+            var first = slot === null;
 
             if (info.current.$block !== undefined) {
                 position.$item = info.current.$block;
@@ -381,11 +394,15 @@
                 };
             };
             if (info.slot.get(index) !== block) {
-                if (slot !== null) {
+                if (!first) {
                     slot.remove(block);
                 };
-                info.slot.add(block, index);
                 slot = info.slot;
+                slot.add(block, index);
+                if (first) {
+                    $placeholder.html($component.children().clone());
+                    block.placehold($placeholder, '1em', '8em', false);
+                };
                 block.deplace(position, slot.horizontal);
                 view.slots.update();
                 $placeholder.attr('class', 'contentlayout-component contentlayout-placeholder');
@@ -413,9 +430,7 @@
         };
 
         var bootstrap = function() {
-            $placeholder.html($component.children().clone());
             $component.addClass('selected');
-            block.placehold($placeholder, '1em', '8em');
             view.$body.css('cursor', 'move');
 
             view.slots.events.snapshot();
@@ -431,7 +446,7 @@
                     view.$body.append($helper);
                 } else {
                     $helper.offset(this.mouse);
-                }
+                };
                 if (this.current !== null && this.mouse.changed !== false) {
                     reorder(this);
                 };
@@ -782,6 +797,7 @@
                 return null;
             }
         });
+        api.update();
         return api;
     };
 
@@ -1046,7 +1062,7 @@
 
                         this.$body = this.$document.find('body');
                         this.shortcuts.create('editor', $content, true);
-                        this.slots = Slots(this.$document, this.$body.find('div.contentlayout-edit-slot'), '> div.contentlayout-edit-block');
+                        this.slots = Slots(this.$document, this.$body.find('.contentlayout-edit-slot'), '> .contentlayout-edit-block');
 
                         var mode = NormalMode(this, $layer, $components);
 

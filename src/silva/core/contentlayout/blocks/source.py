@@ -29,6 +29,7 @@ from ..interfaces import IBlockManager, IBlockController
 class SourceBlock(Block):
     grok.implements(IBlock)
     grok.name('source')
+    grok.order(500)
     silvaconf.icon('source.png')
 
     def __init__(self, identifier):

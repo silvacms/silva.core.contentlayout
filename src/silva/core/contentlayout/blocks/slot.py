@@ -29,6 +29,7 @@ class BlockSlot(Slot, Block):
     grok.name('slot')
     grok.title(_('Slot'))
     grok.context(IPageModelVersion)
+    grok.order(50)
     silvaconf.icon('slot.png')
 
     def __init__(self, tag='div', css_class='', restrictions=None):
