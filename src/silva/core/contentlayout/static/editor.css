@@ -29,9 +29,17 @@
   background: rgba(200, 200, 200, 0.5);
 }
 
+#contentlayout-cover-layer {
+  background: transparent;
+  z-index: 499999;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
 #contentlayout-edit-layer {
   background: rgba(200, 200, 200, 0.5);
-  zIndex: 25000;
+  z-index: 500000;
   position: absolute;
 }
 

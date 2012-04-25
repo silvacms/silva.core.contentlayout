@@ -442,10 +442,11 @@
                     $helper = $component.clone();
                     $helper.css('position', 'absolute');
                     $helper.css('opacity', '0.6');
-                    $helper.offset(this.mouse);
+                    $helper.zIndex('100000');
+                    $helper.offset(this.mouse.offset);
                     view.$body.append($helper);
                 } else {
-                    $helper.offset(this.mouse);
+                    $helper.offset(this.mouse.offset);
                 };
                 if (this.current !== null && this.mouse.changed !== false) {
                     reorder(this);
@@ -575,6 +576,7 @@
             $helper = block.$block.clone();
             $helper.css('position', 'absolute');
             $helper.css('opacity', '0.6');
+            $helper.zIndex('100000');
             $helper.offset(original.mouse);
             view.$body.append($helper);
             view.$body.css('cursor', 'move');
@@ -585,7 +587,7 @@
                reorder(this);
             });
             view.slots.events.onmove(function(event) {
-                $helper.offset(this.mouse);
+                $helper.offset(this.mouse.offset);
                 if (this.current !== null && this.mouse.changed !== false) {
                     reorder(this);
                 };
@@ -609,15 +611,26 @@
         var delegated = null;
         var $actions = $layer.find('#contentlayout-actions');
         var $edit = $actions.find('#contentlayout-edit-block');
+        var $cover = $('<div id="contentlayout-cover-layer" />');
+
+        var cover = function() {
+            $cover.offset(view.$body.offset());
+            $cover.height(view.$body.height());
+            $cover.width(view.$body.width());
+        };
 
         var api = {
+            resize: function() {
+                cover();
+                api.update();
+                view.slots.update();
+            },
             update: function() {
                 if (selected !== null) {
                     $layer.offset(selected.current);
                     $layer.width(selected.current.width);
                     $layer.height(selected.current.height);
                 };
-                view.slots.update();
             },
             enable: function(other) {
                 var $block = other.current.$block;
@@ -711,6 +724,8 @@
         view.shortcuts.bind('editor', null, ['ctrl+m'], move);
         $layer.delegate('#contentlayout-remove-block', 'click', remove);
         view.shortcuts.bind('editor', null, ['ctrl+d'], remove);
+        $cover.appendTo(view.$body);
+        cover();
         return api;
     };
 
@@ -807,6 +822,10 @@
             left: -1,
             threshold: 10,
             changed: false,
+            offset: {
+                top: -1,
+                left: -1
+            },
             direction: {
                 right: null,
                 bottom: null,
@@ -826,6 +845,8 @@
                 };
                 this.left = event.pageX;
                 this.top = event.pageY;
+                this.offset.left = event.pageX + this.threshold;
+                this.offset.top = event.pageY + this.threshold;
                 this.changed = Math.abs(this.left - this.previous.left) > this.threshold ||
                     Math.abs(this.top - this.previous.top) > this.threshold;
                 if (this.changed) {
@@ -1062,7 +1083,10 @@
 
                         this.$body = this.$document.find('body');
                         this.shortcuts.create('editor', $content, true);
-                        this.slots = Slots(this.$document, this.$body.find('.contentlayout-edit-slot'), '> .contentlayout-edit-block');
+                        this.slots = Slots(
+                            this.$document,
+                            this.$body.find('.contentlayout-edit-slot'),
+                            '> .contentlayout-edit-block');
 
                         var mode = NormalMode(this, $layer, $components);
 
@@ -1072,7 +1096,7 @@
                                 clearTimeout(timer);
                             };
                             timer = setTimeout(function() {
-                                mode.update();
+                                mode.resize();
                                 timer = null;
                             }, 50);
                         });
