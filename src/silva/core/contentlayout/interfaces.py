@@ -296,7 +296,7 @@ class IDesignLookup(interface.Interface):
       """Same as lookup but accept a silva content type as argument.
       """
 
-    def lookup_desgin_by_name(name):
+    def lookup_design_by_name(name):
        """Lookup a design by its grok name
        """
 
