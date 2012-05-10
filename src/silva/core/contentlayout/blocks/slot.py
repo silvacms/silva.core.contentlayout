@@ -269,6 +269,7 @@ class AddBlockSlot(silvaforms.RESTPopupForm):
         self.restriction = restriction
 
     def update(self):
+        super(AddBlockSlot, self).update()
         self.fields['identifier'].validate = validate_slot_identifier
 
 
