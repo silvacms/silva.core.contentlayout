@@ -27,42 +27,36 @@ from Products.Silva.ExtensionRegistry import extensionRegistry
 from Products.Silva.icon import registry as iconRegistry
 
 
-class ISlotRestriction(interface.Interface):
-   """This object is used to restrict which
-   :py:interface:`~silva.core.contentlayout.interface.IBlock`, using
-   which configuration or settings is allowed inside a given
-   :py:interface:`~silva.core.contentlayout.interfaces.ISlot`.
+class IDesign(interface.Interface):
+   """A design is a pluggable template used to render a content, that
+   can contains blocks defined on the content.
    """
+   slots = interface.Attribute(
+       u"A dictionary of slot used in the template associated to the design.")
+   markers = interface.Attribute(
+      u"List of customization markers to apply when the design is used.")
 
-   def allow_configuration(configuration, slot, context):
-       """Allow or disallow a not yet existing block that would be
-       created using the given ``configuration`` to be added in the
-       given ``slot``, located on the given ``context`` object.
+   def get_identifier():
+      """Return a unique identifier for the template.
+      """
 
-       Must return True to allow the block, false to prevent it.
-       """
+   def get_title():
+      """Return template title to be used in the Silva Management Interface.
+      """
 
-   def allow_controller(controller, slot, context):
-        """Allow or disallow an existing block defined with the given
-        ``controller`` to be moved or added to the given ``slot``,
-        located on the given ``context`` object.
-
-        Must return True to allow the block, false to prevent it.
-        """
-
-   def apply_to(block_type):
-       """Must return True if the restriction should apply the block
-       defined by ``block_type``. ``block_type`` is the class of the
-       block.
-       """
+   def update():
+      """Method called before the design is rendered.
+      """
 
 
-class IContentSlotRestriction(ISlotRestriction):
-   schema = interface.Attribute(
-      u"Interface that the linked content must provides")
+class InvalidDesign(ValueError):
+   pass
 
 
 class ISlot(interface.Interface):
+   """A slot is defined and contained inside a design. It defines an
+   area in the design that can render blocks.
+   """
    tag = interface.Attribute(
       u"HTML tag to use. It must be a block element.")
    css_class = interface.Attribute(
@@ -101,21 +95,39 @@ class InvalidSlot(KeyError):
    pass
 
 
-class IDesign(interface.Interface):
-   description = interface.Attribute(
-       u"a description of the design")
-   slots = interface.Attribute(
-       u"a dictionary of slot definition in the design")
-   markers = interface.Attribute(
-      u"list of customization markers to apply in addition with the design")
+class ISlotRestriction(interface.Interface):
+   """Objects conforming this API are used to restrict which
+   :py:interface:`~silva.core.contentlayout.interfaces.IBlock`, using
+   which configuration or settings are allowed inside a given
+   :py:interface:`~silva.core.contentlayout.interfaces.ISlot`.
+   """
 
-   def update():
-      """Method called before the design is rendered.
-      """
+   def allow_configuration(configuration, slot, context):
+       """Allow or disallow a not yet existing block that would be
+       created using the given ``configuration`` to be added in the
+       given ``slot``, located on the given ``context`` object.
+
+       Must return True to allow the block, false to prevent it.
+       """
+
+   def allow_controller(controller, slot, context):
+        """Allow or disallow an existing block defined with the given
+        ``controller`` to be moved or added to the given ``slot``,
+        located on the given ``context`` object.
+
+        Must return True to allow the block, false to prevent it.
+        """
+
+   def apply_to(block_type):
+       """Must return True if the restriction should apply the block
+       defined by ``block_type``. ``block_type`` is the class of the
+       block.
+       """
 
 
-class InvalidDesign(ValueError):
-   pass
+class IContentSlotRestriction(ISlotRestriction):
+   schema = interface.Attribute(
+      u"Interface that the linked content must provides")
 
 
 @grok.provider(IContextSourceBinder)
@@ -203,16 +215,17 @@ class IPage(IAttributeAnnotatable):
 
 
 class IBlock(interface.Interface):
-   """A block.
+   """A block is contained in a slot.
    """
 
 
 class IBlockSlot(IBlock, ISlot):
-   """ A block usable as a slot for page models.
+   """ A block usable as a slot inside a  page models.
    """
-   name = interface.Attribute('Slot id on the design')
-   identifier = interface.Attribute('Reprensent the slot id '
-                                    'when used as a slot')
+   name = interface.Attribute(
+      u'Slot identifier on the design')
+   identifier = interface.Attribute(
+      u'Reprensent the slot id when used as a slot')
 
 
 class IBlockConfiguration(interface.Interface):
@@ -220,12 +233,12 @@ class IBlockConfiguration(interface.Interface):
    title = interface.Attribute('Block configuration title')
    block = interface.Attribute('Associated block class')
 
-   def get_icon(self, screen):
-      """Return the icon.
+   def get_icon(screen):
+      """Return the icon used to represent this configuration.
       """
 
-   def is_available(self, screen):
-      """Return true if the configuration is available on this screen.
+   def is_available(screen):
+      """Return True if the configuration is available on this screen.
       """
 
 
@@ -235,11 +248,12 @@ class IBlockConfigurations(interface.Interface):
    """
 
    def get_by_identifier(identifier):
-       """Return associated configuration to the identifier.
+       """Return the associated configuration to the identifier.
        """
 
-   def get_all(self):
-      """Return all associated configuration with the block.
+   def get_all():
+      """Return all associated configurations with the block as a
+      list.
       """
 
 
