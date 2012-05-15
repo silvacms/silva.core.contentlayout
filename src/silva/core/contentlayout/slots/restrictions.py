@@ -2,9 +2,9 @@ from five import grok
 from zope.interface.interfaces import IInterface
 from zope.interface import Interface
 
-from silva.core.contentlayout import interfaces
-from silva.core.contentlayout.blocks.source import SourceBlock
-from silva.core.contentlayout.blocks.contents import ReferenceBlock
+from .. import interfaces
+from ..blocks.source import SourceBlock
+from ..blocks.contents import ReferenceBlock
 
 
 class SlotRestriction(object):
@@ -32,6 +32,8 @@ class SlotRestriction(object):
 
 
 class BlockAll(SlotRestriction):
+    """Block any type of block not already authorized.
+    """
     grok.context(Interface)
 
     def allow_configuration(self, configuration, slot, context):
@@ -42,10 +44,15 @@ class BlockAll(SlotRestriction):
 
 
 class CodeSource(SlotRestriction):
+    """Block code source type block.
+    """
     grok.context(SourceBlock)
 
 
 class CodeSourceName(CodeSource):
+    """Block a block of code source type based on the identifier of
+    selected or desired code source.
+    """
 
     def __init__(self, allowed=set(), disallowed=set()):
         self.allowed = set(allowed)
@@ -64,6 +71,9 @@ class CodeSourceName(CodeSource):
 
 
 class Content(SlotRestriction):
+    """Block a block of content type based on the interface of the
+    selected or desired linked content.
+    """
     grok.implements(interfaces.IContentSlotRestriction)
     grok.context(ReferenceBlock)
 

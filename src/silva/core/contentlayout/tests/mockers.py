@@ -5,10 +5,12 @@ from Products.Silva.VersionedContent import VersionedContent
 from Products.Silva.Version import Version
 
 from silva.core import conf as silvaconf
-from silva.core.contentlayout import interfaces
+
+from .. import interfaces
+from ..designs.design import DesignAccessors
 
 
-class MockPageVersion(Version):
+class MockPageVersion(DesignAccessors, Version):
     meta_type = 'Mock Page Version'
     grok.implements(interfaces.IPage)
 
@@ -19,7 +21,7 @@ class MockPage(VersionedContent):
     grok.implements(interfaces.IPageAware)
 
 
-class MockOtherPageVersion(Version):
+class MockOtherPageVersion(DesignAccessors, Version):
     meta_type = 'Mock Other Page Version'
     grok.implements(interfaces.IPage)
 

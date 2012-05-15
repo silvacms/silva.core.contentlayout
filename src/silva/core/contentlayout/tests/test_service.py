@@ -1,10 +1,11 @@
 
 import unittest
+
 from zope.component import queryUtility
 from zope.interface.verify import verifyObject
 
-from silva.core.contentlayout.interfaces import IContentLayoutService
-from silva.core.contentlayout.testing import FunctionalLayer
+from ..interfaces import IContentLayoutService
+from ..testing import FunctionalLayer
 
 
 class ServiceTestCase(unittest.TestCase):

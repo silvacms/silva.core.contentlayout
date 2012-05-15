@@ -12,6 +12,7 @@ import transaction
 class SilvaContentLayoutLayer(SilvaLayer):
     default_packages = SilvaLayer.default_packages + [
         'silva.core.contentlayout',
+        'silva.demo.contentlayout',
         ]
 
     def _install_application(self, app):

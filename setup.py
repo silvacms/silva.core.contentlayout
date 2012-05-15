@@ -5,6 +5,7 @@ version = '2.0dev'
 
 tests_require = [
     'Products.Silva [test]',
+    'silva.demo.contentlayout',
     ]
 
 setup(name='silva.core.contentlayout',
@@ -33,7 +34,14 @@ setup(name='silva.core.contentlayout',
           'silva.core.interfaces',
           'silva.core.services',
           'silva.core.conf',
-          'silva.core.cache',
+          'silva.core.references',
+          'silva.core.views',
+          'zeam.component',
+          'zeam.form.silva',
+          'zope.component',
+          'zope.event',
+          'zope.interface',
+          'zope.schema',
       ],
       tests_require = tests_require,
       extras_require = {'test': tests_require},

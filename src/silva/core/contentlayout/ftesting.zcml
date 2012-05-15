@@ -4,6 +4,7 @@
 
   <include package="Products.Silva" file="ftesting.zcml" />
   <include package="silva.core.contentlayout" />
+  <include package="silva.demo.contentlayout" />
 
   <grok:grok package=".tests.mockers" />
 

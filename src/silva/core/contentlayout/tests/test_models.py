@@ -1,10 +1,10 @@
 
-
 import unittest
 
-from silva.core.contentlayout.interfaces import IPageModel
-from silva.core.contentlayout.testing import FunctionalLayer
 from zope.interface.verify import verifyObject
+
+from ..interfaces import IPageModel
+from ..testing import FunctionalLayer
 
 
 class ModelsTestCase(unittest.TestCase):
