@@ -25,12 +25,12 @@ class MockOtherPageVersion(Version):
 
 
 class MockOtherPage(VersionedContent):
-    meta_type = 'Mock Sub Page'
+    meta_type = 'Mock Other Page'
     silvaconf.version_class(MockOtherPageVersion)
     grok.implements(interfaces.IPageAware)
 
 
-def install_mocks(root):
+def install_mockers(root):
     root.service_metadata.addTypesMapping(
         [MockPageVersion.meta_type], ('silva-content', 'silva-extra',))
     root.service_metadata.addTypesMapping(

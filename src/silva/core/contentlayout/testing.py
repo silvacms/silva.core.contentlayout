@@ -5,7 +5,7 @@
 
 from Products.Silva.testing import SilvaLayer
 import silva.core.contentlayout
-from silva.core.contentlayout.tests.mocks import install_mocks
+from silva.core.contentlayout.tests.mockers import install_mockers
 import transaction
 
 
@@ -16,7 +16,7 @@ class SilvaContentLayoutLayer(SilvaLayer):
 
     def _install_application(self, app):
         super(SilvaContentLayoutLayer, self)._install_application(app)
-        install_mocks(app.root)
+        install_mockers(app.root)
         transaction.commit()
 
 
