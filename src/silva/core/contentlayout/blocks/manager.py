@@ -1,4 +1,5 @@
 
+
 import uuid
 import logging
 
@@ -160,6 +161,12 @@ class BlockManager(grok.Annotation):
         self._p_changed = True
         return block_id
 
+    def get_slot_ids(self):
+        return self._slot_to_block.keys()
+
+    def get_block_ids(self):
+        return self._blocks.keys()
+
     def move(self, slot_id, block_id, index):
         previous_slot_id = self._block_to_slot[block_id]
         self._block_to_slot[block_id] = slot_id
@@ -174,6 +181,8 @@ class BlockManager(grok.Annotation):
         slot_id = self._block_to_slot.get(block_id, _marker)
         if slot_id is not _marker:
             self._slot_to_block[slot_id].remove(block_id)
+            if not self._slot_to_block[slot_id]:
+                del self._slot_to_block[slot_id]
             del self._block_to_slot[block_id]
         del self._blocks[block_id]
         self._p_changed = True

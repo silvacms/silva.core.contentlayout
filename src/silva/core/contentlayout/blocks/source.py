@@ -17,10 +17,11 @@ from silva.core import conf as silvaconf
 from silva.core.conf.interfaces import ITitledContent
 from silva.translations import translate as _
 from silva.ui.rest.exceptions import RESTRedirectHandler
-from zeam import component
+from zeam.component import Component, getWrapper
 from zeam.form import silva as silvaforms
 
 from . import Block
+from .contents import ReferenceBlock
 from ..interfaces import IPage, IBlock
 from ..interfaces import IBlockConfiguration, IBlockConfigurations
 from ..interfaces import IBlockManager, IBlockController
@@ -62,7 +63,7 @@ class SourceBlockConfiguration(object):
         return aq_base(found_source) is aq_base(self.source)
 
 
-class SourceBlockConfigurations(component.Component):
+class SourceBlockConfigurations(Component):
     grok.provides(IBlockConfigurations)
     grok.adapts(SourceBlock, Interface)
 
@@ -83,7 +84,7 @@ class SourceBlockConfigurations(component.Component):
 
 
 def source_controller(block, context, request):
-    source = component.getWrapper(context, IExternalSourceManager)
+    source = getWrapper(context, IExternalSourceManager)
     return source(request, instance=block.identifier)
 
 
@@ -145,7 +146,7 @@ class AddSourceBlock(silvaforms.RESTPopupForm):
         super(AddSourceBlock, self).__init__(context, request)
         self.restriction = restriction
         self.configuration = configuration
-        manager = component.getWrapper(self.context, IExternalSourceManager)
+        manager = getWrapper(self.context, IExternalSourceManager)
         self.controller = manager(self.request, name=configuration.source.id)
 
     @property
@@ -265,6 +266,46 @@ class EditSourceBlockLookup(silvaforms.DefaultFormLookup):
             return self.form.controller.fields
         return silvaforms.Fields()
 
+
+class ConvertSourceBlockAction(silvaforms.Action):
+    grok.implements(
+        silvaforms.IDefaultAction,
+        silvaforms.IRESTExtraPayloadProvider,
+        silvaforms.IRESTCloseOnSuccessAction)
+    title = _('Convert')
+
+    block = None
+    block_id = None
+    block_controller = None
+
+    def get_extra_payload(self, form):
+        return {
+            'block_id': self.block_id,
+            'block_data': self.block_controller.render(),
+            'block_editable': True}
+
+    def __call__(self, form):
+        data, errors = form.extractData()
+        if errors:
+            return silvaforms.FAILURE
+        api = form.__parent__.__parent__
+        container = form.context.get_container()
+        factory = container.manage_addProduct['SilvaExternalSources']
+        factory.manage_addSourceAsset(data['id'], data['title'])
+        asset = container._getOb(data['id'])
+        factory = getWrapper(asset, IExternalSourceManager)
+        target = factory(form.request, name=api.block_controller.getSourceId())
+        target.create()
+        api.block_controller.copy(target)
+        asset.set_parameters_identifier(target.getId())
+        self.block_id = api.manager.replace(api.block_id, ReferenceBlock())
+        self.block, self.block_controller = api.manager.get(self.block_id)
+        self.block_controller.content = asset
+        notify(ObjectModifiedEvent(asset))
+        notify(ObjectModifiedEvent(form.context))
+        return silvaforms.SUCCESS
+
+
 class ConvertSourceBlock(silvaforms.RESTPopupForm):
     grok.adapts(EditSourceBlock, IPage)
     grok.name('convert')
@@ -272,4 +313,5 @@ class ConvertSourceBlock(silvaforms.RESTPopupForm):
     label = _(u"Convert existing source to asset")
     fields = silvaforms.Fields(ITitledContent)
     actions = silvaforms.Actions(
-        silvaforms.CancelAction())
+        silvaforms.CancelAction(),
+        ConvertSourceBlockAction())
