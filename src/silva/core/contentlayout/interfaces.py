@@ -28,23 +28,33 @@ from Products.Silva.icon import registry as iconRegistry
 
 
 class ISlotRestriction(interface.Interface):
-   """Restriction on the blocks a slot accepts
+   """This object is used to restrict which
+   :py:interface:`~silva.core.contentlayout.interface.IBlock`, using
+   which configuration or settings is allowed inside a given
+   :py:interface:`~silva.core.contentlayout.interfaces.ISlot`.
    """
 
-   def allow_block_type(block_type):
-      """ Allow this kind of block.
-      """
+   def allow_configuration(configuration, slot, context):
+       """Allow or disallow a not yet existing block that would be
+       created using the given ``configuration`` to be added in the
+       given ``slot``, located on the given ``context`` object.
 
-   def allow_name(self, name):
-      """ The name is arbitrary defined by the each type of blocks.
+       Must return True to allow the block, false to prevent it.
+       """
 
-      For example for a code source, the name will be the identifier,
-      e.g: cs_toc
-      """
+   def allow_controller(controller, slot, context):
+        """Allow or disallow an existing block defined with the given
+        ``controller`` to be moved or added to the given ``slot``,
+        located on the given ``context`` object.
 
-   def allow_block(block, context, slot):
-      """ Allow this block instance in this context, on this slot.
-      """
+        Must return True to allow the block, false to prevent it.
+        """
+
+   def apply_to(block_type):
+       """Must return True if the restriction should apply the block
+       defined by ``block_type``. ``block_type`` is the class of the
+       block.
+       """
 
 
 class IContentSlotRestriction(ISlotRestriction):
