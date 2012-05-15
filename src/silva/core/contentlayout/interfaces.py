@@ -285,7 +285,7 @@ class ITextBlock(interface.Interface):
    """
 
 class IDesignLookup(interface.Interface):
-    """Defines how to lookup a design
+    """Defines how to lookup a design.
     """
 
     def lookup_design(context):
@@ -450,12 +450,17 @@ class IContentDefaultDesigns(interface.Interface):
 
 
 class IPageModel(IVersionedContent):
-   """ A page model
+   """ A page model.
+
+   This versioned content is usable as a design by other pages and
+   models when it is published.
    """
 
 
 class IPageModelVersion(IVersion, IPage):
-   """ A page model version
+   """ A page model version.
+
+   This version store the blocks and slots predefined in the model.
    """
 
 
