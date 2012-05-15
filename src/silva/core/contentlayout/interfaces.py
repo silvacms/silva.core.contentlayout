@@ -58,12 +58,43 @@ class ISlotRestriction(interface.Interface):
 
 
 class IContentSlotRestriction(ISlotRestriction):
-   interface = interface.Attribute(u"interface to limit usable content")
+   schema = interface.Attribute(
+      u"Interface that the linked content must provides")
 
 
 class ISlot(interface.Interface):
-   css_class = interface.Attribute(u"CSS class to apply")
-   restriction= interface.Attribute(u"ISlotRestriction restriction")
+   tag = interface.Attribute(
+      u"HTML tag to use. It must be a block element.")
+   css_class = interface.Attribute(
+      u"CSS class to apply on the HTML tag.")
+
+   def is_new_block_allowed(configuration, context):
+       """Return True if a new block created with the given
+       ``configuration`` would be allowed in this slot on the given
+       ``context``.
+
+       Return False if this is not authorized.
+       """
+
+   def is_existing_block_allowed(block, controller, context):
+       """Return True if the existing ``block``, using the given
+       ``controller`` is authorized in this slot on the given
+       ``context``.
+
+       Return False if this is not authorized.
+       """
+
+   def get_new_restriction(configuration):
+       """Lookup for the given ``configuration`` an existing
+       :py:interface:`~silva.core.contentlayout.interfaces.ISlotRestriction`.
+       Return the restriction or None if no restriction is found.
+       """
+
+   def get_existing_restriction(block):
+       """Lookup for the given ``block`` an existing
+       :py:interface:`~silva.core.contentlayout.interfaces.ISlotRestriction`.
+       Return the restriction or None if no restriction is found.
+       """
 
 
 class InvalidSlot(KeyError):
