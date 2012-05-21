@@ -1,0 +1,6 @@
+<div>
+  <tal:slot id="one">
+  </tal:slot>
+  <tal:slot id="two">
+  </tal:slot>
+</div>

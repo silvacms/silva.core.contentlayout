@@ -155,7 +155,10 @@ class BlockManager(grok.Annotation):
         if slot_id not in self._slot_to_block:
             self._slot_to_block[slot_id] = []
         block_id = str(uuid.uuid1())
-        self._slot_to_block[slot_id].insert(index, block_id)
+        if index == -1:
+            self._slot_to_block[slot_id].append(block_id)
+        else:
+            self._slot_to_block[slot_id].insert(index, block_id)
         self._block_to_slot[block_id] = slot_id
         self._blocks[block_id] = block
         self._p_changed = True
@@ -173,7 +176,10 @@ class BlockManager(grok.Annotation):
         self._slot_to_block[previous_slot_id].remove(block_id)
         if slot_id not in self._slot_to_block:
             self._slot_to_block[slot_id] = []
-        self._slot_to_block[slot_id].insert(index, block_id)
+        if index == -1:
+            self._slot_to_block[slot_id].append(block_id)
+        else:
+            self._slot_to_block[slot_id].insert(index, block_id)
         self._p_changed = True
         return previous_slot_id
 

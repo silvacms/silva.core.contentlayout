@@ -10,6 +10,9 @@ import transaction
 
 
 class SilvaContentLayoutLayer(SilvaLayer):
+    default_products = SilvaLayer.default_products + [
+        'SilvaExternalSources',
+    ]
     default_packages = SilvaLayer.default_packages + [
         'silva.core.contentlayout',
         'silva.demo.contentlayout',
@@ -17,8 +20,11 @@ class SilvaContentLayoutLayer(SilvaLayer):
 
     def _install_application(self, app):
         super(SilvaContentLayoutLayer, self)._install_application(app)
+        app.root.service_extensions.install('SilvaExternalSources')
         install_mockers(app.root)
         transaction.commit()
 
 
 FunctionalLayer = SilvaContentLayoutLayer(silva.core.contentlayout)
+
+

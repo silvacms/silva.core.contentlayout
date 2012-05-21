@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<silva xmlns="http://infrae.com/namespace/silva" {namespaces} silva_version="{version}">
+  <folder id="exportbase">
+    <metadata>
+      <set id="silva-content">
+        <silva-content:maintitle>Export base</silva-content:maintitle>
+        <silva-content:shorttitle/>
+      </set>
+      <set id="silva-extra">
+        <silva-extra:comment/>
+        <silva-extra:contactemail/>
+        <silva-extra:contactname/>
+        <silva-extra:content_description/>
+        <silva-extra:creationtime>YYYY-MM-DDTHH:MM:SS</silva-extra:creationtime>
+        <silva-extra:creator>manager</silva-extra:creator>
+        <silva-extra:hide_from_tocs>do not hide</silva-extra:hide_from_tocs>
+        <silva-extra:keywords/>
+        <silva-extra:language/>
+        <silva-extra:lastauthor>unknown</silva-extra:lastauthor>
+        <silva-extra:modificationtime>YYYY-MM-DDTHH:MM:SS</silva-extra:modificationtime>
+        <silva-extra:subject/>
+      </set>
+    </metadata>
+    <content>
+      <page id="apage">
+        <workflow>
+          <version id="0">
+            <status>unapproved</status>
+            <publication_datetime/>
+            <expiration_datetime/>
+          </version>
+        </workflow>
+        <content version_id="0">
+          <metadata>
+            <set id="silva-content">
+              <silva-content:maintitle>Page</silva-content:maintitle>
+              <silva-content:shorttitle/>
+            </set>
+            <set id="silva-extra">
+              <silva-extra:comment/>
+              <silva-extra:contactemail/>
+              <silva-extra:contactname/>
+              <silva-extra:content_description/>
+              <silva-extra:creationtime>YYYY-MM-DDTHH:MM:SS</silva-extra:creationtime>
+              <silva-extra:creator>manager</silva-extra:creator>
+              <silva-extra:hide_from_tocs>do not hide</silva-extra:hide_from_tocs>
+              <silva-extra:keywords/>
+              <silva-extra:language/>
+              <silva-extra:lastauthor>unknown</silva-extra:lastauthor>
+              <silva-extra:modificationtime>YYYY-MM-DDTHH:MM:SS</silva-extra:modificationtime>
+              <silva-extra:subject/>
+            </set>
+          </metadata>
+          <contentlayout:design id="adesign">
+            <contentlayout:slot id="two">
+              <contentlayout:textblock>
+                <silva-core-editor:text>
+                  <html:div>text</html:div>
+                </silva-core-editor:text>
+              </contentlayout:textblock>
+            </contentlayout:slot>
+          </contentlayout:design>
+        </content>
+      </page>
+    </content>
+  </folder>
+</silva>
