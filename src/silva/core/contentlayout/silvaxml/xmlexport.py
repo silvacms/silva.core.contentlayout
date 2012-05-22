@@ -15,7 +15,7 @@ from ..blocks.slot import BlockSlot
 from . import NS_URI
 
 
-class BasePageProducer(xmlexport.SilvaBaseProducer):
+class BasePageProducer(xmlexport.SilvaProducer):
     grok.adapts(interfaces.IPage, Interface)
     grok.baseclass()
 
@@ -33,7 +33,7 @@ class BasePageProducer(xmlexport.SilvaBaseProducer):
             self.endElementNS(NS_URI, 'design')
 
 
-class BlockProducer(xmlexport.SilvaBaseProducer):
+class BlockProducer(xmlexport.SilvaProducer):
     grok.adapts(interfaces.IBlock, Interface)
 
     def sax(self, parent):
@@ -41,7 +41,7 @@ class BlockProducer(xmlexport.SilvaBaseProducer):
             % self.context.__class__.__name__)
 
 
-class ReferenceBlockProducer(xmlexport.SilvaBaseProducer):
+class ReferenceBlockProducer(xmlexport.SilvaProducer):
     grok.adapts(interfaces.IReferenceBlock, Interface)
 
     def sax(self, parent):
@@ -50,7 +50,7 @@ class ReferenceBlockProducer(xmlexport.SilvaBaseProducer):
         self.endElementNS(NS_URI, 'referenceblock')
 
 
-class SourceBlockProducer(xmlexport.SilvaBaseProducer):
+class SourceBlockProducer(xmlexport.SilvaProducer):
     grok.adapts(SourceBlock, Interface)
 
     def sax(self, parent):
@@ -59,7 +59,7 @@ class SourceBlockProducer(xmlexport.SilvaBaseProducer):
         self.endElementNS(NS_URI, 'sourceblock')
 
 
-class TextBlockProducer(xmlexport.SilvaBaseProducer):
+class TextBlockProducer(xmlexport.SilvaProducer):
     grok.adapts(TextBlock, Interface)
 
     def sax(self, parent):
@@ -68,7 +68,7 @@ class TextBlockProducer(xmlexport.SilvaBaseProducer):
         self.endElementNS(NS_URI, 'textblock')
 
 
-class SlotBlockProducer(xmlexport.SilvaBaseProducer):
+class SlotBlockProducer(xmlexport.SilvaProducer):
     grok.adapts(BlockSlot, Interface)
 
     def sax(self, parent):
@@ -80,7 +80,7 @@ class SlotBlockProducer(xmlexport.SilvaBaseProducer):
         self.endElementNS(NS_URI, 'slotblock')
 
 
-class PageModel(xmlexport.VersionedContentProducer):
+class PageModel(xmlexport.SilvaVersionedContentProducer):
     grok.adapts(interfaces.IPageModel, Interface)
 
     def sax(self):
