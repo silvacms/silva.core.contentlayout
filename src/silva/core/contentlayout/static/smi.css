@@ -13,8 +13,10 @@ div.contentlayout-components div.contentlayout-component {
   margin: 0.1em;
   padding: 0.1em;
 }
-div.contentlayout-components div.contentlayout-component:hover, div.contentlayout-components div.selected {
+div.contentlayout-components div.contentlayout-component:hover,
+div.contentlayout-components div.selected {
   border: 1px dotted #555555;
+  cursor: move;
 }
 div.contentlayout-components div.contentlayout-component span {
   padding-left: 0.5em;

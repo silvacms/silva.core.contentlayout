@@ -32,7 +32,7 @@ class BlockSlot(Slot, Block):
     grok.order(50)
     silvaconf.icon('slot.png')
 
-    def __init__(self, tag='div', css_class='', restrictions=None):
+    def __init__(self, tag='section', css_class='', restrictions=None):
         Slot.__init__(self, tag=tag,
                       css_class=css_class,
                       restrictions=restrictions)
@@ -64,14 +64,17 @@ class IBlockSlotFields(Interface):
 
     identifier = schema.TextLine(
         title=_(u"Slot identifier"),
-        description=_(u"Only letters and numbers are allowed."),
+        description=_(
+            u"This identifier should uniquely identify the new sub-slot, "
+            u"and will be used to refer the sub-slot to store blocks. "
+            u"Only letters and numbers are allowed."),
         required=True)
 
     tag = schema.TextLine(
         title=_(u'HTML tag'),
         description=_(u"HTML tag to use to create the slot."),
         required=True,
-        default=u'div')
+        default=u'section')
 
     css_class = schema.TextLine(
         title=_(u'CSS class(es)'),
