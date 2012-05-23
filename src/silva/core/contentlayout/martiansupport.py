@@ -127,3 +127,11 @@ class RegistryBlockGrokker(martian.ClassGrokker):
 
 class AssociateBlockViewGrokker(TemplateGrokker):
     martian.component(BlockView)
+
+
+# Register default icons
+for category, icon in (
+    (('silva.core.contentlayout.designs', 'default'), 'design.png'),):
+    icon_registry.register(
+        category,
+        '++static++/silva.core.contentlayout/' + icon)

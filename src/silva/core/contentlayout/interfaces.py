@@ -159,7 +159,8 @@ def design_source(form):
          icon = base_url + iconRegistry.get_icon_by_identifier(
             ('silva.core.contentlayout.designs', identifier))
       except ValueError:
-         icon = None
+         icon = base_url + iconRegistry.get_icon_by_identifier(
+            ('silva.core.contentlayout.designs', 'default'))
       return Term(value=design,
                   token=identifier,
                   title=design.get_title(),
