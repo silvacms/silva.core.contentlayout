@@ -1,8 +1,27 @@
 
 .contentlayout-edit-slot {
-  outline: 1px solid black;
-  min-height: 32px;
   overflow: hidden;
+}
+
+.contentlayout-empty-slot {
+  outline: 3px dashed #A0A0A0;
+  height: 90px;
+  position: relative;
+}
+.contentlayout-over-slot {
+  outline: 3px dashed #A0A0A0;
+}
+
+.contentlayout-empty-slot:before {
+  padding: 5px;
+  color: #A0A0A0;
+  content: "Add components here";
+  width: 100%;
+  position: absolute;
+  left: 0;
+  top: 30px;
+  font-size: 1.2em;
+  text-align: center;
 }
 
 /* Contentlayout layer CSS */
@@ -46,25 +65,21 @@
 #contentlayout-edit-layer a {
   display: block;
   background: url(icons.png) no-repeat;
+  cursor: pointer;
   float: left;
-  height: 28px;
-  width: 28px;
-  margin: 2px 4px;
+  height: 16px;
+  width: 16px;
+  margin: 1px 2px;
 }
 #contentlayout-actions {
   position: relative;
-  border: 1px solid black;
-  border-radius: 6px;
-  margin: 4px;
-  width: 110px;
-  background: white;
 }
 #contentlayout-edit-block {
-  background-position: -84px 0px  !important;
+  background-position: -32px 0px  !important;
 }
 #contentlayout-move-block {
   background-position: 0px 0px !important;
 }
 #contentlayout-remove-block {
-  background-position: -56px 0px !important;
+  background-position: -16px 0px !important;
 }

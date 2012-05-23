@@ -16,13 +16,12 @@ from zope.publisher.interfaces.browser import IHTTPRequest
 
 from silva.core import conf as silvaconf
 from silva.core.conf.utils import IconResourceFactory
-from silva.core.contentlayout.interfaces import IBlockView
-from silva.core.contentlayout.blocks import BlockView, Block
-from silva.core.contentlayout.blocks.registry import \
-    registry as block_registry
-from silva.core.contentlayout.designs.design import Design, TemplateFile
-from silva.core.contentlayout.designs.registry import \
-    registry as design_registry
+
+from .blocks import BlockView, Block
+from .blocks.registry import registry as block_registry
+from .designs.design import Design, TemplateFile
+from .designs.registry import registry as design_registry
+from .interfaces import IBlockView
 
 from Products.Silva.icon import registry as icon_registry
 

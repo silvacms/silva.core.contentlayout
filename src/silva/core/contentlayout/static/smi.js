@@ -189,12 +189,12 @@
                     function(data) {
                         if (data.success) {
                             state.slot.remove(state.current);
+                            state.current.destroy();
                             events.change.invoke({
                                 removed: true,
                                 current: state.current,
                                 slot: state.slot
                             });
-                            state.current.destroy();
                         };
                     }
                 );
@@ -344,24 +344,30 @@
              }).pipe(view.editor.add, function() {
                  return $.Deferred().reject();
              })
-             : $.Deferred().reject({
-                 success: true,
-                 slot: slot,
-                 current: block}).always(function() {
-                     if ($helper !== null) {
-                         $helper.remove();
-                     };
-                 })
-            ).always(function() {
+             : $.Deferred().reject().always(function() {
+                 if ($helper !== null) {
+                     $helper.remove();
+                 };
+             })
+            ).pipe(function (data) {
+                if (data.block_id) {
+                    block.block_set(data);
+                    return data;
+                };
+                return $.Deferred().reject();
+            }, function() {
+                return $.Deferred().reject();
+            }).always(function() {
                 block.placeholder.clear();
-            }).done(function(data) {
-                block.block_set(data);
             }).fail(function() {
                 if (slot !== null) {
                     slot.remove(block);
                 };
                 block.destroy();
             }).always(function() {
+                if (slot !== null) {
+                    slot.$slot.removeClass('contentlayout-over-slot');
+                };
                 view.slots.update();
                 view.slots.events.restore(event);
                 view.$body.css('cursor', 'inherit');
@@ -396,6 +402,7 @@
             if (info.slot.get(index) !== block) {
                 if (!first) {
                     slot.remove(block);
+                    slot.$slot.removeClass('contentlayout-over-slot');
                 };
                 slot = info.slot;
                 slot.add(block, index);
@@ -406,6 +413,7 @@
                 block.deplace(position, slot.horizontal);
                 view.slots.update();
                 $placeholder.attr('class', 'contentlayout-component contentlayout-placeholder');
+                slot.$slot.addClass('contentlayout-over-slot');
                 validator = view.editor.addable({
                     slot: slot,
                     block: block,
@@ -516,6 +524,7 @@
                 block.placeholder.revert();
             }).always(function() {
                 $helper.remove();
+                slot.$slot.removeClass('contentlayout-over-slot');
                 view.slots.update();
                 view.slots.events.restore(event);
                 view.$body.css('cursor', 'inherit');
@@ -546,8 +555,10 @@
             };
             if (info.slot.get(index) !== block) {
                 slot.remove(block);
+                slot.$slot.removeClass('contentlayout-over-slot');
                 info.slot.add(block, index);
                 slot = info.slot;
+                slot.$slot.addClass('contentlayout-over-slot');
                 block.deplace(position, slot.horizontal);
                 view.slots.update();
                 $placeholder.attr('class', 'contentlayout-placeholder');
@@ -581,6 +592,7 @@
             view.$body.append($helper);
             view.$body.css('cursor', 'move');
             block.placehold($placeholder);
+            slot.$slot.addClass('contentlayout-over-slot');
 
             view.slots.events.snapshot();
             view.slots.events.onenter(function(event) {
@@ -754,10 +766,13 @@
         var position = Element($slot);
         var blocks = [];
 
-        // Find contained blocks.
+        // Find contained blocks, check if the slot is empty.
         $(selector, $slot).each(function () {
             blocks.push(Block($(this)));
         });
+        if (!blocks.length) {
+            $slot.addClass('contentlayout-empty-slot');
+        };
 
         $.extend(api, position, {
             id: $slot.data('slot-id'),
@@ -800,6 +815,9 @@
                 return blocks.indexOf(item);
             },
             add: function(item, index) {
+                if (!blocks.length) {
+                    $slot.removeClass('contentlayout-empty-slot');
+                };
                 blocks.splice(index, 0, item);
             },
             remove: function(item) {
@@ -807,9 +825,12 @@
                 var removed = null;
 
                 if (index > -1) {
-                    return blocks.splice(index, 1)[0];
+                    removed = blocks.splice(index, 1)[0];
                 };
-                return null;
+                if (!blocks.length) {
+                    $slot.addClass('contentlayout-empty-slot');
+                };
+                return removed;
             }
         });
         api.update();
@@ -820,7 +841,7 @@
         var api = {
             top: -1,
             left: -1,
-            threshold: 10,
+            threshold: 7,
             changed: false,
             offset: {
                 top: -1,

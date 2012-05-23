@@ -1,7 +1,7 @@
 <tal:block i18n:domain="silva">
   <tal:tag tal:replace="structure slot.opening_tag()" />
-  <div tal:repeat="block slot.blocks()"
-       tal:content="structure block.block_data">
-  </div>
+  <tal:block tal:repeat="block slot.blocks()"
+             tal:content="structure block.block_data">
+  </tal:block>
   <tal:tag tal:replace="structure slot.closing_tag()" />
 </tal:block>
