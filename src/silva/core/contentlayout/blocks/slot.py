@@ -83,21 +83,32 @@ class IBlockSlotFields(Interface):
     # code source restriction
     cs_whitelist = schema.Set(
         title=_(u"Code source whitelist"),
-        value_type=schema.Choice(title=_(u'name'),
-                                 source=code_source_source),
+        description=_(
+            u"If any code sources are selected, it will be the only ones "
+            u"addable to the slot."),
+        value_type=schema.Choice(
+            title=_(u'name'),
+            source=code_source_source),
         required=False,
         default=set())
 
     cs_blacklist = schema.Set(
         title=_(u"Code source blacklist"),
-        value_type=schema.Choice(title=_(u'name'),
-                                 source=code_source_source),
+        description=_(
+            u"If any code sources are selected, it will be the only ones "
+            u"not addable to the slot."),
+        value_type=schema.Choice(
+            title=_(u'name'),
+            source=code_source_source),
         required=False,
         default=set())
 
     # content restriction
     content_restriction = schema.Choice(
         title=_(u"Content type"),
+        description=_(
+            u"Only the selected Silva content types will be addable "
+            u"to the slot using the site content block."),
         source=content_type_source,
         required=False)
 
@@ -105,7 +116,9 @@ class IBlockSlotFields(Interface):
     block_all = schema.Bool(
         title=_(u"Block all others"),
         description=_(
-            u'Any block not allowed previously is blocked with this option.'),
+            u"Any code sources or Silva content types not explicitly allowed "
+            u"by a previous option won't be addable to the slot if this "
+            u"option is checked."),
         required=False,
         default=False)
 
@@ -252,8 +265,11 @@ class AddBlockSlot(silvaforms.RESTPopupForm):
     grok.name('add')
 
     label = _(u'Add a sub-slot')
-    description = _(u'You should be able to configure restrictions here.')
+    description = _(u'You can configure slot options and restrictions here.')
     fields = silvaforms.Fields(IBlockSlotFields)
+    fields['cs_whitelist'].mode = 'multipickup'
+    fields['cs_blacklist'].mode = 'multipickup'
+    fields['content_restriction'].mode = 'combobox'
     actions = silvaforms.Actions(
         silvaforms.CancelAction(),
         AddBlockSlotAction())
@@ -298,7 +314,7 @@ class EditBlockSlotAction(EditAction):
 class EditBlockSlot(AddBlockSlot):
     grok.name('edit')
 
-    label = _(u"Edit an content block")
+    label = _(u"Edit a sub-slot")
     actions = silvaforms.Actions(
         silvaforms.CancelAction(),
         EditBlockSlotAction())
