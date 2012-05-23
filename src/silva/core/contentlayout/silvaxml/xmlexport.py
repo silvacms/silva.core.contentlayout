@@ -14,6 +14,8 @@ from ..blocks.text import TextBlock
 from ..blocks.slot import BlockSlot
 from . import NS_URI
 
+from silva.core.contentlayout.interfaces import IPageModelVersion
+
 
 class BasePageProducer(xmlexport.SilvaProducer):
     grok.adapts(interfaces.IPage, Interface)
@@ -22,8 +24,12 @@ class BasePageProducer(xmlexport.SilvaProducer):
     def design(self):
         design = self.context.get_design()
         if design is not None:
-            self.startElementNS(NS_URI, 'design',
-                {'id': design.get_identifier()})
+            attrs = {}
+            if IPageModelVersion.providedBy(design):
+                attrs['path'] = self.relative_path_to(design)
+            else:
+                attrs['id'] = design.get_identifier()
+            self.startElementNS(NS_URI, 'design', attrs)
             manager = interfaces.IBlockManager(self.context)
             for slot_id in manager.get_slot_ids():
                 self.startElementNS(NS_URI, 'slot', {'id': slot_id})

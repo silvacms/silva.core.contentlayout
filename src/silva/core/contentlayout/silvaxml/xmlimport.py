@@ -1,3 +1,4 @@
+
 from five import grok
 from zope.component import getMultiAdapter
 
@@ -100,12 +101,21 @@ class DesignHandler(xmlimport.SilvaBaseHandler):
 
     def startElementNS(self, name, qname, attrs):
         if name == (NS_URI, 'design'):
-            self._design = registry.lookup_design_by_name(attrs[(None, 'id')])
+            id = attrs.get((None, 'id'))
+            design = registry.lookup_design_by_name(id)
+            if id is not None:
+                self.parent().set_design(design)
+            else:
+                path = attrs.get((None, 'path'))
+                if path is not None:
+                    info = self.getInfo()
+                    content = self.parent()
 
-    def endElementNS(self, name, qname):
-        if name == (NS_URI, 'design'):
-            self.parent().set_design(self._design)
-            del self._design
+                    def set_design(design):
+                        content.set_design(design)
+
+                    info.addAction(
+                        xmlimport.resolve_path, [set_design, info, path])
 
 
 class PageModelHandler(xmlimport.SilvaBaseHandler):

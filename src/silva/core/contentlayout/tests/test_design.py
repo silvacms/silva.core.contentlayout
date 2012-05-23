@@ -25,11 +25,11 @@ class DesignTestCase(unittest.TestCase):
         demo_designs = design_registry.lookup_design(self.root.page)
         demo_designs_by_id = {}
 
-        self.assertEqual(len(demo_designs), 3)
+        self.assertEqual(len(demo_designs), 4)
         for design in demo_designs:
             self.assertTrue(verifyClass(IDesign, design))
             demo_designs_by_id[design.get_identifier()] = design
-        self.assertEqual(len(demo_designs_by_id), 3)
+        self.assertEqual(len(demo_designs_by_id), 4)
 
         # Test lookup_design_by_name
         self.assertIn('demo.one_column', demo_designs_by_id)

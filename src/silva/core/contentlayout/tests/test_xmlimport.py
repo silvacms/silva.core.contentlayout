@@ -17,9 +17,6 @@ class PageModelImportTest(SilvaXMLTestCase):
 
     def setUp(self):
         self.root = self.layer.get_application()
-        factory = self.root.manage_addProduct['Silva']
-        factory.manage_addFolder('exportbase', 'Export base')
-        self.base_folder = self.root.exportbase
         self.layer.login('editor')
 
     def test_import_page_model(self):

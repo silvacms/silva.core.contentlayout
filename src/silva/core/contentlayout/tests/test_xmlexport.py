@@ -30,7 +30,7 @@ class TestExport(SilvaXMLTestCase):
         self.page.set_design(self.design)
 
     def test_export_design(self):
-        xml, info = exportToString(self.base_folder)
+        xml, _ = exportToString(self.base_folder)
         self.assertExportEqual(
                     xml, 'test_export_design.silvaxml', globs=globals())
 
@@ -47,7 +47,7 @@ class TestExport(SilvaXMLTestCase):
         manager = interfaces.IBlockManager(self.page)
         manager.add('one', block)
 
-        xml, info = exportToString(self.base_folder)
+        xml, _ = exportToString(self.base_folder)
         self.assertExportEqual(
             xml, 'test_export_ref_block.silvaxml', globs=globals())
 
@@ -62,7 +62,7 @@ class TestExport(SilvaXMLTestCase):
         manager = interfaces.IBlockManager(self.page)
         manager.add('two', block)
 
-        xml, info = exportToString(self.base_folder)
+        xml, _ = exportToString(self.base_folder)
         self.assertExportEqual(
             xml, 'test_export_text_block.silvaxml', globs=globals())
 
@@ -83,7 +83,7 @@ class TestExport(SilvaXMLTestCase):
         manager.add('two', BlockSlot())
         manager.add('one', BlockSlot())
 
-        xml, info = exportToString(self.base_folder)
+        xml, _ = exportToString(self.base_folder)
 
         self.assertExportEqual(
             xml, 'test_export_page_model.silvaxml', globs=globals())

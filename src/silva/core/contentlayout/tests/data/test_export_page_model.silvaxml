@@ -63,7 +63,6 @@
           </version>
         </workflow>
         <content version_id="0">
-          <title>A Page Model</title>
           <contentlayout:design id="adesign">
             <contentlayout:slot id="two">
               <contentlayout:slotblock css_class="" tag="div"/>

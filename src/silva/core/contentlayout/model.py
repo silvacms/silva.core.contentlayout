@@ -18,6 +18,7 @@ from OFS.interfaces import IObjectWillBeRemovedEvent
 from silva.core import conf as silvaconf
 from silva.core.interfaces.events import IContentClosedEvent
 from silva.core.interfaces.events import IContentPublishedEvent
+from silva.core.interfaces.events import IContentImported
 from silva.core.smi.content import ContentEditMenu
 from silva.core.smi.content import IEditScreen
 from silva.core.views import views as silvaviews
@@ -34,6 +35,7 @@ from Products.Silva.Version import Version
 from .interfaces import IPageModel, IPageModelVersion, PageModelFields
 from .interfaces import IContentLayoutService, IBlockSlot, IBlockManager
 from .designs.design import DesignAccessors
+
 
 
 class PageModelVersion(Version, DesignAccessors):
@@ -158,6 +160,14 @@ class PageModelView(silvaviews.View):
         msg = _('Sorry, this ${meta_type} is not viewable.',
                 mapping={'meta_type': self.context.meta_type})
         return '<p>%s</p>' % translate(msg, context=self.request)
+
+
+@grok.subscribe(IPageModel, IContentImported)
+def register_if_published(model, event):
+    version = model.get_viewable()
+    if version is not None:
+        service = getUtility(IContentLayoutService)
+        service.register_page_model(version)
 
 
 @grok.subscribe(IPageModelVersion, IContentPublishedEvent)
