@@ -18,6 +18,11 @@ from ..slots import restrictions
 
 
 from . import NS_URI
+from zeam.form.silva.interfaces import IXMLFormSerialization
+from Products.SilvaExternalSources.interfaces import IExternalSourceManager
+from zeam.component import getWrapper
+from Products.SilvaExternalSources.silvaxml import NS_SOURCE_URI
+from silva.core.contentlayout.blocks.source import SourceBlock
 
 
 silvaconf.namespace(NS_URI)
@@ -66,7 +71,56 @@ class ReferenceBlockHandler(BlockHandler):
             self._block = None
 
 
-# XXX: class SourceBlockHandler
+class SourceFieldsHandler(xmlimport.SilvaBaseHandler):
+
+    def startElementNS(self, name, qname, attrs):
+        if name == (NS_SOURCE_URI, 'fields'):
+            self._deserializers = getWrapper(
+                self.parent(),
+                IXMLFormSerialization).getDeserializers()
+
+        if name == (NS_SOURCE_URI, 'field'):
+            self._field_id = attrs[(None, 'id')]
+            self._field_value = u''
+
+    def characters(self, value):
+        if hasattr(self, '_field_value'):
+            self._field_value += unicode(value)
+
+    def endElementNS(self, name, qname):
+        if name == (NS_SOURCE_URI, 'field'):
+            deserializer = self._deserializers.get(self._field_id)
+            deserializer(self._field_value, self)
+            del self._field_id
+            del self._field_value
+
+        if name == (NS_SOURCE_URI, 'fields'):
+            del self._deserializers
+
+
+class SourceBlockHandler(BlockHandler):
+    silvaconf.name('sourceblock')
+
+    def getOverrides(self):
+        return {(NS_SOURCE_URI, 'fields'): SourceFieldsHandler}
+
+    def startElementNS(self, name, qname, attrs):
+        if name == (NS_URI, 'sourceblock'):
+            request = self.getInfo().request
+            manager = getWrapper(self.parentHandler().parent(),
+                                 IExternalSourceManager)
+            identifier = attrs[(None, 'id')]
+            self._source = manager(request, name=identifier)
+            instance_identifier = self._source.new()
+            self._block = SourceBlock(instance_identifier)
+            self.setResult(self._source)
+
+    def endElementNS(self, name, qname):
+        if name == (NS_URI, 'sourceblock'):
+            self.add_block(self._block)
+            del self._source
+            del self._block
+
 
 class AllowedCodeSourceNameHandler(xmlimport.SilvaBaseHandler):
 

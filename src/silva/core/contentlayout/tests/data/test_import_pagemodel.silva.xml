@@ -40,6 +40,13 @@
 				<contentlayout:slot id="one">
 					<contentlayout:slotblock css_class="" tag="div" />
 					<contentlayout:referenceblock ref="image" />
+					<contentlayout:sourceblock id="cs_citation">
+						<silva-external-sources:fields>
+							<silva-external-sources:field id="citation">A joke is a very serious thing.</silva-external-sources:field>
+							<silva-external-sources:field id="author">Winston Churchill</silva-external-sources:field>
+							<silva-external-sources:field id="source" />
+						</silva-external-sources:fields>
+					</contentlayout:sourceblock>
 				</contentlayout:slot>
 			</contentlayout:design>
 		</content>

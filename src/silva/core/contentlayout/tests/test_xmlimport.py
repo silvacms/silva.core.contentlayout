@@ -12,6 +12,7 @@ from ..blocks.contents import ReferenceBlock
 from silva.core.contentlayout.slots import restrictions as restrict
 from silva.core.interfaces.content import IImage
 from silva.core.contentlayout.blocks.slot import BlockSlot
+from silva.core.contentlayout.blocks.source import SourceBlock
 
 
 class PageModelImportTest(SilvaXMLTestCase):
@@ -41,7 +42,7 @@ class PageModelImportTest(SilvaXMLTestCase):
         self.assertEquals(2, len(slots))
         manager = IBlockManager(version)
         slot1 = manager.get_slot('one')
-        self.assertEquals(2, len(slot1))
+        self.assertEquals(3, len(slot1))
         slot2 = manager.get_slot('two')
         _, slot_block = slot2[0]
         self.assertIsInstance(slot_block, BlockSlot)
@@ -70,4 +71,12 @@ class PageModelImportTest(SilvaXMLTestCase):
         controller = getMultiAdapter((ref_block, version, TestRequest()),
                                      IBlockController)
         self.assertEquals(controller.content, self.root.image)
+
+        _, source_block = slot1[2]
+        self.assertIsInstance(source_block, SourceBlock)
+        controller = getMultiAdapter((source_block, version, TestRequest()),
+                                     IBlockController)
+        params, _ = controller.manager.get_parameters(source_block.identifier)
+        self.assertEquals('A joke is a very serious thing.', params.citation)
+        self.assertEquals('Winston Churchill', params.author)
 
