@@ -1,4 +1,6 @@
 
+import sys
+
 from five import grok
 from zope.component import getMultiAdapter
 
@@ -12,6 +14,7 @@ from ..interfaces import IBlockManager, IBlockController
 from ..blocks.slot import BlockSlot
 from ..blocks.text import TextBlock
 from ..blocks.contents import ReferenceBlock
+from ..slots import restrictions
 
 
 from . import NS_URI
@@ -65,6 +68,56 @@ class ReferenceBlockHandler(BlockHandler):
 
 # XXX: class SourceBlockHandler
 
+class AllowedCodeSourceNameHandler(xmlimport.SilvaBaseHandler):
+
+    def startElementNS(self, name, qname, attrs):
+        if name == (NS_URI, 'allowed'):
+            name = attrs[(None, 'name')]
+            self.parentHandler().restriction.allowed.add(name)
+        if name == (NS_URI, 'disallowed'):
+            name = attrs[(None, 'name')]
+            self.parentHandler().restriction.disallowed.add(name)
+
+
+class CodeSourceNameRestrictionHandler(xmlimport.SilvaBaseHandler):
+    silvaconf.name('codesourcename-restriction')
+
+    def getOverrides(self):
+        return {(NS_URI, 'allowed'): AllowedCodeSourceNameHandler,
+                (NS_URI, 'disallowed'): AllowedCodeSourceNameHandler}
+
+    def startElementNS(self, name, qname, attrs):
+        if name == (NS_URI, 'codesourcename-restriction'):
+            self.restriction = restrictions.CodeSourceName()
+
+    def endElementNS(self, name, qname):
+        if name == (NS_URI, 'codesourcename-restriction'):
+            self.parent()._restrictions.append(self.restriction)
+            del self.restriction
+
+
+class ContentRestrictionHandler(xmlimport.SilvaBaseHandler):
+    silvaconf.name('content-restriction')
+
+    def startElementNS(self, name, qname, attrs):
+        if name == (NS_URI, 'content-restriction'):
+            class_path = attrs[(None, 'schema')]
+            module, name = class_path.split(':', 1)
+            __import__(module)
+            schema = getattr(sys.modules[module], name, None)
+            if schema is None:
+                raise ImportError('unable to import %s' % class_path)
+            self.parent()._restrictions.append(restrictions.Content(schema))
+
+
+class BlockAllRestrictionHandler(xmlimport.SilvaBaseHandler):
+    silvaconf.name('blockall-restriction')
+
+    def endElementNS(self, name, qname):
+        if name == (NS_URI, 'blockall-restriction'):
+            self.parent()._restrictions.append(restrictions.BlockAll())
+
+
 class BlockSlotHandler(BlockHandler):
     silvaconf.name('slotblock')
 
@@ -77,7 +130,13 @@ class BlockSlotHandler(BlockHandler):
                 if value is not None:
                     options[option_name] = value
 
-            self.add_block(BlockSlot(**options))
+            self.block = BlockSlot(**options)
+            self.setResult(self.block)
+
+    def endElementNS(self, name, qname):
+        if name == (NS_URI, 'slotblock'):
+            self.add_block(self.block)
+            del self.block
 
 
 class TextBlockHandler(BlockHandler):

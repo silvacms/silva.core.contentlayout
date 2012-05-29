@@ -15,6 +15,8 @@ from ..blocks.slot import BlockSlot
 from . import NS_URI
 
 from silva.core.contentlayout.interfaces import IPageModelVersion
+from silva.core.contentlayout.slots.restrictions import BlockAll, CodeSourceName,\
+    Content
 
 
 class BasePageProducer(xmlexport.SilvaProducer):
@@ -81,8 +83,12 @@ class SlotBlockProducer(xmlexport.SilvaProducer):
         self.startElementNS(NS_URI, 'slotblock',
             {'css_class': self.context.css_class,
              'tag': self.context.tag})
-        for restriction in self.context._restrictions:
-            self.subsax(restriction)
+        restrictions = self.context._restrictions
+        if restrictions:
+            self.startElementNS(NS_URI, 'restrictions')
+            for restriction in restrictions:
+                self.subsax(restriction)
+            self.endElementNS(NS_URI, 'restrictions')
         self.endElementNS(NS_URI, 'slotblock')
 
 
@@ -106,4 +112,38 @@ class PageModelVersionProducer(BasePageProducer):
         self.design()
         self.endElementNS(NS_SILVA_URI, 'content')
 
+
+class CodeSourceNameRestriction(xmlexport.SilvaBaseProducer):
+    grok.adapts(CodeSourceName, Interface)
+
+    def sax(self):
+        self.startElementNS(NS_URI, 'codesourcename-restriction')
+        for name in self.context.allowed:
+            self.startElementNS(NS_URI, 'allowed', {'name': name})
+            self.endElementNS(NS_URI, 'allowed')
+        for name in self.context.disallowed:
+            self.startElementNS(NS_URI, 'disallowed', {'name': name})
+            self.endElementNS(NS_URI, 'disallowed')
+        self.endElementNS(NS_URI, 'codesourcename-restriction')
+
+
+class ContentRestrictionProvider(xmlexport.SilvaBaseProducer):
+    grok.adapts(Content, Interface)
+
+    def sax(self):
+        self.startElementNS(NS_URI, 'content-restriction',
+                            {'schema': self.get_schema()})
+        self.endElementNS(NS_URI, 'content-restriction')
+
+    def get_schema(self):
+        return ":".join([self.context.schema.__module__,
+                         self.context.schema.__name__])
+
+
+class BlockAllRestrictionProducer(xmlexport.SilvaBaseProducer):
+    grok.adapts(BlockAll, Interface)
+
+    def sax(self):
+        self.startElementNS(NS_URI, 'blockall-restriction')
+        self.endElementNS(NS_URI, 'blockall-restriction')
 
