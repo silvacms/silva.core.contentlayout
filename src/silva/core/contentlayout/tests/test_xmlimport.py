@@ -9,6 +9,9 @@ from ..model import PageModel, PageModelVersion
 from ..interfaces import IBlockManager, IBlockController
 from ..blocks.text import TextBlock
 from ..blocks.contents import ReferenceBlock
+from silva.core.contentlayout.slots import restrictions as restrict
+from silva.core.interfaces.content import IImage
+from silva.core.contentlayout.blocks.slot import BlockSlot
 
 
 class PageModelImportTest(SilvaXMLTestCase):
@@ -20,7 +23,7 @@ class PageModelImportTest(SilvaXMLTestCase):
         self.layer.login('editor')
 
     def test_import_page_model(self):
-        self.import_file('test_import_pagemodel.silvaxml', globs=globals())
+        self.import_file('test_import_pagemodel.silva.xml', globs=globals())
 
         message_service = getUtility(IMessageService)
         errors = message_service.receive(TestRequest(), namespace='error')
@@ -40,6 +43,21 @@ class PageModelImportTest(SilvaXMLTestCase):
         slot1 = manager.get_slot('one')
         self.assertEquals(2, len(slot1))
         slot2 = manager.get_slot('two')
+        _, slot_block = slot2[0]
+        self.assertIsInstance(slot_block, BlockSlot)
+        # restrictions
+        restrictions = slot_block._restrictions
+        self.assertEquals([restrict.CodeSourceName,
+                           restrict.Content,
+                           restrict.BlockAll],
+                          [r.__class__ for r in restrictions])
+        self.assertEquals(set(['allow1', 'allow2']),
+                          restrictions[0].allowed)
+        self.assertEquals(set(['dis1', 'dis2']),
+                          restrictions[0].disallowed)
+        self.assertEquals(IImage, restrictions[1].schema)
+
+        # text block
         self.assertEquals(2, len(slot2))
         _, text_block = slot2[1]
         self.assertIsInstance(text_block, TextBlock)

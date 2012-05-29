@@ -12,9 +12,10 @@ from ..blocks.contents import ReferenceBlock
 from ..blocks.text import TextBlock
 from ..blocks.slot import BlockSlot
 from .. import interfaces
+from silva.core.contentlayout.slots import restrictions
+from silva.core.interfaces import IImage
 
-
-class TestExport(SilvaXMLTestCase):
+class TestExportPage(SilvaXMLTestCase):
 
     layer = FunctionalLayer
 
@@ -81,10 +82,13 @@ class TestExport(SilvaXMLTestCase):
         manager = interfaces.IBlockManager(version)
         manager.add('two', text_block)
         manager.add('two', BlockSlot())
-        manager.add('one', BlockSlot())
+        manager.add('one', BlockSlot(restrictions=[
+            restrictions.CodeSourceName(allowed=set(['allow1', 'allow2']),
+                                        disallowed=set(['dis1', 'dis2'])),
+            restrictions.Content(schema=IImage),
+            restrictions.BlockAll()]))
 
         xml, _ = exportToString(self.base_folder)
 
         self.assertExportEqual(
-            xml, 'test_export_page_model.silvaxml', globs=globals())
-
+            xml, 'test_export_page_model.silva.xml', globs=globals())
