@@ -14,6 +14,10 @@ from ..blocks.slot import BlockSlot
 from .. import interfaces
 from silva.core.contentlayout.slots import restrictions
 from silva.core.interfaces import IImage
+from silva.core.contentlayout.blocks.source import SourceBlock
+from Products.SilvaExternalSources.interfaces import IExternalSourceManager
+from zeam.component import getWrapper
+from zeam.form import silva as silvaforms
 
 class TestExportPage(SilvaXMLTestCase):
 
@@ -66,6 +70,21 @@ class TestExportPage(SilvaXMLTestCase):
         xml, _ = exportToString(self.base_folder)
         self.assertExportEqual(
             xml, 'test_export_text_block.silvaxml', globs=globals())
+
+    def test_export_source_block(self):
+        source_manager = getWrapper(self.page, IExternalSourceManager)
+        parameters = dict(field_citation="A joke is a very serious thing.",
+                          field_author="Winston Churchill")
+        request = TestRequest(form=parameters)
+        controller = source_manager(request, name='cs_citation')
+        marker = controller.create()
+        assert marker is silvaforms.SUCCESS
+        manager = interfaces.IBlockManager(self.page)
+        manager.add('one', SourceBlock(controller.getId()))
+
+        xml, _ = exportToString(self.base_folder)
+        self.assertExportEqual(xml, 'test_export_source_block.silva.xml',
+                               globals())
 
     def test_export_page_model(self):
         factory = self.base_folder.manage_addProduct['silva.core.contentlayout']

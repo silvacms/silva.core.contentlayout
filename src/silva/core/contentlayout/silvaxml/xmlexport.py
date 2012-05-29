@@ -8,15 +8,23 @@ from zope.interface import Interface
 
 from silva.core.editor.transform.silvaxml.xmlexport import TextProducerProxy
 from Products.Silva.silvaxml import xmlexport, NS_SILVA_URI
+from Products.SilvaExternalSources.silvaxml import NS_SOURCE_URI
 from .. import interfaces
 from ..blocks.source import SourceBlock
 from ..blocks.text import TextBlock
 from ..blocks.slot import BlockSlot
 from . import NS_URI
 
-from silva.core.contentlayout.interfaces import IPageModelVersion
+
+from silva.core.contentlayout.interfaces import IPageModelVersion,\
+    IBlockController
 from silva.core.contentlayout.slots.restrictions import BlockAll, CodeSourceName,\
     Content
+from zope.publisher.browser import TestRequest
+from zope.component import getMultiAdapter
+from zeam.component.site import getWrapper
+from Products.SilvaExternalSources.interfaces import IExternalSourceManager
+from zeam.form.silva.interfaces import IXMLFormSerialization
 
 
 class BasePageProducer(xmlexport.SilvaProducer):
@@ -62,8 +70,20 @@ class SourceBlockProducer(xmlexport.SilvaProducer):
     grok.adapts(SourceBlock, Interface)
 
     def sax(self, parent):
+        manager = getWrapper(parent.context, IExternalSourceManager)
+        source = manager(self.getInfo().request,
+                             instance=self.context.identifier)
         self.startElementNS(NS_URI, 'sourceblock',
-            {"id": self.context.identifier})
+            {"id": source.getSourceId()})
+        self.startElementNS(NS_SOURCE_URI, 'fields')
+        for serializer in getWrapper(
+                source, IXMLFormSerialization).getSerializers():
+                self.startElementNS(NS_SOURCE_URI,
+                                    'field',
+                                    {(None, 'id'): serializer.identifier})
+                serializer(self)
+                self.endElementNS(NS_SOURCE_URI, 'field')
+        self.endElementNS(NS_SOURCE_URI, 'fields')
         self.endElementNS(NS_URI, 'sourceblock')
 
 
