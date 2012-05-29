@@ -56,9 +56,6 @@ class TestExportPage(SilvaXMLTestCase):
         self.assertExportEqual(
             xml, 'test_export_ref_block.silvaxml', globs=globals())
 
-    def test_export_codesource_block(self):
-        self.assertFalse(True, 'Pending')
-
     def test_export_text_block(self):
         block = TextBlock()
         controller = getMultiAdapter((block, self.page, TestRequest()),
