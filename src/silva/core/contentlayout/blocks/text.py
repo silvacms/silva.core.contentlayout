@@ -26,7 +26,7 @@ from ..interfaces import ITextBlock, IPage
 class TextBlock(Text, Block):
     grok.implements(ITextBlock)
     grok.name('text')
-    grok.title(_(u"Rich text"))
+    grok.title(_(u"Text"))
     grok.order(0)
     silvaconf.icon('text.png')
 
@@ -98,7 +98,7 @@ class AddTextBlockAction(silvaforms.Action):
         adding = form.__parent__
         adding.add(TextBlock()).text = data['text']
         notify(ObjectModifiedEvent(form.context))
-        form.send_message(_(u"New text block added."))
+        form.send_message(_(u"New text added."))
         return silvaforms.SUCCESS
 
 
@@ -106,7 +106,7 @@ class AddTextBlock(silvaforms.RESTPopupForm):
     grok.adapts(TextBlock, IPage)
     grok.name('add')
 
-    label = _(u"Add a text block ")
+    label = _(u"Add some text")
     fields = silvaforms.Fields(ITextBlockFields)
     actions = silvaforms.Actions(
         silvaforms.CancelAction(),
@@ -138,7 +138,7 @@ class EditTextBlockAction(silvaforms.Action):
         manager = form.getContentData()
         manager.set('text', data.getWithDefault('text'))
         notify(ObjectModifiedEvent(form.context))
-        form.send_message(_(u"Text block modified."))
+        form.send_message(_(u"Text modified."))
         return silvaforms.SUCCESS
 
 
@@ -146,7 +146,7 @@ class EditTextBlock(silvaforms.RESTPopupForm):
     grok.adapts(ITextBlock, IPage)
     grok.name('edit')
 
-    label = _(u"Edit a text block")
+    label = _(u"Edit text")
     fields = silvaforms.Fields(ITextBlockFields)
     actions = silvaforms.Actions(
         silvaforms.CancelAction())
@@ -209,7 +209,9 @@ class ConvertTextBlock(silvaforms.RESTPopupForm):
     grok.adapts(EditTextBlock, IPage)
     grok.name('convert')
 
-    label = _(u"Convert text to document")
+    label = _(u"Convert text to a document")
+    description = _(u"Convert text to a standalone document, and refer to it "
+                    u"using a site content component.")
     fields = silvaforms.Fields(ITitledContent)
     actions = silvaforms.Actions(
         silvaforms.CancelAction(),

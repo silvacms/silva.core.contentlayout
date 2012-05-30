@@ -33,7 +33,7 @@ class EditPage(silvaviews.Page):
             render = design(self.context, self.request, [self.context])
             if render is not None:
                 return render(edition=True)
-        return u'<p>There is no design selected, please select one.</p>'
+        return u'<p>There is no template selected, please select one.</p>'
 
 
 class EditorSMIConfiguration(silvaviews.Viewlet):

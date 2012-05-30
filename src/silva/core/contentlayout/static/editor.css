@@ -64,22 +64,28 @@
 
 #contentlayout-edit-layer a {
   display: block;
-  background: url(icons.png) no-repeat;
+  /* background: url(icons.png) no-repeat; */
+  color: white;
   cursor: pointer;
   float: left;
-  height: 16px;
-  width: 16px;
-  margin: 1px 2px;
+  /* height: 16px; */
+  /* width: 16px; */
+  /* margin: 1px 2px; */
+  margin: 2px;
+  padding: 4px;
 }
 #contentlayout-actions {
   position: relative;
 }
 #contentlayout-edit-block {
-  background-position: -32px 0px  !important;
+  /* background-position: -32px 0px  !important; */
+  background-color: green;
 }
 #contentlayout-move-block {
-  background-position: 0px 0px !important;
+  /* background-position: 0px 0px !important; */
+  background-color: blue;
 }
 #contentlayout-remove-block {
-  background-position: -16px 0px !important;
+  /* background-position: -16px 0px !important; */
+  background-color: red;
 }

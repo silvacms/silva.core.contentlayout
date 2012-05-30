@@ -133,9 +133,9 @@ class PageModelEdit(PageREST):
 
 class PageModelDesignForm(silvaforms.SMIEditForm):
     grok.context(IPageModel)
-    grok.name('design')
+    grok.name('template')
 
-    label = _(u"Page design")
+    label = _(u"Page template")
     fields = PageModelFields.omit('id')
 
 
@@ -144,7 +144,7 @@ class PageModelDesignMenu(MenuItem):
     grok.require('silva.ChangeSilvaContent')
     grok.order(15)
 
-    name = _('Design')
+    name = _('Template')
     screen = PageModelDesignForm
 
 

@@ -154,7 +154,7 @@ class AddSourceBlock(silvaforms.RESTPopupForm):
         if self.controller is not None:
             return _(u"Parameters for new source ${title}",
                      mapping={'title': self.controller.label})
-        return _(u"Add a source block")
+        return _(u"Add a source component")
 
     @property
     def description(self):
@@ -208,7 +208,7 @@ class EditSourceBlockAction(silvaforms.Action):
         status = form.controller.save()
         if status is silvaforms.SUCCESS:
             notify(ObjectModifiedEvent(form.context))
-            form.send_message(_(u"Block modified"))
+            form.send_message(_(u"Source modified."))
         return status
 
 
@@ -311,6 +311,8 @@ class ConvertSourceBlock(silvaforms.RESTPopupForm):
     grok.name('convert')
 
     label = _(u"Convert existing source to asset")
+    description = _(u"Create a source asset using current source parameters, "
+                    u"and refer to it using a site content component.")
     fields = silvaforms.Fields(ITitledContent)
     actions = silvaforms.Actions(
         silvaforms.CancelAction(),

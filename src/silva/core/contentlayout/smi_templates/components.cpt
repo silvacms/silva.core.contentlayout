@@ -1,4 +1,4 @@
-<div title="Place components" class="contentlayout-dialog"
+<div title="Components" class="contentlayout-dialog"
      i18n:domain="silva"
      i18n:attributes="title">
   <div class="contentlayout-components">
@@ -6,12 +6,12 @@
       <h3><a href="#" tal:content="block.title">Title</a></h3>
       <div>
         <div class="contentlayout-component"
-             tal:repeat="component block.components"
-             tal:attributes="data-block-name component.identifier">
-          <img src="${icon}" alt="${component.title}"
+             tal:repeat="block block.blocks"
+             tal:attributes="data-block-name block.identifier">
+          <img src="${icon}" alt="${block.title}"
                tal:condition="icon is not None"
-               tal:define="icon component.get_icon(view)"/>
-          <span class="component-name" tal:content="component.title" />
+               tal:define="icon block.get_icon(view)"/>
+          <span class="component-name" tal:content="block.title" />
           <div clear="both" />
         </div>
       </div>

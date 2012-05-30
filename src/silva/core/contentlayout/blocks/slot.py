@@ -66,7 +66,7 @@ class IBlockSlotFields(Interface):
         title=_(u"Slot identifier"),
         description=_(
             u"This identifier should uniquely identify the new sub-slot, "
-            u"and will be used to refer the sub-slot to store blocks. "
+            u"and will be used to refer the sub-slot to store components. "
             u"Only letters and numbers are allowed."),
         required=True)
 
@@ -111,7 +111,7 @@ class IBlockSlotFields(Interface):
         title=_(u"Content type"),
         description=_(
             u"Only the selected Silva content types will be addable "
-            u"to the slot using the site content block."),
+            u"to the slot using the site content component."),
         source=content_type_source,
         required=False)
 

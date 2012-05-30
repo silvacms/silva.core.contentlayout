@@ -42,7 +42,7 @@ class Design(object):
     grok.implements(IDesign)
     grok.context(Interface)
     grok.provides(IDesign)
-    grok.title('Design')
+    grok.title('Template')
     grok.baseclass()
 
     template = None

@@ -83,10 +83,10 @@ class ReferenceBlockController(BlockController):
     def render(self, view=None):
         content = self.content
         if content is None:
-            return _(u'Reference is broken or missing.')
+            return _(u'Content reference is broken or missing.')
         block_view = queryMultiAdapter((content, self.request), IBlockView)
         if block_view is None:
-            return _(u'Block content is not viewable.')
+            return _(u'Content is not viewable.')
         return block_view()
 
 
@@ -120,7 +120,7 @@ class AddExternalBlockAction(silvaforms.Action):
         adding = form.__parent__
         adding.add(ReferenceBlock()).content = data['content']
         notify(ObjectModifiedEvent(form.context))
-        form.send_message(_(u"New content block added."))
+        form.send_message(_(u"New site content component added."))
         return silvaforms.SUCCESS
 
 
@@ -129,7 +129,7 @@ class AddExternalBlock(silvaforms.RESTPopupForm):
     grok.adapts(ReferenceBlock, IPage)
     grok.name('add')
 
-    label = _(u"Add an content block ")
+    label = _(u"Add a site content component ")
     baseFields = silvaforms.Fields(IExternalBlockFields)
     actions = silvaforms.Actions(
         silvaforms.CancelAction(),
@@ -167,7 +167,7 @@ class EditExternalBlockAction(silvaforms.Action):
             return silvaforms.FAILURE
         manager = form.getContentData()
         manager.set('content', data.getWithDefault('content'))
-        form.send_message(_(u"Content block modified."))
+        form.send_message(_(u"Site content component modified."))
         notify(ObjectModifiedEvent(form.context))
         return silvaforms.SUCCESS
 
@@ -175,7 +175,7 @@ class EditExternalBlockAction(silvaforms.Action):
 class EditExternalBlock(AddExternalBlock):
     grok.name('edit')
 
-    label = _(u"Edit an content block")
+    label = _(u"Edit a site content component")
     actions = silvaforms.Actions(
         silvaforms.CancelAction(),
         EditExternalBlockAction())

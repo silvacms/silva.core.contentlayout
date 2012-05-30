@@ -30,6 +30,10 @@ from Products.Silva.icon import registry as iconRegistry
 class IDesign(interface.Interface):
    """A design is a pluggable template used to render a content, that
    can contains blocks defined on the content.
+
+   In the user interface, this is called a template. This extremely
+   common term was not used in the code to prevent further confusion
+   with already existing templates.
    """
    slots = interface.Attribute(
        u"A dictionary of slot used in the template associated to the design.")
@@ -173,8 +177,8 @@ class ITitledPage(ITitledContent):
     """Interface defining an add schema for a page.
     """
     design = schema.Choice(
-        title=_(u"Design"),
-        description=_(u"Select a design for your document."),
+        title=_(u"Template"),
+        description=_(u"Select a template for your document."),
         source=design_source)
 
 
@@ -217,6 +221,10 @@ class IPage(IAttributeAnnotatable):
 
 class IBlock(interface.Interface):
    """A block is contained in a slot.
+
+   In the user interface, this is called a component. This very common
+   term was not used in the code in order to prevent confusion with
+   already existing components.
    """
 
 
@@ -404,10 +412,10 @@ class IBlockGroup(interface.Interface):
    title = schema.TextLine(
       title=_(u"Title"),
       required=True)
-   components = schema.List(
+   blocks = schema.List(
       title=_(u"Components"),
       value_type=schema.Choice(
-         title=_(u"Block type"),
+         title=_(u"Component type"),
          required=True,
          source=block_factory_source),
       required=True)
@@ -461,7 +469,7 @@ class IDesignContentRule(interface.Interface):
    """Rules bind together a design and a content
    """
    design = schema.Choice(
-      title=_(u"Design"),
+      title=_(u"Template"),
       source=design_identifier_source)
    content_type = schema.Choice(
       title=_(u"Content type"),
@@ -485,7 +493,7 @@ class IDefaultDesignRule(IDesignContentRule):
       title=_(u"Content type"),
       source=all_content_type_source)
    design = schema.Choice(
-      title=_(u"Design"),
+      title=_(u"Template"),
       source=design_identifier_source)
 
 
@@ -500,7 +508,7 @@ class IDesignRestrictions(interface.Interface):
 class IContentDefaultDesigns(interface.Interface):
 
    default_designs = schema.Set(
-      title=_(u"Default designs"),
+      title=_(u"Default templates"),
       value_type=schema.Object(schema=IDefaultDesignRule),
       required=False)
 
@@ -524,14 +532,14 @@ class IPageModelFields(ITitledContent):
     """Interface defining an add schema for a page model.
     """
     design = schema.Choice(
-       title=_(u"Design"),
-       description=_(u"Select a design for your document."),
+       title=_(u"Template"),
+       description=_(u"Select a template for your document."),
        source=design_source)
 
     allowed_content_types = schema.Set(
        title=_(u"Allowed Content Types"),
        description=_(u"Only the selected content types will accept "
-                     u"it as a design"),
+                     u"it as a template."),
        required=True,
        value_type=schema.Choice(
           source=content_type_source_without_placeholder))
@@ -550,7 +558,7 @@ PageModelFields['design'].mode = 'combobox'
 class IDesignEvent(IObjectEvent):
    """Base interface for design related events.
    """
-   design = interface.Attribute('the design')
+   design = interface.Attribute(u'Affected design')
 
 
 class IDesignAssociatedEvent(IDesignEvent):

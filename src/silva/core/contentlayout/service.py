@@ -209,14 +209,13 @@ class ContentLayoutService(SilvaService):
         context = aq_parent(self)
         groups = []
         for group in self._block_groups:
-            components = []
-            for name in group.components:
+            blocks = []
+            for name in group.blocks:
                 block = block_registry.lookup_block_by_name(context, name)
                 if block is not None and block.is_available(view):
-                    components.append(block)
-            if components:
-                groups.append({'title': group.title,
-                               'components': components})
+                    blocks.append(block)
+            if blocks:
+                groups.append({'title': group.title, 'blocks': blocks})
         return groups
 
 
@@ -229,7 +228,7 @@ class ContentLayoutServiceManageTemplates(silvaforms.ZMIComposedForm):
     grok.name('manage_templates')
     grok.context(ContentLayoutService)
 
-    label = _(u"Design Service configuration")
+    label = _(u"Template Service configuration")
     description = _(u"Configure restrictions and defaults"
                     u" for content layout tempates")
 
@@ -257,14 +256,14 @@ class DesignContentRule(object):
         design = service.lookup_design_by_name(self.design)
         if design is None:
             raise ValueError(
-                _(u"Design ${design} is not available.",
+                _(u"Template ${design} is not available.",
                   mapping=dict(design=self.design)))
         addable = get_content_class(self.content_type)
         comply, require = verify_context(design, addable, True)
         if not comply:
             raise ValueError(
-                _(u'Design ${design} restricts its usage to ${require} objects'
-                  u', however ${content} do not comply.',
+                _(u'Template ${design} restricts its usage to ${require} '
+                  u'objects, however ${content} do not comply.',
                   mapping=dict(design=design.get_title(),
                                require=require.__name__,
                                content=self.content_type)))
@@ -294,7 +293,7 @@ class DesignRestrictionsSettings(silvaforms.ZMISubForm):
     grok.view(ContentLayoutServiceManageTemplates)
     grok.order(10)
 
-    label = _(u"Define designs access restrictions")
+    label = _(u"Define templates access restrictions")
     fields = silvaforms.Fields(interfaces.IDesignRestrictions)
     actions = silvaforms.Actions(silvaforms.EditAction())
     dataManager = silvaforms.SilvaDataManager
@@ -321,7 +320,7 @@ class ContentDefaultDesignSettings(silvaforms.ZMISubForm):
     grok.view(ContentLayoutServiceManageTemplates)
     grok.order(10)
 
-    label = _(u"Define default design for content types")
+    label = _(u"Define default template for content types")
     fields = silvaforms.Fields(interfaces.IContentDefaultDesigns)
     actions = silvaforms.Actions(silvaforms.EditAction())
     dataManager = silvaforms.SilvaDataManager
@@ -335,11 +334,11 @@ class BlockGroup(object):
     """
     grok.implements(interfaces.IBlockGroup)
     title = None
-    components = None
+    blocks = None
 
-    def __init__(self, title, components):
+    def __init__(self, title, blocks):
         self.title = title
-        self.components = components
+        self.blocks = blocks
 
 
 grok.global_utility(

@@ -1,12 +1,12 @@
 <div id="contentlayout-edit-layer"
      i18n:domain="silva">
   <div id="contentlayout-actions">
-    <a id="contentlayout-edit-block" title="Edit block"
-       i18n:attributes="title"></a>
-    <a id="contentlayout-move-block" title="Move block"
-       i18n:attributes="title"></a>
-    <a id="contentlayout-remove-block" title="Remove block"
-       i18n:attributes="title"></a>
+    <a id="contentlayout-edit-block" title="Edit component"
+       i18n:attributes="title">Edit</a>
+    <a id="contentlayout-move-block" title="Move component"
+       i18n:attributes="title">Move</a>
+    <a id="contentlayout-remove-block" title="Remove component"
+       i18n:attributes="title">Remove</a>
     <div style="clear:both"></div>
   </div>
 </div>
