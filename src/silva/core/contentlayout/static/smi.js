@@ -313,6 +313,7 @@
         var slot = null;
         var validator = null;
         var deferred = $.Deferred();
+        var finishing = false;
 
         var save = function(event) {
             finish(event, false);
@@ -331,7 +332,10 @@
         };
 
         var finish = function(event, failed) {
-            view.$body.unbind('click', save);
+            if (finishing) {
+                return $.Deferred();
+            };
+            finishing = true;
             view.shortcuts.remove('editor', 'adding');
 
             return (validator !== null && failed !== true
@@ -460,7 +464,8 @@
                     reorder(this);
                 };
             });
-            view.$body.bind('click', save);
+            view.slots.events.ondrop(save);
+            view.slots.events.oncancel(cancel);
             view.shortcuts.bind('editor', 'adding', ['ctrl+s'], save);
             view.shortcuts.bind('editor', 'adding', ['esc'], cancel);
         };
@@ -479,6 +484,7 @@
         var slot = original.slot;
         var block = original.current;
         var validator = null;
+        var finishing = false;
         var deferred = $.Deferred();
         // Save original index
         original.index = slot.index(block);
@@ -500,7 +506,10 @@
         };
 
         var finish = function(event, failed) {
-            view.$body.unbind('click', save);
+            if (finishing) {
+                return $.Deferred();
+            };
+            finishing = true;
             view.shortcuts.remove('editor', 'moving');
 
             return (validator !== null && failed !== true
@@ -604,7 +613,8 @@
                     reorder(this);
                 };
             });
-            view.$body.bind('click', save);
+            view.slots.events.ondrop(save);
+            view.slots.events.oncancel(cancel);
             view.shortcuts.bind('editor', 'moving', ['ctrl+s'], save);
             view.shortcuts.bind('editor', 'moving', ['esc'], cancel);
         };
@@ -691,13 +701,14 @@
             if (delegated !== null) {
                 delegated.cancel();
             };
-            delegated = mode.apply(this, [].splice.call(arguments, 1));
+            delegated = mode.apply(this, [].splice.call(arguments, 1, 2));
             delegated.promise().always(function() { delegated = null });
         };
         var add = function(event){
             if (selected !== null) {
                 api.disable();
             };
+            view.slots.drag(event);
             delegate(AddMode, view, $(this));
             event.stopPropagation();
             event.preventDefault();
@@ -711,6 +722,7 @@
         };
         var move = function(event) {
             if (selected !== null && selected.current.$block !== undefined) {
+                view.slots.drag(event);
                 delegate(MoveMode, view, selected);
                 api.disable();
             };
@@ -729,10 +741,10 @@
             event.stopPropagation();
             event.preventDefault();
         };
-        $components.delegate('div.contentlayout-component', 'click', add);
+        $components.delegate('div.contentlayout-component', 'mousedown', add);
         $layer.delegate('#contentlayout-edit-block', 'click', edit);
         view.shortcuts.bind('editor', null, ['ctrl+e'], edit);
-        $layer.delegate('#contentlayout-move-block', 'click', move);
+        $layer.delegate('#contentlayout-move-block', 'mousedown', move);
         view.shortcuts.bind('editor', null, ['ctrl+m'], move);
         $layer.delegate('#contentlayout-remove-block', 'click', remove);
         view.shortcuts.bind('editor', null, ['ctrl+d'], remove);
@@ -812,7 +824,7 @@
                 return blocks[index];
             },
             index: function(item) {
-                return blocks.indexOf(item);
+                return $.inArray(item, blocks);
             },
             add: function(item, index) {
                 if (!blocks.length) {
@@ -841,7 +853,7 @@
         var api = {
             top: -1,
             left: -1,
-            threshold: 7,
+            threshold: 10,
             changed: false,
             offset: {
                 top: -1,
@@ -891,8 +903,13 @@
         return api;
     };
 
-    var Slots = function($document, $slots, selector) {
+    var Slots = function($document, $slots, selector, $target) {
         var slots = [];
+        var dnd = {
+            started: false,
+            dragued: false,
+            captured: false
+        };
         var current = null;
         var slot = null;
         var timer = null;
@@ -901,7 +918,9 @@
             enter: infrae.deferred.Callbacks(),
             change: infrae.deferred.Callbacks(),
             leave: infrae.deferred.Callbacks(),
-            move: infrae.deferred.Callbacks()
+            move: infrae.deferred.Callbacks(),
+            drop: infrae.deferred.Callbacks(),
+            cancel: infrae.deferred.Callbacks()
         };
         var api = {
             events: {
@@ -916,6 +935,12 @@
                 },
                 onmove: function(callback) {
                     events.move.add(callback);
+                },
+                ondrop: function(callback) {
+                    events.drop.add(callback);
+                },
+                oncancel: function(callback) {
+                    events.cancel.add(callback);
                 },
                 snapshot: function() {
                     for (var name in events) {
@@ -932,6 +957,16 @@
                         };
                     };
                 }
+            },
+            drag: function(event) {
+                if (dnd.started) {
+                    // We missed mouseup (might have happened outside of the window)
+                    events.cancel.invoke(SlotEvent(), [event]);
+                };
+                mouse.update(event);
+                dnd.started = true;
+                dnd.dragued = true;
+                dnd.captured = false;
             },
             update: function() {
                 for (var i=0; i < slots.length; i++) {
@@ -980,8 +1015,30 @@
         $slots.each(function() {
             slots.push(Slot($(this), selector));
         });
-
-        $document.bind('mousemove', function(event) {
+        $target.bind('mousedown.contentlayout', function(event) {
+            if (dnd.started && !dnd.dragued) {
+                // This is a click
+                events.drop.invoke(SlotEvent(), [event]);
+                dnd.started = false;
+                return;
+            };
+            api.drag(event);
+        });
+        $target.bind('mouseup.contentlayout', function(event) {
+            if (dnd.started) {
+                if (dnd.captured) {
+                    // This was captured, it is a real DND
+                    events.drop.invoke(SlotEvent(), [event]);
+                    event.stopPropagation();
+                    event.preventDefault();
+                    dnd.started = false;
+                } else {
+                    // This was not captured, we will finish upon a click
+                    dnd.dragued = false;
+                };
+            };
+        });
+        $target.bind('mousemove.contentlayout', function(event) {
             if (timer !== null) {
                 clearTimeout(timer);
             };
@@ -990,8 +1047,11 @@
                     // The mouse didn't move
                     return;
                 };
-
-                if (!lookup(event)) {
+                if (dnd.started && dnd.dragued && !dnd.captured) {
+                    // Capture to DND
+                    dnd.captured = true;
+                };
+                if ($document.get(0) === event.delegateTarget && !lookup(event)) {
                     events.move.invoke(SlotEvent(), [event]);
                 };
                 mouse.finish(event);
@@ -1107,7 +1167,8 @@
                             view.slots = Slots(
                                 view.$document,
                                 view.$body.find('.contentlayout-edit-slot'),
-                            '> .contentlayout-edit-block');
+                                '> .contentlayout-edit-block',
+                                $(document).add(view.$document));
 
                             var mode = NormalMode(view, $layer, $components);
                             var timer = null;
@@ -1171,6 +1232,7 @@
                     cleanup: function() {
                         this.components.close();
                         this.shortcuts.remove('editor');
+                        $(document).unbind('.contentlayout');
                         $components.remove();
                         $content.empty();
                     }
