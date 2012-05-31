@@ -26,6 +26,9 @@ class Slot(object):
             return restriction.allow_controller(controller, self, context)
         return True
 
+    def get_restrictions(self):
+        return self._restrictions[:]
+
     def get_new_restriction(self, configuration):
         return self._get_restriction(configuration.block)
 

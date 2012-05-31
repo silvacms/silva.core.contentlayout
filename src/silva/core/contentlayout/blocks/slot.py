@@ -263,16 +263,42 @@ def validate_slot_identifier(value, form):
     return None
 
 
+def _slot_restrictions_block_controller(form):
+    slot = form.__parent__.slot
+    return BlockSlotController(
+        BlockSlot(restrictions=slot.get_restrictions()),
+        form.context,
+        form.request)
+
+def default_cs_whitelist(form):
+    return _slot_restrictions_block_controller(form).get_cs_whitelist()
+
+def default_cs_blacklist(form):
+    return _slot_restrictions_block_controller(form).get_cs_blacklist()
+
+def default_content_restriction(form):
+    return _slot_restrictions_block_controller(form).get_content_restriction()
+
+def default_block_all(form):
+    return _slot_restrictions_block_controller(form).get_block_all()
+
+
 class AddBlockSlot(silvaforms.RESTPopupForm):
     grok.adapts(IBlockSlot, IPageModelVersion)
     grok.name('add')
 
     label = _(u'Add a sub-slot')
     description = _(u'You can configure slot options and restrictions here.')
+
     fields = silvaforms.Fields(IBlockSlotFields)
     fields['cs_whitelist'].mode = 'multipickup'
+    fields['cs_whitelist'].defaultValue = default_cs_whitelist
     fields['cs_blacklist'].mode = 'multipickup'
+    fields['cs_blacklist'].defaultValue = default_cs_blacklist
     fields['content_restriction'].mode = 'combobox'
+    fields['content_restriction'].defautValue = default_content_restriction
+    fields['block_all'].defaultValue = default_block_all
+
     actions = silvaforms.Actions(
         silvaforms.CancelAction(),
         AddBlockSlotAction())

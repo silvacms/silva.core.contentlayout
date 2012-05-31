@@ -82,6 +82,10 @@ class ISlot(interface.Interface):
        Return False if this is not authorized.
        """
 
+   def get_restrictions(self):
+       """ return restrictions list set on this slot.
+       """
+
    def get_new_restriction(configuration):
        """Lookup for the given ``configuration`` an existing
        :py:interface:`~silva.core.contentlayout.interfaces.ISlotRestriction`.
