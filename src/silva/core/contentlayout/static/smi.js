@@ -1113,7 +1113,7 @@
             factory: function($content, data, smi) {
                 var path = smi.opened.path + (data.identifier ? '/' + data.identifier : '');
                 var opened = false;
-                var $components = $(data.components);
+                var $components = $(data.blocks.available);
                 var $listing = $components.children('.contentlayout-components');
                 var $layer = $(data.layer);
                 var events = {

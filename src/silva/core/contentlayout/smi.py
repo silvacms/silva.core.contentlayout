@@ -16,6 +16,7 @@ from silva.ui.smi import SMIConfiguration
 
 from .interfaces import IPage
 from .interfaces import IBoundBlockManager, IBlockGroupLookup
+from .slots.slot import Slot, SlotView
 
 from zExceptions import BadRequest, NotFound
 
@@ -45,8 +46,10 @@ class EditorJSView(grok.MultiAdapter):
     grok.adapts(Interface, Interface)
     grok.name('content-layout')
 
-    layer = ChameleonPageTemplate(filename="smi_templates/layer.cpt")
-    components = ChameleonPageTemplate(filename="smi_templates/components.cpt")
+    layer = ChameleonPageTemplate(
+        filename="smi_templates/layer.cpt")
+    blocks = ChameleonPageTemplate(
+        filename="smi_templates/blocks.cpt")
 
     def __init__(self, context, request):
         self.context = context
@@ -64,11 +67,34 @@ class EditorJSView(grok.MultiAdapter):
         service = getUtility(IBlockGroupLookup)
         self.root_url = IVirtualSite(self.request).get_root_url()
         self.screen = screen
-        self.blocks = service.lookup_block_groups(self)
-        return {"ifaces": ["content-layout"],
-                "layer": self.layer.render(self),
-                "components": self.components.render(self),
-                "identifier": identifier}
+        self.block_groups = service.lookup_block_groups(self)
+
+        available = False
+        design = self.context.get_design()
+        missing_blocks = {}
+        if design is not None:
+            render = design(self.context, self.request, [self.context])
+            if render is not None:
+                render.edition = True
+                available = True
+                slot = Slot()
+                blocks = getMultiAdapter(
+                    (self.context, self.request), IBoundBlockManager)
+                missing_slots = set(blocks.manager.get_slot_ids()).difference(
+                    set(render.slots.keys()))
+                for slot_id in missing_slots:
+                    missing_blocks[slot_id] = list(
+                        blocks.render(
+                            SlotView(slot_id, slot, render, self.context)))
+
+        return {
+            "ifaces": ["content-layout"],
+            "available": available,
+            "layer": self.layer.render(self),
+            "blocks": {
+                "available": self.blocks.render(self),
+                "lost": missing_blocks},
+            "identifier": identifier}
 
 
 class PageAPI(REST):

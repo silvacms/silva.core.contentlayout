@@ -47,6 +47,7 @@ class Design(object):
 
     template = None
     description = None
+    slots = {}
     markers = []
     __template_path__ = 'inline'
 
