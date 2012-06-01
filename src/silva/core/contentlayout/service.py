@@ -216,7 +216,7 @@ class ContentLayoutService(SilvaService):
         groups = []
         for group in self._block_groups:
             blocks = []
-            if groups.blocks is not None:
+            if group.blocks is not None:
                 for name in group.blocks:
                     block = block_registry.lookup_block_by_name(context, name)
                     if block is not None and block.is_available(view):
