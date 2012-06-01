@@ -2,17 +2,18 @@
 from zope.publisher.browser import TestRequest
 from zope.component import getMultiAdapter, getUtility
 
-from silva.core.messages.interfaces import IMessageService
 from Products.Silva.tests.test_xml_import import SilvaXMLTestCase
+from silva.core.messages.interfaces import IMessageService
+from silva.core.contentlayout.slots import restrictions as restrict
+from silva.core.interfaces.content import IImage
+from silva.core.contentlayout.blocks.slot import BlockSlot
+from silva.core.contentlayout.blocks.source import SourceBlock
+
 from ..testing import FunctionalLayer
 from ..model import PageModel, PageModelVersion
 from ..interfaces import IBlockManager, IBlockController
 from ..blocks.text import TextBlock
 from ..blocks.contents import ReferenceBlock
-from silva.core.contentlayout.slots import restrictions as restrict
-from silva.core.interfaces.content import IImage
-from silva.core.contentlayout.blocks.slot import BlockSlot
-from silva.core.contentlayout.blocks.source import SourceBlock
 
 
 class PageModelImportTest(SilvaXMLTestCase):
@@ -24,7 +25,7 @@ class PageModelImportTest(SilvaXMLTestCase):
         self.layer.login('editor')
 
     def test_import_page_model(self):
-        self.import_file('test_import_pagemodel.silva.xml', globs=globals())
+        self.import_file('test_import_pagemodel.silvaxml', globs=globals())
 
         message_service = getUtility(IMessageService)
         errors = message_service.receive(TestRequest(), namespace='error')

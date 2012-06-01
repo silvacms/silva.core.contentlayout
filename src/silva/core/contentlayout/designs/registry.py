@@ -59,9 +59,6 @@ class DesignRegistry(object):
         factories = self._designs.setdefault(context, [])
         factories.append(factory)
 
-    def remove(self, factory):
-        self._designs
-
     def _lookup(self, validator):
         candidates = []
         for iface, factories in self._designs.iteritems():
@@ -85,6 +82,7 @@ class DesignRegistry(object):
 
     def clear(self):
         self._designs = {}
+        self._designs_by_name = {}
 
 
 registry = DesignRegistry()

@@ -27,7 +27,7 @@ class Slot(object):
         return True
 
     def get_restrictions(self):
-        return self._restrictions[:]
+        return list(self._restrictions)
 
     def get_new_restriction(self, configuration):
         return self._get_restriction(configuration.block)

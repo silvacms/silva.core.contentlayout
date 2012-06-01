@@ -66,8 +66,7 @@
 				<content version_id="0">
 					<contentlayout:design id="adesign">
 						<contentlayout:slot id="two">
-							<contentlayout:slotblock css_class=""
-								tag="div" />
+							<contentlayout:slotblock css_class="" tag="section" />
 							<contentlayout:textblock>
 								<silva-core-editor:text>
 									<html:div>text</html:div>
@@ -75,8 +74,7 @@
 							</contentlayout:textblock>
 						</contentlayout:slot>
 						<contentlayout:slot id="one">
-							<contentlayout:slotblock css_class=""
-								tag="div">
+							<contentlayout:slotblock css_class="" tag="section">
 								<contentlayout:restrictions>
 									<contentlayout:codesourcename-restriction>
 										<contentlayout:allowed name="allow2" />
