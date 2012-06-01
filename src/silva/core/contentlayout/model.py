@@ -35,6 +35,10 @@ from Products.Silva.Version import Version
 from .interfaces import IPageModel, IPageModelVersion, PageModelFields
 from .interfaces import IContentLayoutService, IBlockSlot, IBlockManager
 from .designs.design import DesignAccessors
+from silva.core.contentlayout.interfaces import IDesignAssociatedEvent, IPage,\
+    IDesignDeassociatedEvent
+from silva.core.references.interfaces import IReferenceService
+from silva.core.interfaces.content import IVersion
 
 
 
@@ -169,13 +173,32 @@ class PageModelView(silvaviews.View):
         return '<p>%s</p>' % translate(msg, context=self.request)
 
 
+PAGE_TO_DESIGN_REF_NAME = u'page-to-design'
+
+
+@grok.subscribe(IPage, IDesignAssociatedEvent)
+def set_reference_to_page_model(page, event):
+    if not IPageModelVersion.providedBy(event.design):
+        return
+    model = event.design.get_content()
+    reference_service = getUtility(IReferenceService)
+    reference = reference_service.get_reference(
+        page, name=PAGE_TO_DESIGN_REF_NAME, add=True)
+    reference.set_target(model)
+
+@grok.subscribe(IPage, IDesignDeassociatedEvent)
+def remove_reference_to_page_model(page, event):
+    if not IPageModelVersion.providedBy(event.design):
+        return
+    reference_service = getUtility(IReferenceService)
+    reference_service.delete_reference(page, name=PAGE_TO_DESIGN_REF_NAME)
+
 @grok.subscribe(IPageModel, IContentImported)
 def register_if_published(model, event):
     version = model.get_viewable()
     if version is not None:
         service = getUtility(IContentLayoutService)
         service.register_page_model(version)
-
 
 @grok.subscribe(IPageModelVersion, IContentPublishedEvent)
 def register(version, event):
