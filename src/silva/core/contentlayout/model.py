@@ -47,6 +47,7 @@ class PageModelVersion(Version, DesignAccessors):
 
     _title = None
     _allowed_content_types = None
+    _role = None
 
     def get_identifier(self):
         return getUtility(IIntIds).register(self.get_content())
@@ -56,6 +57,12 @@ class PageModelVersion(Version, DesignAccessors):
 
     def get_title(self):
         return self._title or ''
+
+    def set_role(self, role):
+        self._role = role
+
+    def get_role(self):
+        return self._role
 
     def get_allowed_content_types(self):
         return self._allowed_content_types

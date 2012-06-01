@@ -548,6 +548,12 @@ class IPageModelFields(ITitledContent):
        value_type=schema.Choice(
           source=content_type_source_without_placeholder))
 
+    role = schema.Choice(
+        title=_(u"Minimum role"),
+        description=_(u"Only users with this role can associate it."),
+        source=editor_roles_source,
+        required=False)
+
 
 def all_page_content_types(form):
    addables = IAddableContents(

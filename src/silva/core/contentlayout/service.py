@@ -106,17 +106,23 @@ class ContentLayoutService(SilvaService):
 
     security.declareProtected(
         'View Management Screens', 'list_page_model')
-    def list_page_model(self, meta_type):
+    def list_page_model(self, context, meta_type):
         models = []
         resolve = getUtility(IIntIds).getObject
+        user_role = IAuthorizationManager(context).get_user_role()
         for int_id in self._page_models.values():
             try:
                 model = resolve(int_id)
             except KeyError:
                 continue
+            role = model.get_role()
+            if role is not None and \
+                    not roleinfo.isEqualToOrGreaterThan(user_role, role):
+                continue
             if (meta_type is None or
                 meta_type in model.get_allowed_content_types()):
                 models.append(model)
+
         return models
 
     def _design_allowed(self, design, context, meta_type):
@@ -142,7 +148,7 @@ class ContentLayoutService(SilvaService):
             results = filter(
                 lambda design: self._design_allowed(design, context, meta_type),
                 results)
-        results += self.list_page_model(meta_type)
+        results += self.list_page_model(context, meta_type)
         return results
 
     security.declareProtected(
@@ -152,7 +158,7 @@ class ContentLayoutService(SilvaService):
         results = filter(
             lambda design: self._design_allowed(design, context, meta_type),
             design_registry.lookup_design_by_addable(context, addable))
-        results += self.list_page_model(meta_type)
+        results += self.list_page_model(context, meta_type)
         return results
 
     security.declareProtected(
@@ -210,10 +216,11 @@ class ContentLayoutService(SilvaService):
         groups = []
         for group in self._block_groups:
             blocks = []
-            for name in group.blocks:
-                block = block_registry.lookup_block_by_name(context, name)
-                if block is not None and block.is_available(view):
-                    blocks.append(block)
+            if groups.blocks is not None:
+                for name in group.blocks:
+                    block = block_registry.lookup_block_by_name(context, name)
+                    if block is not None and block.is_available(view):
+                        blocks.append(block)
             if blocks:
                 groups.append({'title': group.title, 'blocks': blocks})
         return groups
