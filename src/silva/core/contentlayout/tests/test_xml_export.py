@@ -2,25 +2,26 @@
 from Products.Silva.tests.helpers import open_test_file
 from Products.Silva.silvaxml.xmlexport import exportToString
 from Products.Silva.tests.test_xml_export import SilvaXMLTestCase
+
 from zope.publisher.browser import TestRequest
 from zope.component import getMultiAdapter
 
-from ..testing import FunctionalLayer
-from ..designs.registry import registry
-from ..blocks.contents import ReferenceBlock
-# from ..blocks.source import SourceBlock
-from ..blocks.text import TextBlock
-from ..blocks.slot import BlockSlot
-from .. import interfaces
+from Products.SilvaExternalSources.interfaces import IExternalSourceManager
+from silva.core.contentlayout.blocks.source import SourceBlock
 from silva.core.contentlayout.slots import restrictions
 from silva.core.interfaces import IImage
-from silva.core.contentlayout.blocks.source import SourceBlock
-from Products.SilvaExternalSources.interfaces import IExternalSourceManager
 from zeam.component import getWrapper
 from zeam.form import silva as silvaforms
 
-class TestExportPage(SilvaXMLTestCase):
+from .. import interfaces
+from ..blocks.contents import ReferenceBlock
+from ..blocks.slot import BlockSlot
+from ..blocks.text import TextBlock
+from ..designs.registry import registry
+from ..testing import FunctionalLayer
 
+
+class TestExportPage(SilvaXMLTestCase):
     layer = FunctionalLayer
 
     def setUp(self):
@@ -37,7 +38,7 @@ class TestExportPage(SilvaXMLTestCase):
     def test_export_design(self):
         xml, _ = exportToString(self.base_folder)
         self.assertExportEqual(
-                    xml, 'test_export_design.silvaxml', globs=globals())
+            xml, 'test_export_design.silvaxml', globs=globals())
 
     def test_export_design_and_ref_block(self):
         factory = self.base_folder.manage_addProduct['Silva']
@@ -80,7 +81,7 @@ class TestExportPage(SilvaXMLTestCase):
         manager.add('one', SourceBlock(controller.getId()))
 
         xml, _ = exportToString(self.base_folder)
-        self.assertExportEqual(xml, 'test_export_source_block.silva.xml',
+        self.assertExportEqual(xml, 'test_export_source_block.silvaxml',
                                globals())
 
     def test_export_page_model(self):
@@ -107,4 +108,4 @@ class TestExportPage(SilvaXMLTestCase):
         xml, _ = exportToString(self.base_folder)
 
         self.assertExportEqual(
-            xml, 'test_export_page_model.silva.xml', globs=globals())
+            xml, 'test_export_page_model.silvaxml', globs=globals())
