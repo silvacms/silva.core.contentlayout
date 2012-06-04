@@ -33,11 +33,15 @@ class SourceBlock(BlockView):
 
     def update(self):
         self.msg = None
+        viewable = self.context.get_viewable()
         self.controller = None
-        try:
-            self.controller = self.context.get_controller(self.request)
-        except SourceError, error:
-            self.msg = error.to_html()
+        if viewable is not None:
+            try:
+                self.controller = viewable.get_controller(self.request)
+            except SourceError, error:
+                self.msg = error.to_html()
+        else:
+            self.msg = _(u"This component is not available.")
 
     def render(self):
         if self.msg:

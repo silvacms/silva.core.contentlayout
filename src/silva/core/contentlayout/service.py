@@ -47,7 +47,7 @@ class ContentLayoutService(SilvaService):
 
     security = ClassSecurityInfo()
     manage_options = (
-        {'label': 'Blocks', 'action': 'manage_blocks'},
+        {'label': 'Components', 'action': 'manage_components'},
         {'label': 'Templates', 'action': 'manage_templates'},
         ) + SilvaService.manage_options
 
@@ -358,11 +358,11 @@ grok.global_utility(
 class ContentLayoutServiceManageBlocks(silvaforms.ZMIForm):
     """ Block Groups Service configuration.
     """
-    grok.name('manage_blocks')
+    grok.name('manage_components')
     grok.context(ContentLayoutService)
 
-    label = _(u"Blocks palette configuration")
-    description = _(u"Sort possible block into groups.")
+    label = _(u"Component palette configuration")
+    description = _(u"Sort possible components into groups.")
     fields = silvaforms.Fields(interfaces.IBlockGroupsFields)
     actions = silvaforms.Actions(silvaforms.EditAction())
     dataManager = silvaforms.SilvaDataManager
