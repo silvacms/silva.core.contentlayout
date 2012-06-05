@@ -208,7 +208,7 @@ class EditSourceBlockAction(silvaforms.Action):
         status = form.controller.save()
         if status is silvaforms.SUCCESS:
             notify(ObjectModifiedEvent(form.context))
-            form.send_message(_(u"Source componentmodified."))
+            form.send_message(_(u"Source component modified."))
         return status
 
 
