@@ -47,18 +47,11 @@ class PageModelVersion(Version, DesignAccessors):
     security = ClassSecurityInfo()
     meta_type = 'Silva Page Model Version'
 
-    _title = None
     _allowed_content_types = None
     _role = None
 
     def get_identifier(self):
         return getUtility(IIntIds).register(self.get_silva_object())
-
-    def set_title(self, title):
-        self._title = title
-
-    def get_title(self):
-        return self._title or ''
 
     def set_role(self, role):
         self._role = role
