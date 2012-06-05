@@ -5,6 +5,8 @@ from Products.Silva.tests.test_xml_export import SilvaXMLTestCase
 
 from zope.publisher.browser import TestRequest
 from zope.component import getMultiAdapter
+from zope.intid.interfaces import IIntIds
+from zope.component import getUtility
 
 from Products.SilvaExternalSources.interfaces import IExternalSourceManager
 from silva.core.contentlayout.blocks.source import SourceBlock
@@ -83,6 +85,28 @@ class TestExportPage(SilvaXMLTestCase):
         xml, _ = exportToString(self.base_folder)
         self.assertExportEqual(xml, 'test_export_source_block.silvaxml',
                                globals())
+
+    def test_export_source_block_with_reference(self):
+        source_manager = getWrapper(self.page, IExternalSourceManager)
+        intids = getUtility(IIntIds)
+        folder_id = intids.register(self.base_folder)
+        parameters = dict(field_paths=str(folder_id),
+                          field_toc_types="Silva Folder",
+                          field_depth="0",
+                          field_sort_on="silva",
+                          field_order="normal")
+        request = TestRequest(form=parameters)
+        controller = source_manager(request, name='cs_toc')
+        marker = controller.create()
+        assert marker is silvaforms.SUCCESS
+
+        manager = interfaces.IBlockManager(self.page)
+        manager.add('two', SourceBlock(controller.getId()))
+        xml, _ = exportToString(self.base_folder)
+        self.assertExportEqual(
+            xml,
+            'test_export_source_block_with_reference.silvaxml',
+            globs=globals())
 
     def test_export_page_model(self):
         factory = self.base_folder.manage_addProduct['silva.core.contentlayout']

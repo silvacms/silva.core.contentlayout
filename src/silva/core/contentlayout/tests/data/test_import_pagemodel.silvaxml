@@ -6,6 +6,30 @@
 	xmlns:silva-external-sources="http://infrae.com/namespace/silva-external-sources"
 	xmlns:silva-extra="http://infrae.com/namespace/metadata/silva-extra"
 	silva_version="Silva 3.0dev">
+	<folder id="somefolder">
+    <metadata>
+      <set id="silva-content">
+        <silva-content:maintitle>Some folder</silva-content:maintitle>
+        <silva-content:shorttitle/>
+      </set>
+      <set id="silva-extra">
+        <silva-extra:comment/>
+        <silva-extra:contactemail/>
+        <silva-extra:contactname/>
+        <silva-extra:content_description/>
+        <silva-extra:creationtime>2011-05-06T15:19:09Z</silva-extra:creationtime>
+        <silva-extra:creator>manager</silva-extra:creator>
+        <silva-extra:hide_from_tocs>do not hide</silva-extra:hide_from_tocs>
+        <silva-extra:keywords/>
+        <silva-extra:language/>
+        <silva-extra:lastauthor>unknown</silva-extra:lastauthor>
+        <silva-extra:modificationtime>2011-05-06T15:19:09Z</silva-extra:modificationtime>
+        <silva-extra:subject/>
+      </set>
+    </metadata>
+    <content>
+    </content>
+    </folder>
 	<contentlayout:pagemodel id="pm">
 		<workflow>
 			<version id="0">
@@ -36,6 +60,27 @@
 							<html:div>text</html:div>
 						</silva-core-editor:text>
 					</contentlayout:textblock>
+					<contentlayout:sourceblock id="cs_toc">
+						<silva-external-sources:fields>
+						<silva-external-sources:field xmlns="http://infrae.com/namespace/silva-references" id="paths">
+						<path>somefolder</path>
+						</silva-external-sources:field>
+						<silva-external-sources:field xmlns="http://infrae.com/namespace/formulator" id="toc_types">
+						<value>Silva Folder</value>
+						<value>Silva Publication</value>
+						</silva-external-sources:field>
+						<silva-external-sources:field id="depth">0</silva-external-sources:field>
+						<silva-external-sources:field id="sort_on">silva</silva-external-sources:field>
+						<silva-external-sources:field id="order">normal</silva-external-sources:field>
+						<silva-external-sources:field id="show_icon">False</silva-external-sources:field>
+						<silva-external-sources:field id="show_desc">False</silva-external-sources:field>
+						<silva-external-sources:field id="display_headings">False</silva-external-sources:field>
+						<silva-external-sources:field id="link_headings">False</silva-external-sources:field>
+						<silva-external-sources:field id="capsule_title"/>
+						<silva-external-sources:field id="css_class"/>
+						<silva-external-sources:field id="css_style"/>
+						</silva-external-sources:fields>
+					</contentlayout:sourceblock>
 				</contentlayout:slot>
 				<contentlayout:slot id="one">
 					<contentlayout:slotblock css_class="" tag="div" />

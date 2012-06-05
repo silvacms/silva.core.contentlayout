@@ -1,5 +1,6 @@
 
 import sys
+import lxml.sax
 
 from five import grok
 from zope.component import getMultiAdapter
@@ -71,31 +72,48 @@ class ReferenceBlockHandler(BlockHandler):
             self._block = None
 
 
-class SourceFieldsHandler(xmlimport.SilvaBaseHandler):
+class SourceFieldHandler(xmlimport.SilvaBaseHandler):
+
+    proxy = None
+    field_id = None
 
     def startElementNS(self, name, qname, attrs):
-        if name == (NS_SOURCE_URI, 'fields'):
-            self._deserializers = getWrapper(
-                self.parent(),
-                IXMLFormSerialization).getDeserializers()
-
         if name == (NS_SOURCE_URI, 'field'):
-            self._field_id = attrs[(None, 'id')]
-            self._field_value = u''
+            self.proxy = lxml.sax.ElementTreeContentHandler()
+            self.proxy.startElementNS(name, qname, attrs)
+            self.field_id = attrs[(None, 'id')]
+        elif self.proxy is not None:
+            self.proxy.startElementNS(name, qname, attrs)
 
-    def characters(self, value):
-        if hasattr(self, '_field_value'):
-            self._field_value += unicode(value)
+    def characters(self, input_text):
+        text = input_text.strip()
+        if self.proxy is not None and text:
+            self.proxy.characters(text)
 
     def endElementNS(self, name, qname):
         if name == (NS_SOURCE_URI, 'field'):
-            deserializer = self._deserializers.get(self._field_id)
-            deserializer(self._field_value, self)
-            del self._field_id
-            del self._field_value
+            self.proxy.endElementNS(name, qname)
+            deserializer = self.parentHandler().deserializers[self.field_id]
+            deserializer(self.proxy.etree.getroot(), self.parentHandler())
+            del self.proxy
+        elif self.proxy is not None:
+            self.proxy.endElementNS(name, qname)
 
+
+class SourceFieldsHandler(xmlimport.SilvaBaseHandler):
+
+    def getOverrides(self):
+        return {(NS_SOURCE_URI, 'field'): SourceFieldHandler}
+
+    def startElementNS(self, name, qname, attrs):
         if name == (NS_SOURCE_URI, 'fields'):
-            del self._deserializers
+            self.deserializers = getWrapper(
+                self.parent(),
+                IXMLFormSerialization).getDeserializers()
+
+    def endElementNS(self, name, qname):
+        if name == (NS_SOURCE_URI, 'fields'):
+            del self.deserializers
 
 
 class SourceBlockHandler(BlockHandler):

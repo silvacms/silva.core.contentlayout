@@ -14,6 +14,8 @@ from ..model import PageModel, PageModelVersion
 from ..interfaces import IBlockManager, IBlockController
 from ..blocks.text import TextBlock
 from ..blocks.contents import ReferenceBlock
+from silva.core.references.interfaces import IReferenceService
+from silva.core.references.reference import ReferenceSet
 
 
 class PageModelImportTest(SilvaXMLTestCase):
@@ -60,7 +62,7 @@ class PageModelImportTest(SilvaXMLTestCase):
         self.assertEquals(IImage, restrictions[1].schema)
 
         # text block
-        self.assertEquals(2, len(slot2))
+        self.assertEquals(3, len(slot2))
         _, text_block = slot2[1]
         self.assertIsInstance(text_block, TextBlock)
         controller = getMultiAdapter((text_block, version, TestRequest()),
@@ -81,3 +83,15 @@ class PageModelImportTest(SilvaXMLTestCase):
         self.assertEquals('A joke is a very serious thing.', params.citation)
         self.assertEquals('Winston Churchill', params.author)
 
+        _, source_block_with_ref = slot2[2]
+        self.assertIsInstance(source_block_with_ref, SourceBlock)
+        controller = getMultiAdapter(
+            (source_block_with_ref, version, TestRequest()),
+            IBlockController)
+        params, _ = controller.manager.get_parameters(
+            source_block_with_ref.identifier)
+        ref_name = params.paths
+        ref_set = ReferenceSet(version, ref_name)
+        assert self.root.somefolder in ref_set
+        self.assertEquals(set(['Silva Publication', 'Silva Folder']),
+                          set(params.toc_types))
