@@ -58,7 +58,7 @@ class PageToModelReferenceTestCase(unittest.TestCase):
         ref = self.reference_service.get_reference(version,
                                                    name=PAGE_TO_DESIGN_REF_NAME)
         self.assertTrue(ref)
-        self.assertEquals(ref.target, self.model.get_content())
+        self.assertEquals(ref.target, self.model.get_silva_object())
 
         other_model = self._create_model('other')
         version.set_design(other_model)
@@ -66,7 +66,7 @@ class PageToModelReferenceTestCase(unittest.TestCase):
         ref = self.reference_service.get_reference(version,
                                                    name=PAGE_TO_DESIGN_REF_NAME)
         self.assertTrue(ref)
-        self.assertEquals(ref.target, other_model.get_content())
+        self.assertEquals(ref.target, other_model.get_silva_object())
 
     def test_delete_reference_when_deassociate(self):
         version = self._create_page_and_associate()
@@ -77,7 +77,7 @@ class PageToModelReferenceTestCase(unittest.TestCase):
 
     def test_page_model_removal_raise(self):
         self._create_page_and_associate()
-        IPublicationWorkflow(self.model.get_content()).close()
+        IPublicationWorkflow(self.model.get_silva_object()).close()
         def remove():
             self.root.manage_delObjects('model')
 
@@ -86,11 +86,11 @@ class PageToModelReferenceTestCase(unittest.TestCase):
     def test_page_is_removed(self):
         version = self._create_page_and_associate()
         refs = list(self.reference_service.get_references_to(
-            self.model.get_content(), name=PAGE_TO_DESIGN_REF_NAME))
+            self.model.get_silva_object(), name=PAGE_TO_DESIGN_REF_NAME))
         self.assertEquals(version, refs[0].source)
         self.root.manage_delObjects('apage')
         refs = list(self.reference_service.get_references_to(
-            self.model.get_content(), name=PAGE_TO_DESIGN_REF_NAME))
+            self.model.get_silva_object(), name=PAGE_TO_DESIGN_REF_NAME))
         self.assertFalse(refs)
         self.root.manage_delObjects('model')
 

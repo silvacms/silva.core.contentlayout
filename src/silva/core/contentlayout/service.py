@@ -7,6 +7,7 @@ from itertools import chain
 from zope.component import IFactory
 from zope.component import getUtility
 from zope.intid.interfaces import IIntIds
+from zope.lifecycleevent import IObjectAddedEvent
 
 from five import grok
 from AccessControl import ClassSecurityInfo
@@ -14,7 +15,7 @@ from App.class_init import InitializeClass
 from Acquisition import aq_parent
 
 from silva.core import conf as silvaconf
-from silva.core.interfaces import IAuthorizationManager
+from silva.core.interfaces import IAuthorizationManager, IRoot
 from silva.core.services.base import SilvaService
 from silva.translations import translate as _
 from zeam.form import silva as silvaforms
@@ -367,3 +368,11 @@ class ContentLayoutServiceManageBlocks(silvaforms.ZMIForm):
     actions = silvaforms.Actions(silvaforms.EditAction())
     dataManager = silvaforms.SilvaDataManager
     ignoreContent = False
+
+
+@grok.subscribe(interfaces.IContentLayoutService, IObjectAddedEvent)
+def configure_models(service, event):
+    root = aq_parent(service)
+    if event.oldParent is None and IRoot.providedBy(root):
+        extension = extensionRegistry.get_extension('silva.core.contentlayout')
+        extension.installer.configure_content(root, extension)

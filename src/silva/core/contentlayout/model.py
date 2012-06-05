@@ -11,16 +11,15 @@ from zope.component import getMultiAdapter
 from zope.i18n import translate
 
 from AccessControl import ClassSecurityInfo
-from AccessControl.security import checkPermission
 from App.class_init import InitializeClass
 from OFS.interfaces import IObjectWillBeRemovedEvent
 
 from silva.core import conf as silvaconf
+from silva.core.interfaces import IRoot
 from silva.core.interfaces.events import IContentClosedEvent
 from silva.core.interfaces.events import IContentPublishedEvent
 from silva.core.interfaces.events import IContentImported
-from silva.core.smi.content import ContentEditMenu
-from silva.core.smi.content import IEditScreen
+from silva.core.smi.content import EditMenu, IEditScreen
 from silva.core.views import views as silvaviews
 from silva.core.views.interfaces import ISilvaURL
 from silva.translations import translate as _
@@ -29,7 +28,7 @@ from silva.ui.menu import MenuItem
 from silva.ui.rest.base import Screen, PageREST
 from zeam.form import silva as silvaforms
 
-from Products.Silva.VersionedContent import VersionedContent
+from Products.Silva.VersionedContent import VersionedNonPublishable
 from Products.Silva.Version import Version
 
 from .interfaces import IPageModel, IPageModelVersion, PageModelFields
@@ -38,7 +37,6 @@ from .designs.design import DesignAccessors
 from silva.core.contentlayout.interfaces import IDesignAssociatedEvent, IPage,\
     IDesignDeassociatedEvent
 from silva.core.references.interfaces import IReferenceService
-from silva.core.interfaces.content import IVersion
 
 
 
@@ -54,7 +52,7 @@ class PageModelVersion(Version, DesignAccessors):
     _role = None
 
     def get_identifier(self):
-        return getUtility(IIntIds).register(self.get_content())
+        return getUtility(IIntIds).register(self.get_silva_object())
 
     def set_title(self, title):
         self._title = title
@@ -101,13 +99,14 @@ class PageModelVersion(Version, DesignAccessors):
 InitializeClass(PageModelVersion)
 
 
-class PageModel(VersionedContent):
+class PageModel(VersionedNonPublishable):
     """ A Silva Page Model is content type that represents a template
     where you can add slots / default blocks and restrictions.
     """
     grok.implements(IPageModel)
     silvaconf.version_class(PageModelVersion)
     silvaconf.priority(-20)
+    silvaconf.icon('model.png')
 
     meta_type = 'Silva Page Model'
     security = ClassSecurityInfo()
@@ -127,15 +126,14 @@ class PageModelEdit(PageREST):
     grok.adapts(Screen, IPageModel)
     grok.name('content')
     grok.implements(IEditScreen)
-    grok.require('silva.ReadSilvaContent')
+    grok.require('silva.ManageSilvaContentSettings')
 
     def payload(self):
-        if checkPermission('silva.ChangeSilvaContent', self.context):
-            version = self.context.get_editable()
-            if version is not None:
-                view = getMultiAdapter(
-                    (version, self.request), IJSView, name='content-layout')
-                return view(self, identifier=version.getId())
+        version = self.context.get_editable()
+        if version is not None:
+            view = getMultiAdapter(
+                (version, self.request), IJSView, name='content-layout')
+            return view(self, identifier=version.getId())
 
         url = getMultiAdapter((self.context, self.request), ISilvaURL).preview()
         return {"ifaces": ["preview"],
@@ -145,14 +143,15 @@ class PageModelEdit(PageREST):
 class PageModelDesignForm(silvaforms.SMIEditForm):
     grok.context(IPageModel)
     grok.name('template')
+    grok.require('silva.ManageSilvaContentSettings')
 
     label = _(u"Page template")
     fields = PageModelFields.omit('id')
 
 
 class PageModelDesignMenu(MenuItem):
-    grok.adapts(ContentEditMenu, IPageModel)
-    grok.require('silva.ChangeSilvaContent')
+    grok.adapts(EditMenu, IPageModel)
+    grok.require('silva.ManageSilvaContentSettings')
     grok.order(15)
 
     name = _('Template')
@@ -180,7 +179,7 @@ PAGE_TO_DESIGN_REF_NAME = u'page-to-design'
 def set_reference_to_page_model(page, event):
     if not IPageModelVersion.providedBy(event.design):
         return
-    model = event.design.get_content()
+    model = event.design.get_silva_object()
     reference_service = getUtility(IReferenceService)
     reference = reference_service.get_reference(
         page, name=PAGE_TO_DESIGN_REF_NAME, add=True)
@@ -209,5 +208,7 @@ def register(version, event):
 @grok.subscribe(IPageModelVersion, IObjectWillBeRemovedEvent)
 @grok.subscribe(IPageModelVersion, IContentClosedEvent)
 def unregister(version, event):
-    service = getUtility(IContentLayoutService)
-    service.unregister_page_model(version)
+    # If we remove the root, we can't unregister
+    if not IRoot.providedBy(event.object):
+        service = getUtility(IContentLayoutService)
+        service.unregister_page_model(version)

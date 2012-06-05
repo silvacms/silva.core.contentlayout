@@ -1,4 +1,6 @@
 
+from Acquisition import aq_base
+
 from five import grok
 from chameleon.zpt.template import PageTemplateFile
 from chameleon.tales import PythonExpr
@@ -97,13 +99,19 @@ class DesignAccessors(object):
     _design_name = None
 
     def get_design(self):
-        service = getUtility(IDesignLookup)
-        if self._design_name is not None:
-            return service.lookup_design_by_name(self._design_name)
-        return None
+        if not hasattr(aq_base(self), '_v_design'):
+            if self._design_name is not None:
+                service = getUtility(IDesignLookup)
+                self._v_design = service.lookup_design_by_name(
+                    self._design_name)
+            else:
+                self._v_design = None
+        return self._v_design
 
     def set_design(self, design):
         previous = self.get_design()
+        if hasattr(aq_base(self), '_v_design'):
+            del self._v_design
         if design is None:
             identifier = None
         else:
@@ -121,7 +129,7 @@ class DesignAccessors(object):
 def set_markers(content, event):
     target = content
     if IVersion.providedBy(content):
-        target = content.get_content()
+        target = content.get_silva_object()
     for marker in event.design.markers:
         alsoProvides(target, marker)
 
@@ -129,7 +137,7 @@ def set_markers(content, event):
 def remove_markers(content, event):
     target = content
     if IVersion.providedBy(content):
-        target = content.get_content()
+        target = content.get_silva_object()
     for marker in event.design.markers:
         if marker.providedBy(target):
             noLongerProvides(target, marker)
