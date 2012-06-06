@@ -13,6 +13,7 @@ from zope.i18n import translate
 from AccessControl import ClassSecurityInfo
 from App.class_init import InitializeClass
 from OFS.interfaces import IObjectWillBeRemovedEvent
+from OFS.Folder import Folder
 
 from silva.core import conf as silvaconf
 from silva.core.interfaces import IRoot
@@ -26,9 +27,10 @@ from silva.translations import translate as _
 from silva.ui.interfaces import IJSView
 from silva.ui.menu import MenuItem
 from silva.ui.rest.base import Screen, PageREST
+from silva.ui.rest.container.listing import ContainerListing
 from zeam.form import silva as silvaforms
 
-from Products.Silva.VersionedContent import VersionedNonPublishable
+from Products.Silva.VersionedContent import VersionedObject
 from Products.Silva.Version import Version
 
 from .interfaces import IPageModel, IPageModelVersion, PageModelFields
@@ -92,7 +94,7 @@ class PageModelVersion(Version, DesignAccessors):
 InitializeClass(PageModelVersion)
 
 
-class PageModel(VersionedNonPublishable):
+class PageModel(VersionedObject, Folder):
     """ A Silva Page Model is content type that represents a template
     where you can add slots / default blocks and restrictions.
     """
@@ -106,6 +108,13 @@ class PageModel(VersionedNonPublishable):
 
 
 InitializeClass(PageModel)
+
+
+class PageModelListing(ContainerListing):
+    grok.name('pagemodels')
+    grok.order(20)
+    title = _(u'Page Model(s)')
+    interface = IPageModel
 
 
 class PageModelAddForm(silvaforms.SMIAddForm):

@@ -13,7 +13,7 @@ from silva.core import conf as silvaconf
 from silva.core.conf.interfaces import ITitledContent
 from silva.core.conf.schema import Vocabulary, Term
 from silva.core.interfaces import IAddableContents
-from silva.core.interfaces import IVersion,  IVersionedNonPublishable
+from silva.core.interfaces import IVersion,  IVersionedObject
 from silva.core.interfaces import IViewableObject, ISilvaLocalService
 from silva.core.views.interfaces import IVirtualSite
 from silva.translations import translate as _
@@ -517,7 +517,7 @@ class IContentDefaultDesigns(interface.Interface):
       required=False)
 
 
-class IPageModel(IVersionedNonPublishable):
+class IPageModel(IVersionedObject):
    """ A page model.
 
    This versioned content is usable as a design by other pages and
