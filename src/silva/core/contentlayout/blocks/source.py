@@ -293,15 +293,16 @@ class ConvertSourceBlockAction(silvaforms.Action):
         factory = container.manage_addProduct['SilvaExternalSources']
         factory.manage_addSourceAsset(data['id'], data['title'])
         asset = container._getOb(data['id'])
-        factory = getWrapper(asset, IExternalSourceManager)
+        editable = asset.get_editable()
+        factory = getWrapper(editable, IExternalSourceManager)
         target = factory(form.request, name=api.block_controller.getSourceId())
         target.create()
         api.block_controller.copy(target)
-        asset.set_parameters_identifier(target.getId())
+        editable.set_parameters_identifier(target.getId())
         self.block_id = api.manager.replace(api.block_id, ReferenceBlock())
         self.block, self.block_controller = api.manager.get(self.block_id)
         self.block_controller.content = asset
-        notify(ObjectModifiedEvent(asset))
+        notify(ObjectModifiedEvent(editable))
         notify(ObjectModifiedEvent(form.context))
         return silvaforms.SUCCESS
 
