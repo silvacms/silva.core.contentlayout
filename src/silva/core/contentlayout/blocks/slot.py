@@ -1,6 +1,7 @@
 
 import re
 import uuid
+
 from five import grok
 from zope.interface import Interface, implementedBy
 from zope.publisher.interfaces.http import IHTTPRequest
@@ -45,9 +46,11 @@ def content_type_source(context):
                        token='',
                        title=_(u"No restriction"))]
    for addable in extensionRegistry.get_addables(requires=[IBlockable,]):
-      terms.append(SimpleTerm(value=implementedBy(addable['instance']),
-                              token=addable['name'],
-                              title=addable['name']))
+       terms.append(
+           SimpleTerm(
+               value=addable['interfaces'][0],
+               token=addable['name'],
+               title=addable['name']))
    return SimpleVocabulary(terms)
 
 @grok.provider(IContextSourceBinder)
