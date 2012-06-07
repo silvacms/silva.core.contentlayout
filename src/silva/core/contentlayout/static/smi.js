@@ -733,7 +733,7 @@
             if (selected !== null && selected.current.$block !== undefined) {
                 infrae.ui.ConfirmationDialog({
                     title: 'Remove block',
-                    message: 'Please confirm the permanent deletion of the block'
+                    message: 'Please confirm the permanent deletion of the component'
                 }).done(function () {
                     view.editor.remove(selected);
                 });
