@@ -20,12 +20,11 @@ from silva.core.interfaces import IRoot
 from silva.core.interfaces.events import IContentClosedEvent
 from silva.core.interfaces.events import IContentPublishedEvent
 from silva.core.interfaces.events import IContentImported
-from silva.core.smi.content import EditMenu, IEditScreen
 from silva.core.views import views as silvaviews
 from silva.core.views.interfaces import ISilvaURL
 from silva.translations import translate as _
 from silva.ui.interfaces import IJSView
-from silva.ui.menu import MenuItem
+from silva.ui.menu import MenuItem, ExpendableMenuItem, ContentMenu
 from silva.ui.rest.base import Screen, PageREST
 from silva.ui.rest.container.listing import ContainerListing
 from zeam.form import silva as silvaforms
@@ -135,7 +134,6 @@ class PageModelAddForm(silvaforms.SMIAddForm):
 class PageModelEdit(PageREST):
     grok.adapts(Screen, IPageModel)
     grok.name('content')
-    grok.implements(IEditScreen)
     grok.require('silva.ManageSilvaContentSettings')
 
     def payload(self):
@@ -157,6 +155,14 @@ class PageModelDesignForm(silvaforms.SMIEditForm):
 
     label = _(u"Page template")
     fields = PageModelFields.omit('id')
+
+
+class EditMenu(ExpendableMenuItem):
+    grok.adapts(ContentMenu, IPageModel)
+    grok.order(10)
+
+    name = _('Edit')
+    screen = PageModelEdit
 
 
 class PageModelDesignMenu(MenuItem):
