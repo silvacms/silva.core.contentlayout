@@ -8,13 +8,13 @@ from silva.core.references.interfaces import IReferenceService
 from silva.core.interfaces.adapters import IPublicationWorkflow
 
 from ..interfaces import IPageModel
-from ..testing import FunctionalLayer, FunctionalLayerWithService
+from ..testing import FunctionalLayerWithService
 from silva.core.contentlayout.model import PAGE_TO_DESIGN_REF_NAME
 from silva.core.references.reference import BrokenReferenceError
 
 
 class ModelsTestCase(unittest.TestCase):
-    layer = FunctionalLayer
+    layer = FunctionalLayerWithService
 
     def setUp(self):
         self.root = self.layer.get_application()
@@ -93,6 +93,9 @@ class PageToModelReferenceTestCase(unittest.TestCase):
             self.model.get_silva_object(), name=PAGE_TO_DESIGN_REF_NAME))
         self.assertFalse(refs)
         self.root.manage_delObjects('model')
+
+    def test_service_list_page_model(self):
+        assert False, "TBD"
 
 
 def test_suite():

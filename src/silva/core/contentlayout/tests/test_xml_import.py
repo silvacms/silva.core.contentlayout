@@ -9,18 +9,16 @@ from silva.core.interfaces.content import IImage
 from silva.core.contentlayout.blocks.slot import BlockSlot
 from silva.core.contentlayout.blocks.source import SourceBlock
 
-from ..testing import FunctionalLayer
+from ..testing import FunctionalLayerWithService
 from ..model import PageModel, PageModelVersion
 from ..interfaces import IBlockManager, IBlockController
 from ..blocks.text import TextBlock
 from ..blocks.contents import ReferenceBlock
-from silva.core.references.interfaces import IReferenceService
 from silva.core.references.reference import ReferenceSet
 
 
 class PageModelImportTest(SilvaXMLTestCase):
-
-    layer = FunctionalLayer
+    layer = FunctionalLayerWithService
 
     def setUp(self):
         self.root = self.layer.get_application()

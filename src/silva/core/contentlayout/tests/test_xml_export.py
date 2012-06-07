@@ -20,11 +20,11 @@ from ..blocks.contents import ReferenceBlock
 from ..blocks.slot import BlockSlot
 from ..blocks.text import TextBlock
 from ..designs.registry import registry
-from ..testing import FunctionalLayer
+from ..testing import FunctionalLayerWithService
 
 
 class TestExportPage(SilvaXMLTestCase):
-    layer = FunctionalLayer
+    layer = FunctionalLayerWithService
 
     def setUp(self):
         self.root = self.layer.get_application()
@@ -32,8 +32,8 @@ class TestExportPage(SilvaXMLTestCase):
         factory.manage_addFolder('exportbase', 'Export base')
         self.base_folder = self.root.exportbase
         factory = self.base_folder.manage_addProduct['silva.core.contentlayout']
-        factory.manage_addMockPage('apage', 'Page')
-        self.page = self.base_folder.apage.get_editable()
+        factory.manage_addMockPage('page', 'Page')
+        self.page = self.base_folder.page.get_editable()
         self.design = registry.lookup_design_by_name('adesign')
         self.page.set_design(self.design)
 
@@ -110,8 +110,8 @@ class TestExportPage(SilvaXMLTestCase):
 
     def test_export_page_model(self):
         factory = self.base_folder.manage_addProduct['silva.core.contentlayout']
-        factory.manage_addPageModel('pm', 'A Page Model')
-        page_model = self.base_folder.pm
+        factory.manage_addPageModel('model', 'A Page Model')
+        page_model = self.base_folder.model
         version = page_model.get_editable()
         version.set_design(self.design)
 

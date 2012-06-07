@@ -3,7 +3,7 @@ import re
 import uuid
 
 from five import grok
-from zope.interface import Interface, implementedBy
+from zope.interface import Interface
 from zope.publisher.interfaces.http import IHTTPRequest
 from zope import schema
 from zope.event import notify

@@ -115,8 +115,8 @@ class PageModel(xmlexport.SilvaVersionedContentProducer):
     grok.adapts(interfaces.IPageModel, Interface)
 
     def sax(self):
-        self.startElementNS(NS_URI, 'pagemodel',
-            {'id': self.context.id})
+        self.startElementNS(
+            NS_URI, 'pagemodel', {'id': self.context.id})
         self.workflow()
         self.versions()
         self.endElementNS(NS_URI, 'pagemodel')
@@ -126,7 +126,8 @@ class PageModelVersionProducer(BasePageProducer):
     grok.adapts(interfaces.IPageModelVersion, Interface)
 
     def sax(self):
-        self.startElementNS(NS_SILVA_URI, 'content', {'version_id': self.context.id})
+        self.startElementNS(
+            NS_SILVA_URI, 'content', {'version_id': self.context.id})
         self.metadata()
         self.design()
         self.endElementNS(NS_SILVA_URI, 'content')
@@ -150,8 +151,8 @@ class ContentRestrictionProvider(xmlexport.SilvaBaseProducer):
     grok.adapts(Content, Interface)
 
     def sax(self):
-        self.startElementNS(NS_URI, 'content-restriction',
-                            {'schema': self.get_schema()})
+        self.startElementNS(
+            NS_URI, 'content-restriction', {'schema': self.get_schema()})
         self.endElementNS(NS_URI, 'content-restriction')
 
     def get_schema(self):
