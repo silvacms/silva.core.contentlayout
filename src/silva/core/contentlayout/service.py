@@ -110,19 +110,22 @@ class ContentLayoutService(SilvaService):
     def list_page_model(self, context, meta_type):
         models = []
         resolve = getUtility(IIntIds).getObject
-        user_role = IAuthorizationManager(context).get_user_role()
-        for int_id in self._page_models.values():
+        user_role = 'Manager'
+        if context is not None:
+            user_role = IAuthorizationManager(context).get_user_role()
+        for identifier in self._page_models.values():
             try:
-                model = resolve(int_id)
+                model = resolve(identifier)
             except KeyError:
                 continue
             role = model.get_role()
-            if role is not None and \
-                    not roleinfo.isEqualToOrGreaterThan(user_role, role):
+            if (role is not None and
+                not roleinfo.isEqualToOrGreaterThan(user_role, role)):
                 continue
-            if (meta_type is None or
-                meta_type in model.get_allowed_content_types()):
-                models.append(model)
+            if (meta_type is None and
+                meta_type not in model.get_allowed_content_types()):
+                continue
+            models.append(model)
 
         return models
 
