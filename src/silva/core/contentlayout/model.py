@@ -116,6 +116,14 @@ class PageModelListing(ContainerListing):
     title = _(u'Page Model(s)')
     interface = IPageModel
 
+    @classmethod
+    def configuration(cls, screen):
+        cfg = super(PageModelListing, cls).configuration(screen)
+        cfg.update({
+                'content_match': ['equal', 'access', 'manage']
+                })
+        return cfg
+
 
 class PageModelAddForm(silvaforms.SMIAddForm):
     """ Add form for page models.
