@@ -24,6 +24,8 @@ from Products.SilvaExternalSources.interfaces import IExternalSourceManager
 from zeam.component import getWrapper
 from Products.SilvaExternalSources.silvaxml import NS_SOURCE_URI
 from silva.core.contentlayout.blocks.source import SourceBlock
+from Products.SilvaExternalSources.silvaxml.xmlimport import \
+    SourceParametersHandler
 
 
 silvaconf.namespace(NS_URI)
@@ -72,55 +74,13 @@ class ReferenceBlockHandler(BlockHandler):
             self._block = None
 
 
-class SourceFieldHandler(xmlimport.SilvaBaseHandler):
-
-    proxy = None
-    field_id = None
-
-    def startElementNS(self, name, qname, attrs):
-        if name == (NS_SOURCE_URI, 'field'):
-            self.proxy = lxml.sax.ElementTreeContentHandler()
-            self.proxy.startElementNS(name, qname, attrs)
-            self.field_id = attrs[(None, 'id')]
-        elif self.proxy is not None:
-            self.proxy.startElementNS(name, qname, attrs)
-
-    def characters(self, input_text):
-        text = input_text.strip()
-        if self.proxy is not None and text:
-            self.proxy.characters(text)
-
-    def endElementNS(self, name, qname):
-        if name == (NS_SOURCE_URI, 'field'):
-            self.proxy.endElementNS(name, qname)
-            deserializer = self.parentHandler().deserializers[self.field_id]
-            deserializer(self.proxy.etree.getroot(), self.parentHandler())
-            del self.proxy
-        elif self.proxy is not None:
-            self.proxy.endElementNS(name, qname)
-
-
-class SourceFieldsHandler(xmlimport.SilvaBaseHandler):
-
-    def getOverrides(self):
-        return {(NS_SOURCE_URI, 'field'): SourceFieldHandler}
-
-    def startElementNS(self, name, qname, attrs):
-        if name == (NS_SOURCE_URI, 'fields'):
-            self.deserializers = getWrapper(
-                self.parent(),
-                IXMLFormSerialization).getDeserializers()
-
-    def endElementNS(self, name, qname):
-        if name == (NS_SOURCE_URI, 'fields'):
-            del self.deserializers
-
-
 class SourceBlockHandler(BlockHandler):
     silvaconf.name('sourceblock')
 
+    source = None
+
     def getOverrides(self):
-        return {(NS_SOURCE_URI, 'fields'): SourceFieldsHandler}
+        return {(NS_SOURCE_URI, 'fields'): SourceParametersHandler}
 
     def startElementNS(self, name, qname, attrs):
         if name == (NS_URI, 'sourceblock'):
@@ -128,15 +88,15 @@ class SourceBlockHandler(BlockHandler):
             manager = getWrapper(self.parentHandler().parent(),
                                  IExternalSourceManager)
             identifier = attrs[(None, 'id')]
-            self._source = manager(request, name=identifier)
-            instance_identifier = self._source.new()
+            self.source = manager(request, name=identifier)
+            instance_identifier = self.source.new()
             self._block = SourceBlock(instance_identifier)
-            self.setResult(self._source)
+            self.setResult(self.source)
 
     def endElementNS(self, name, qname):
         if name == (NS_URI, 'sourceblock'):
             self.add_block(self._block)
-            del self._source
+            self.source = None
             del self._block
 
 

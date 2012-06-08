@@ -20,6 +20,8 @@ from ..slots.restrictions import BlockAll, CodeSourceName,Content
 
 from zeam.component.site import getWrapper
 from zeam.form.silva.interfaces import IXMLFormSerialization
+from Products.SilvaExternalSources.silvaxml.xmlexport import \
+    SourceParametersProducer
 
 
 class BasePageProducer(xmlexport.SilvaProducer):
@@ -61,11 +63,8 @@ class ReferenceBlockProducer(xmlexport.SilvaProducer):
         self.endElementNS(NS_URI, 'referenceblock')
 
 
-class SourceBlockProducer(xmlexport.SilvaProducer):
+class SourceBlockProducer(xmlexport.SilvaProducer, SourceParametersProducer):
     grok.adapts(SourceBlock, Interface)
-
-    def getHandler(self):
-        return self
 
     def sax(self, parent):
         manager = getWrapper(parent.context, IExternalSourceManager)
@@ -73,16 +72,7 @@ class SourceBlockProducer(xmlexport.SilvaProducer):
             self.getInfo().request, instance=self.context.identifier)
         self.startElementNS(NS_URI, 'sourceblock',
             {"id": source.getSourceId()})
-        self.startElementNS(NS_SOURCE_URI, 'fields')
-        for serializer in getWrapper(
-                source, IXMLFormSerialization).getSerializers():
-            self.startElementNS(
-                NS_SOURCE_URI,
-                'field',
-                {(None, 'id'): serializer.identifier})
-            serializer(self)
-            self.endElementNS(NS_SOURCE_URI, 'field')
-        self.endElementNS(NS_SOURCE_URI, 'fields')
+        self.source_parameters(source)
         self.endElementNS(NS_URI, 'sourceblock')
 
 
