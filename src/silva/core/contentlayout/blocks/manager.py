@@ -133,11 +133,18 @@ class BoundBlockManager(grok.MultiAdapter):
             if block is not None:
                 controller = getMultiAdapter(
                     (block, self.context, self.request), IBlockController)
-                yield {"block_id": block_id,
-                       "block_editable": controller.editable() and 'true',
-                       "block_data": controller.render(view)}
+                try:
+                    yield {"block_id": block_id,
+                           "block_editable": controller.editable() and 'true',
+                           "block_data": controller.render(view)}
+                except:
+                    logger.error(
+                        u'Error rendering block %s in page %s.',
+                        block_id, '/'.join(self.context.getPhysicalPath()))
             else:
-                logger.error(u'Missing block %s in document.' % block_id)
+                logger.error(
+                    u'Missing block %s in page %s.',
+                    block_id, '/'.join(self.context.getPhysicalPath()))
 
 
 class BlockManager(grok.Annotation):
