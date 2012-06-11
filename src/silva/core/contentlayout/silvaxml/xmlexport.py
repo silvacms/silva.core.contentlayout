@@ -2,13 +2,19 @@
 # Copyright (c) 2012 Infrae. All rights reserved.
 # See also LICENSE.txt
 
+import logging
+
 from five import grok
 from zope.interface import Interface
 
 from silva.core.editor.transform.silvaxml.xmlexport import TextProducerProxy
+from zeam.component.site import getWrapper
+
 from Products.Silva.silvaxml import xmlexport, NS_SILVA_URI
-from Products.SilvaExternalSources.silvaxml import NS_SOURCE_URI
 from Products.SilvaExternalSources.interfaces import IExternalSourceManager
+from Products.SilvaExternalSources.interfaces import SourceError
+from Products.SilvaExternalSources.silvaxml.xmlexport import \
+    SourceParametersProducer
 
 from . import NS_URI
 from .. import interfaces
@@ -18,10 +24,8 @@ from ..blocks.text import TextBlock
 from ..interfaces import IPageModelVersion
 from ..slots.restrictions import BlockAll, CodeSourceName,Content
 
-from zeam.component.site import getWrapper
-from zeam.form.silva.interfaces import IXMLFormSerialization
-from Products.SilvaExternalSources.silvaxml.xmlexport import \
-    SourceParametersProducer
+
+logger = logging.getLogger('silva.core.xml')
 
 
 class BasePageProducer(xmlexport.SilvaProducer):
@@ -68,8 +72,14 @@ class SourceBlockProducer(xmlexport.SilvaProducer, SourceParametersProducer):
 
     def sax(self, parent):
         manager = getWrapper(parent.context, IExternalSourceManager)
-        source = manager(
-            self.getInfo().request, instance=self.context.identifier)
+        try:
+            source = manager(
+                self.getInfo().request, instance=self.context.identifier)
+        except SourceError:
+            logger.error(
+                u"Broken source block in page %s",
+                '/'.join(parent.context.getPhysicalPath()))
+            return
         self.startElementNS(NS_URI, 'sourceblock',
             {"id": source.getSourceId()})
         self.source_parameters(source)
