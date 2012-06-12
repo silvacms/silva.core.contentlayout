@@ -6,10 +6,12 @@ from grokcore.chameleon.components import ChameleonPageTemplate
 from zope.cachedescriptors.property import CachedProperty
 from zope.component import getUtility, getMultiAdapter
 from zope.interface import Interface, implementedBy
+from zope.publisher.interfaces.browser import IBrowserRequest
 
 from infrae.rest import queryRESTComponent
 from silva.core.views.interfaces import IVirtualSite
 from silva.core.views import views as silvaviews
+from silva.core.views.httpheaders import ResponseHeaders
 from silva.ui.interfaces import IJSView
 from silva.ui.rest import REST
 from silva.ui.smi import SMIConfiguration
@@ -35,6 +37,13 @@ class EditPage(silvaviews.Page):
             if render is not None:
                 return render(edition=True)
         return u'<p>There is no template selected, please select one.</p>'
+
+
+class EditPageResponseHeaders(ResponseHeaders):
+    grok.adapts(IBrowserRequest, EditPage)
+
+    def cachable(self):
+        return False
 
 
 class EditorSMIConfiguration(silvaviews.Viewlet):
