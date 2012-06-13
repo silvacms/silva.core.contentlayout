@@ -1124,7 +1124,7 @@
                 return {
                     html_url: urls.url.expand({path: path}),
                     iframe: true,
-                    nocache: true,
+                    template_nocache: true,
                     editor: Editor(smi, urls, path),
                     shortcuts: smi.shortcuts,
                     events: {
