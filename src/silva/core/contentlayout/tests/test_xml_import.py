@@ -5,7 +5,7 @@ from zope.component import getMultiAdapter, getUtility
 from Products.Silva.tests.test_xml_import import SilvaXMLTestCase
 from silva.core.messages.interfaces import IMessageService
 from silva.core.contentlayout.slots import restrictions as restrict
-from silva.core.interfaces.content import IImage
+from silva.core.interfaces.content import IImage, ILinkVersion, ILink
 from silva.core.contentlayout.blocks.slot import BlockSlot
 from silva.core.contentlayout.blocks.source import SourceBlock
 
@@ -15,6 +15,7 @@ from ..interfaces import IBlockManager, IBlockController
 from ..blocks.text import TextBlock
 from ..blocks.contents import ReferenceBlock
 from silva.core.references.reference import ReferenceSet
+from silva.core.references.interfaces import IReferenceService
 
 
 class PageModelImportTest(SilvaXMLTestCase):
@@ -25,12 +26,9 @@ class PageModelImportTest(SilvaXMLTestCase):
         self.layer.login('editor')
 
     def test_import_page_model(self):
-        self.import_file('test_import_pagemodel.silvaxml', globs=globals())
-
-        message_service = getUtility(IMessageService)
-        errors = message_service.receive(TestRequest(), namespace='error')
-        self.assertEquals(0, len(errors),
-            "import warning: " + "\n".join(map(str, errors)))
+        self.import_file('test_import_pagemodel.silvaxml',
+                         globs=globals(),
+                         check_warnings=True)
 
         page_model = self.root._getOb('pm')
         self.assertTrue(page_model is not None)
@@ -93,3 +91,25 @@ class PageModelImportTest(SilvaXMLTestCase):
         assert self.root.somefolder in ref_set
         self.assertEquals(set(['Silva Publication', 'Silva Folder']),
                           set(params.toc_types))
+
+    def test_import_text_block_with_refs(self):
+        self.import_file('test_import_text_block_with_refs.silvaxml',
+                         globs=globals(), check_warnings=True)
+
+        model = self.root.pm.get_editable()
+        self.assertIsInstance(model, PageModelVersion)
+        manager = IBlockManager(model)
+        slot1 = manager.get_slot('one')
+        self.assertEquals(1, len(slot1))
+        _, text_block = slot1[0]
+        self.assertIsInstance(text_block, TextBlock)
+        ref_service = getUtility(IReferenceService)
+        references = list(ref_service.get_references_from(model))
+        self.assertEquals(1, len(references))
+        reference = references[0]
+        link = reference.target
+        self.assertTrue(ILink.providedBy(link))
+        self.assertEquals(2, len(reference.tags))
+        reference_type = reference.tags[0]
+        reference_name = reference.tags[1]
+        self.assertEquals("%s link" % text_block.identifier, reference_type)
