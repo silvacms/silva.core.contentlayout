@@ -60,7 +60,7 @@ class TestExportPage(SilvaXMLTestCase):
             xml, 'test_export_ref_block.silvaxml', globs=globals())
 
     def test_export_text_block(self):
-        block = TextBlock()
+        block = TextBlock(identifier='text block 1')
         controller = getMultiAdapter((block, self.page, TestRequest()),
                                      interfaces.IBlockController)
         controller.text = "<div>text</div>"
@@ -115,7 +115,7 @@ class TestExportPage(SilvaXMLTestCase):
         version = page_model.get_editable()
         version.set_design(self.design)
 
-        text_block = TextBlock()
+        text_block = TextBlock(identifier='text block 1')
         controller = getMultiAdapter((text_block, self.page, TestRequest()),
                                      interfaces.IBlockController)
         controller.text = "<div>text</div>"

@@ -179,7 +179,8 @@ class TextBlockHandler(BlockHandler):
 
     def startElementNS(self, name, qname, attrs):
         if name == (NS_URI, 'textblock'):
-            self.block = TextBlock()
+            identifier = attrs[(None, 'identifier')]
+            self.block = TextBlock(identifier)
             self.setResult(self.block)
 
     def endElementNS(self, name, qname):

@@ -53,7 +53,7 @@
           </metadata>
           <contentlayout:design id="adesign">
             <contentlayout:slot id="two">
-              <contentlayout:textblock>
+              <contentlayout:textblock identifier="text block 1">
                 <silva-core-editor:text>
                   <html:div>text</html:div>
                 </silva-core-editor:text>

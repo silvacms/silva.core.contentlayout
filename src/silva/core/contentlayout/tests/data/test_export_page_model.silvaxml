@@ -107,7 +107,7 @@
 					<contentlayout:design id="adesign">
 						<contentlayout:slot id="two">
 							<contentlayout:slotblock css_class="" tag="section" />
-							<contentlayout:textblock>
+							<contentlayout:textblock identifier="text block 1">
 								<silva-core-editor:text>
 									<html:div>text</html:div>
 								</silva-core-editor:text>

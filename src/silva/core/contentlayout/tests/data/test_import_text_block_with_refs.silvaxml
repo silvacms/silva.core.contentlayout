@@ -18,7 +18,7 @@
       <title>A Page Model</title>
       <contentlayout:design id="adesign">
         <contentlayout:slot id="one">
-          <contentlayout:textblock>
+          <contentlayout:textblock identifier="text block 1233520e-b4a9-11e1-8724-aa0004000a04">
             <silva-core-editor:text><html:p>
                 <html:a class="link" reference="alink"
                   reference-type="text block 1233520e-b4a9-11e1-8724-aa0004000a04 link"

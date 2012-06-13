@@ -55,7 +55,7 @@
 							<contentlayout:blockall-restriction />
 						</contentlayout:restrictions>
 					</contentlayout:slotblock>
-					<contentlayout:textblock>
+					<contentlayout:textblock identifier="text block fee825f4-b551-11e1-85a8-aa0004000a04">
 						<silva-core-editor:text>
 							<html:div>text</html:div>
 						</silva-core-editor:text>

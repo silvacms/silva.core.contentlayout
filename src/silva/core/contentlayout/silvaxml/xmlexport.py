@@ -90,7 +90,8 @@ class TextBlockProducer(xmlexport.SilvaProducer):
     grok.adapts(TextBlock, Interface)
 
     def sax(self, parent):
-        self.startElementNS(NS_URI, 'textblock')
+        self.startElementNS(NS_URI, 'textblock',
+                            {"identifier": self.context.identifier})
         TextProducerProxy(parent.context, self.context).sax(self)
         self.endElementNS(NS_URI, 'textblock')
 

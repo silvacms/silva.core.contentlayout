@@ -30,8 +30,11 @@ class TextBlock(Text, Block):
     grok.order(0)
     silvaconf.icon('text.png')
 
-    def __init__(self):
-        self.identifier = u'text block %s' % uuid.uuid1()
+    def __init__(self, identifier=None):
+        if identifier is None:
+            self.identifier = u'text block %s' % uuid.uuid1()
+        else:
+            self.identifier = unicode(identifier)
         super(TextBlock, self).__init__(self.identifier)
 
 
