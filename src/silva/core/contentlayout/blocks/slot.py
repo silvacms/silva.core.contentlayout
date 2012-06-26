@@ -42,16 +42,16 @@ class BlockSlot(Slot, Block):
 
 @grok.provider(IContextSourceBinder)
 def content_type_source(context):
-   terms = [SimpleTerm(value=None,
-                       token='',
-                       title=_(u"No restriction"))]
-   for addable in extensionRegistry.get_addables(requires=[IBlockable,]):
-       terms.append(
-           SimpleTerm(
-               value=addable['interfaces'][0],
-               token=addable['name'],
-               title=addable['name']))
-   return SimpleVocabulary(terms)
+    terms = [SimpleTerm(value=IBlockable,
+                        token='',
+                        title=_(u"No restriction"))]
+    for addable in extensionRegistry.get_addables(requires=[IBlockable,]):
+        terms.append(
+            SimpleTerm(
+                value=addable['interfaces'][0],
+                token=addable['name'],
+                title=addable['name']))
+    return SimpleVocabulary(terms)
 
 @grok.provider(IContextSourceBinder)
 def code_source_source(context):
