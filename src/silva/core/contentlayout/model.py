@@ -111,7 +111,7 @@ InitializeClass(PageModel)
 
 class PageModelListing(ContainerListing):
     grok.name('pagemodels')
-    grok.order(20)
+    grok.order(200)
     title = _(u'Page Model(s)')
     interface = IPageModel
 

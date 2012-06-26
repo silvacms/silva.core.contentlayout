@@ -2,6 +2,8 @@
 import re
 import uuid
 
+from AccessControl import getSecurityManager
+
 from five import grok
 from zope.interface import Interface
 from zope.publisher.interfaces.http import IHTTPRequest
@@ -285,6 +287,17 @@ def default_content_restriction(form):
 def default_block_all(form):
     return _slot_restrictions_block_controller(form).get_block_all()
 
+def require(permission):
+    """Helper that verify you have a given permission in the scope of
+    a form.
+    """
+
+    def available(form):
+        manager = getSecurityManager()
+        return manager.checkPermission(permission, form.context)
+
+    return available
+
 
 class AddBlockSlot(silvaforms.RESTPopupForm):
     grok.adapts(IBlockSlot, IPageModelVersion)
@@ -294,6 +307,8 @@ class AddBlockSlot(silvaforms.RESTPopupForm):
     description = _(u'You can configure slot options and restrictions here.')
 
     fields = silvaforms.Fields(IBlockSlotFields)
+    fields['tag'].available = require('View Management Screens')
+    fields['css_class'].available = require('View Management Screens')
     fields['cs_whitelist'].mode = 'multipickup'
     fields['cs_whitelist'].defaultValue = default_cs_whitelist
     fields['cs_blacklist'].mode = 'multipickup'

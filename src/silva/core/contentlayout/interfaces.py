@@ -186,7 +186,7 @@ class ITitledPage(ITitledContent):
     """
     design = schema.Choice(
         title=_(u"Template"),
-        description=_(u"Select a template for your document."),
+        description=_(u"Select a template for your Page."),
         source=design_source)
 
 
@@ -541,20 +541,21 @@ class IPageModelFields(ITitledContent):
     """
     design = schema.Choice(
        title=_(u"Template"),
-       description=_(u"Select a template for your document."),
+       description=_(u"Select a template for your Page Model."),
        source=design_source)
 
     allowed_content_types = schema.Set(
        title=_(u"Allowed Content Types"),
        description=_(u"Only the selected content types will accept "
-                     u"it as a template."),
+                     u"this Page Model as a template."),
        required=True,
        value_type=schema.Choice(
           source=content_type_source_without_placeholder))
 
     role = schema.Choice(
         title=_(u"Minimum role"),
-        description=_(u"Only users with this role can associate it."),
+        description=_(u"Only users with this role can utilise this "
+                      u"Page Model."),
         source=editor_roles_source,
         required=False)
 
