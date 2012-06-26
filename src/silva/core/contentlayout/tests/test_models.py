@@ -94,6 +94,16 @@ class PageToModelReferenceTestCase(unittest.TestCase):
         self.assertFalse(refs)
         self.root.manage_delObjects('model')
 
+    def test_page_model_not_cached(self):
+        version = self._create_page_and_associate()
+        model_content = self.model.get_silva_object()
+        self.assertEquals(model_content.get_viewable(), version.get_design())
+        IPublicationWorkflow(model_content).new_version()
+        editable = model_content.get_editable()
+        self.assertNotEquals(editable, version.get_design())
+        IPublicationWorkflow(model_content).publish()
+        self.assertEquals(editable, version.get_design())
+
     def test_service_list_page_model(self):
         assert False, "TBD"
 

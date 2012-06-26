@@ -52,6 +52,10 @@ class IDesign(interface.Interface):
       """Method called before the design is rendered.
       """
 
+class ICachableDesign(interface.Interface):
+    """ Marker to tell if the design won't change and can be cached
+    """
+
 
 class InvalidDesign(ValueError):
    pass

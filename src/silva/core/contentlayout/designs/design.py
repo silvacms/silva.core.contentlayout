@@ -19,6 +19,7 @@ from silva.fanstatic import need
 from ..interfaces import IDesign, IDesignLookup, IPage, IEditionResources
 from ..interfaces import IDesignAssociatedEvent, IDesignDeassociatedEvent
 from ..interfaces import DesignAssociatedEvent, DesignDeassociatedEvent
+from ..interfaces import ICachableDesign
 from .expressions import SlotExpr
 
 
@@ -41,7 +42,7 @@ class TemplateFile(PageTemplateFile):
 class Design(object):
     """A Design.
     """
-    grok.implements(IDesign)
+    grok.implements(IDesign, ICachableDesign)
     grok.context(Interface)
     grok.provides(IDesign)
     grok.title('Template')
@@ -100,12 +101,14 @@ class DesignAccessors(object):
 
     def get_design(self):
         if not hasattr(aq_base(self), '_v_design'):
+            design = None
             if self._design_name is not None:
                 service = getUtility(IDesignLookup)
-                self._v_design = service.lookup_design_by_name(
+                design = service.lookup_design_by_name(
                     self._design_name)
-            else:
-                self._v_design = None
+                if ICachableDesign.providedBy(design):
+                    self._v_design = design
+            return design
         return self._v_design
 
     def set_design(self, design):
