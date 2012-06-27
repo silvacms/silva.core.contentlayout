@@ -29,6 +29,9 @@
 .contentlayout-component {
   padding: 2em;
 }
+.contentlayout-component.selected {
+  padding: 0;
+}
 .contentlayout-component span {
   padding-left: 0.5em;
 }
@@ -47,8 +50,8 @@
 }
 
 .contentlayout-placeholder {
-  background: rgb(200, 200, 200); /*IE 8*/
-  background: rgba(200, 200, 200, 0.5);
+  background: rgb(220, 220, 220); /*IE 8*/
+  background: rgba(220, 220, 220, 0.5);
 }
 
 #contentlayout-cover-layer {
@@ -60,36 +63,47 @@
 }
 
 #contentlayout-edit-layer {
-  background: rgb(200, 200, 200); /*IE 8*/
-  background: rgba(200, 200, 200, 0.5);
+  background: rgb(220, 220, 220); /*IE 8*/
+  background: rgba(220, 220, 220, 0.5);
   z-index: 500000;
   position: absolute;
 }
 
-#contentlayout-edit-layer a {
-  display: block;
-  /* background: url(icons.png) no-repeat; */
-  color: white;
-  cursor: pointer;
-  float: left;
-  /* height: 16px; */
-  /* width: 16px; */
-  /* margin: 1px 2px; */
-  margin: 2px;
-  padding: 4px;
-}
 #contentlayout-actions {
+  background: #fff url(gradient20m.png) repeat-x top;
+  border-radius: 3px;
+  border: 1px solid #777;
+  float: right;
+  margin: 2px;
   position: relative;
 }
+#contentlayout-edit-layer a {
+  background: transparent url(icons.png) no-repeat;
+  display: block;
+  color: black;
+  cursor: pointer;
+  float: left;
+  padding: 2px 4px 1px 20px;
+}
+#contentlayout-edit-block:hover {
+  background-color: #fff;
+  border-radius: 3px 0px 0px 3px;
+}
 #contentlayout-edit-block {
-  /* background-position: -32px 0px  !important; */
-  background-color: green;
+  background-position: 0 -40px !important;
+  border-right: 1px solid #777;
+}
+#contentlayout-move-block:hover {
+  background-color: #fff;
 }
 #contentlayout-move-block {
-  /* background-position: 0px 0px !important; */
-  background-color: blue;
+  background-position: 0 0px !important;
+  border-right: 1px solid #777;
+}
+#contentlayout-remove-block:hover {
+  background-color: #fff;
+  border-radius: 0px 3px 3px 0px;
 }
 #contentlayout-remove-block {
-  /* background-position: -16px 0px !important; */
-  background-color: red;
+  background-position: 0 -20px !important;
 }

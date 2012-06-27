@@ -314,6 +314,7 @@
         var validator = null;
         var deferred = $.Deferred();
         var finishing = false;
+        var $body = $('body');
 
         var save = function(event) {
             finish(event, false);
@@ -337,6 +338,7 @@
             };
             finishing = true;
             view.shortcuts.remove('editor', 'adding');
+            $body.css('cursor', 'inherit');
 
             return (validator !== null && failed !== true
              ?  validator.done(function() {
@@ -443,6 +445,7 @@
 
         var bootstrap = function() {
             $component.addClass('selected');
+            $body.css('cursor', 'move');
             view.$body.css('cursor', 'move');
 
             view.slots.events.snapshot();
