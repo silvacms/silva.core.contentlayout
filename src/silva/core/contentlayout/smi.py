@@ -191,9 +191,9 @@ class AddableBlock(REST):
 
     def GET(self):
         if self.slot_id is None:
-            raise BadRequest('missing slot identifier')
+            raise BadRequest('Missing slot identifier')
         if self.block_name is None:
-            raise BadRequest('missing block name')
+            raise BadRequest('Missing block name')
 
         service = getUtility(IBlockGroupLookup)
         configuration = service.lookup_block_by_name(self, self.block_name)
@@ -214,6 +214,7 @@ class BlockREST(REST):
 
     slot = None
     slot_id = None
+    slot_validate = True
     block = None
     block_id = None
     block_controller = None
@@ -224,17 +225,18 @@ class BlockREST(REST):
             (self.context, self.request), IBoundBlockManager)
 
     def publishTraverse(self, request, name):
-        if self.slot is None:
+        if self.slot_id is None:
             slot_id = urllib.unquote(name)
-            design = self.context.get_design()
-            if slot_id not in design.slots:
-                raise NotFound('Unknown slot %s' % slot_id)
-            self.slot = design.slots[slot_id]
+            if self.slot_validate:
+                design = self.context.get_design()
+                if slot_id not in design.slots:
+                    raise NotFound('Unknown slot %s' % slot_id)
+                self.slot = design.slots[slot_id]
             self.slot_id = slot_id
             self.__name__ = '/'.join((self.__name__, name))
             return self
 
-        if self.slot is not None and self.block is None:
+        if self.slot_id is not None and self.block_id is None:
             block_id = urllib.unquote(name)
             block, block_controller = self.manager.get(block_id)
             if block is not None:
@@ -292,9 +294,9 @@ class MovableBlock(BlockREST):
         """Validate that you can move that block to this slot and index.
         """
         if self.slot_id is None:
-            raise BadRequest('missing slot identifier')
+            raise BadRequest('Missing slot identifier')
         if self.block_id is None:
-            raise BadRequest('missing block identifier')
+            raise BadRequest('Missing block identifier')
 
         success = self.slot.is_existing_block_allowed(
             self.block, self.block_controller, self.context)
@@ -304,9 +306,11 @@ class MovableBlock(BlockREST):
 class RemoveBlock(BlockREST):
     grok.name('delete')
 
+    slot_validate = False
+
     def GET(self):
         if self.block_id is None:
-            raise BadRequest('missing block identifier')
+            raise BadRequest('Missing block identifier')
         self.manager.remove(self.block_id)
         return self.json_response({'content': {'success': True}})
 

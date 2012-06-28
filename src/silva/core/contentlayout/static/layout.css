@@ -13,10 +13,15 @@ div.contentlayout-components div.contentlayout-component {
   margin: 0.1em;
   padding: 0.1em;
 }
-div.contentlayout-components div.contentlayout-component:hover,
+div.contentlayout-components div.contentlayout-component:hover {
+  border: 1px dotted #555555;
+  background-color: #D2E5F9;
+  cursor: pointer;
+}
 div.contentlayout-components div.selected {
   border: 1px dotted #555555;
-  cursor: pointer;
+  background-color: #D2E5F9;
+  cursor: move !important;
 }
 div.contentlayout-components div.contentlayout-component span {
   padding-left: 0.5em;

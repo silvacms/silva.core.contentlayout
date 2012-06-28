@@ -334,8 +334,11 @@ class IEditionResources(IDefaultBrowserLayer):
 class IEditorResources(ISilvaUIDependencies):
    """SMI plugin content-layout
    """
-   silvaconf.resource('smi.css')
-   silvaconf.resource('smi.js')
+   silvaconf.resource('layout.css')
+   silvaconf.resource('layout.js')
+   silvaconf.resource('layout.components.js')
+   silvaconf.resource('layout.modes.js')
+   silvaconf.resource('layout.utils.js')
 
 
 class IBlockable(IViewableObject):

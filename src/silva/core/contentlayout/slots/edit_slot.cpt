@@ -2,7 +2,7 @@
   <tal:tag tal:replace="structure slot.opening_tag()" />
   <div class="contentlayout-edit-block"
        data-block-id="${block.block_id}"
-       data-block-editable="${block.block_editable}"
+       data-block-editable="${block.block_editable and 'true' or 'false'}"
        tal:repeat="block slot.blocks()"
        tal:content="structure block.block_data">
   </div>

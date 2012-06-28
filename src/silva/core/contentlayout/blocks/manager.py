@@ -135,7 +135,7 @@ class BoundBlockManager(grok.MultiAdapter):
                     (block, self.context, self.request), IBlockController)
                 try:
                     yield {"block_id": block_id,
-                           "block_editable": controller.editable() and 'true',
+                           "block_editable": bool(controller.editable()),
                            "block_data": controller.render(view)}
                 except:
                     logger.error(
