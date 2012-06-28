@@ -104,16 +104,17 @@ class AddSourceBlockAction(silvaforms.Action):
     block_id = None
 
     def get_extra_payload(self, form):
-        if self.block_id is None:
+        adding = form.__parent__
+        if adding.block_id is None:
             return {}
         try:
-            data = form.controller.render()
+            data = adding.block_controller.render()
         except SourceError, error:
             data = error.to_html()
         return {
-            'block_id': self.block_id,
+            'block_id': adding.block_id,
             'block_data': data,
-            'block_editable': form.controller.editable()}
+            'block_editable': adding.block_controller.editable()}
 
     def available(self, form):
         return form.controller is not None
@@ -124,10 +125,8 @@ class AddSourceBlockAction(silvaforms.Action):
         status = form.controller.create()
         if status is silvaforms.FAILURE:
             return silvaforms.FAILURE
-        manager = IBlockManager(form.context)
-        self.block_id = manager.add(
-            form.__parent__.slot_id,
-            SourceBlock(form.controller.getId()))
+        adding = form.__parent__
+        adding.add(SourceBlock(form.controller.getId()))
         notify(ObjectModifiedEvent(form.context))
         form.send_message(_(u"Added new source component"))
         return silvaforms.SUCCESS

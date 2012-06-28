@@ -15,7 +15,7 @@
         return prepared;
     };
 
-    var SlotsUI = function($document, $slots, selector, $target) {
+    var Slots = function($document, $slots, selector, $target) {
         var current = null,
             slot = null,
             slots = [],
@@ -33,6 +33,11 @@
             move: infrae.deferred.Callbacks(),
             drop: infrae.deferred.Callbacks(),
             cancel: infrae.deferred.Callbacks()
+        };
+        var sort = function() {
+          slots.sort(function (a, b) {
+              return b.zIndex - a.zIndex;
+          });
         };
         var api = {
             events: {
@@ -72,6 +77,8 @@
             },
             add: function(slot) {
                 slots.push(slot);
+                sort();
+                console.log(slots);
             },
             size: function() {
                 return slots.length;
@@ -142,6 +149,7 @@
         $slots.each(function() {
             slots.push(infrae.smi.layout.components.Slot($(this), selector));
         });
+        sort();
         $target.bind('mousedown.contentlayout', function(event) {
             if (dnd.started && !dnd.dragued) {
                 // This is a click
@@ -186,40 +194,6 @@
             }, 0);
         });
         return api;
-    };
-
-    var LostBlocksUI = function(view, data) {
-        var $lost = null;
-
-        var add = function(slot) {
-            if ($lost === null) {
-                $lost = $('<div id="contentlayout-lost-slots" />');
-                view.$body.append($lost);
-            };
-            $lost.append(slot.$slot);
-            slot.update();
-            view.slots.add(slot);
-        };
-
-        for (var name in data) {
-            var slot = infrae.smi.layout.components.Slot(),
-                block,
-                lost = data[name],
-                index = 0;
-
-            slot.set({slot_id: name});
-            for (; index < lost.length; index++) {
-                block = infrae.smi.layout.components.Block();
-                block.set(lost[index]);
-                slot.$slot.append(block.$block);
-                slot.add(block);
-            };
-            if (index) {
-                add(slot);
-            };
-        };
-        return {
-        };
     };
 
     $(document).bind('load-smiplugins', function(event, smi) {
@@ -277,10 +251,13 @@
                 var $components = $(data.blocks.available);
                 var $listing = $components.children('.contentlayout-components');
                 var $layer = $(data.layer);
+                var active = null,
+                    stopping = false;
                 var events = {
                     resize: infrae.deferred.Callbacks(),
                     components: infrae.deferred.Callbacks(),
-                    viewchange: infrae.deferred.Callbacks()
+                    modestart: infrae.deferred.Callbacks(),
+                    modestop: infrae.deferred.Callbacks()
                 };
 
                 return {
@@ -296,8 +273,11 @@
                         onresize: function(callback) {
                             events.resize.add(callback);
                         },
-                        onviewchange: function(callback) {
-                            events.viewchange.add(callback);
+                        onmodestart: function(callback) {
+                            events.modestart.add(callback);
+                        },
+                        onmodestop: function(callback) {
+                            events.modestop.add(callback);
                         }
                     },
                     components: {
@@ -324,26 +304,52 @@
                             };
                         }
                     },
+                    mode: function(mode) {
+                        if (!stopping) {
+                            var context = this,
+                                options = [].splice.call(arguments, 1, 2);
+
+                            var start = function() {
+                                active = mode.apply(context, options);
+                                active.promise().always(function() {
+                                    events.modestop.invoke(active);
+                                    active = null;
+                                    stopping = false;
+                                });
+                                events.modestart.invoke(active);
+                            };
+
+                            if (active !== null) {
+                                stopping = true;
+                                active.cancel();
+                                active.promise().always(start);
+                            } else {
+                                start();
+                            };
+                        };
+                    },
                     render: function($content) {
                         this.shortcuts.create('editor', $content, true);
 
                         this.ready.done(function(view) {
                             view.$body = view.$document.find('body');
-                            view.slots = SlotsUI(
+                            view.slots = Slots(
                                 view.$document,
                                 view.$body.find('.contentlayout-edit-slot'),
                                 '> .contentlayout-edit-block',
                                 $(document).add(view.$document));
 
-                            if (data.blocks.lost) {
-                                view.lost = LostBlocksUI(view, data.blocks.lost);
-                            };
-
-                            var mode = infrae.smi.layout.NormalMode(view, $layer, $components);
-                            var cover = infrae.smi.layout.CoverMode(view);
-                            var timer = null;
+                            // The order in which the features are initialized is imported
+                            // (because of the order in which the resize event is called).
+                            infrae.smi.layout.CoverFeature(view);
+                            infrae.smi.layout.EditorFeature(view, $layer, $components);
+                            view.events.onresize(function () {
+                                view.slots.update();
+                            });
+                            infrae.smi.layout.LostFeature(view, data.blocks.lost);
 
                             // When the iframe is resize, positions need to be updated.
+                            var timer = null;
                             view.$window.bind('resize', function() {
                                 if (timer !== null) {
                                     clearTimeout(timer);
@@ -352,9 +358,6 @@
                                     events.resize.invoke(view);
                                     timer = null;
                                 }, 50);
-                            });
-                            view.events.onresize(function () {
-                                view.slots.update();
                             });
 
                         });

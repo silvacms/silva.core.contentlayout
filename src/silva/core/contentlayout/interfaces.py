@@ -338,6 +338,7 @@ class IEditorResources(ISilvaUIDependencies):
    silvaconf.resource('layout.js')
    silvaconf.resource('layout.components.js')
    silvaconf.resource('layout.modes.js')
+   silvaconf.resource('layout.features.js')
    silvaconf.resource('layout.utils.js')
 
 

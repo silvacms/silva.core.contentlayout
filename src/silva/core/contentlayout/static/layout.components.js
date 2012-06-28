@@ -1,11 +1,28 @@
 
 (function($, infrae, jsontemplate) {
 
+    var readZIndex = function($element) {
+        // Copy and fix jquery.ui broken zIndex function.
+		var position, value;
+		while ($element.length && $element[0].ownerDocument !== null) {
+			position = $element.css("position");
+			if (position === "absolute" || position === "relative" || position === "fixed") {
+				value = parseInt($element.css("zIndex"), 10);
+				if (!isNaN(value) && value !== 0) {
+					return value;
+				};
+			};
+			$element = $element.parent();
+		};
+        return 0;
+    };
+
     // Base object representing a block or a slot.
     var Element = function($element) {
         var $current = $element;
         var placeholding = null;
         var api = {
+            zIndex: 0,
             placeholder: {
                 active: function() {
                     return false;
@@ -99,6 +116,7 @@
                 // To simplify computation.
                 this.bottom = this.top + this.height;
                 this.right = this.left + this.width;
+                this.zIndex = api.zIndex = readZIndex($current);
             }
         };
         return api;
@@ -138,6 +156,7 @@
         var api = {},
             blocks = [],
             element,
+            zIndex = 0,
             editable = true;
 
         if ($slot !== undefined) {
@@ -150,6 +169,7 @@
         } else {
             $slot = $('<div class="contentlayout-edit-slot"></div>');
             editable = false;
+            zIndex = 99;
         };
         if (!blocks.length && editable) {
             $slot.addClass('contentlayout-empty-slot');
@@ -159,6 +179,7 @@
         $.extend(api, element, {
             id: $slot.data('slot-id'),
             $slot: $slot,
+            zIndex: zIndex,
             editable: editable,
             horizontal: false,
             update: function() {
