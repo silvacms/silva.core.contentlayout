@@ -36,6 +36,9 @@
   border-radius: 3px;
   overflow: hidden;
 }
+#contentlayout-lost-slots .contentlayout-edit-block {
+  min-height: 20px;
+}
 
 .contentlayout-component {
   padding: 2em;
