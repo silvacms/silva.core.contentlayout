@@ -14,7 +14,6 @@ div.contentlayout-components div.contentlayout-component {
   padding: 0.1em;
 }
 div.contentlayout-components div.contentlayout-component:hover {
-  border: 1px dotted #555555;
   background-color: #D2E5F9;
   cursor: pointer;
 }
