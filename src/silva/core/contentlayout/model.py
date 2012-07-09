@@ -22,9 +22,10 @@ from silva.core.interfaces.events import IContentPublishedEvent
 from silva.core.interfaces.events import IContentImported
 from silva.core.views import views as silvaviews
 from silva.core.views.interfaces import ISilvaURL
+from silva.core.smi.settings import Settings
 from silva.translations import translate as _
 from silva.ui.interfaces import IJSView
-from silva.ui.menu import MenuItem, ExpendableMenuItem, ContentMenu
+from silva.ui.menu import ExpendableMenuItem, ContentMenu
 from silva.ui.rest.base import Screen, PageREST
 from silva.ui.rest.container.listing import ContainerListing
 from zeam.form import silva as silvaforms
@@ -148,13 +149,16 @@ class PageModelEdit(PageREST):
                 "html_url": url}
 
 
-class PageModelDesignForm(silvaforms.SMIEditForm):
+class PageModelDesignForm(silvaforms.SMISubForm):
     grok.context(IPageModel)
-    grok.name('template')
-    grok.require('silva.ManageSilvaContentSettings')
+    grok.view(Settings)
+    grok.order(10)
 
     label = _(u"Page template")
-    fields = PageModelFields.omit('id')
+    fields = PageModelFields.omit('id', 'title')
+    actions = silvaforms.Actions(
+        silvaforms.CancelAction(),
+        silvaforms.EditAction())
 
 
 class EditMenu(ExpendableMenuItem):
@@ -163,15 +167,6 @@ class EditMenu(ExpendableMenuItem):
 
     name = _('Edit')
     screen = PageModelEdit
-
-
-class PageModelDesignMenu(MenuItem):
-    grok.adapts(EditMenu, IPageModel)
-    grok.require('silva.ManageSilvaContentSettings')
-    grok.order(15)
-
-    name = _('Template')
-    screen = PageModelDesignForm
 
 
 class PageModelView(silvaviews.View):
