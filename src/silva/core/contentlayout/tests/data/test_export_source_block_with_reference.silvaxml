@@ -16,7 +16,6 @@
 				<silva-extra:creationtime>YYYY-MM-DDTHH:MM:SS
 				</silva-extra:creationtime>
 				<silva-extra:creator>manager</silva-extra:creator>
-				<silva-extra:hide_from_tocs>do not hide</silva-extra:hide_from_tocs>
 				<silva-extra:keywords />
 				<silva-extra:language />
 				<silva-extra:lastauthor>unknown</silva-extra:lastauthor>
@@ -24,6 +23,11 @@
 				</silva-extra:modificationtime>
 				<silva-extra:subject />
 			</set>
+            <set xmlns:silvasettings="http://infrae.com/namespace/metadata/silva-settings" id="silva-settings">
+              <silvasettings:hide_from_tocs>
+                do not hide
+              </silvasettings:hide_from_tocs>
+            </set>
 		</metadata>
 		<content>
 			<page id="page">
@@ -48,8 +52,6 @@
 							<silva-extra:creationtime>YYYY-MM-DDTHH:MM:SS
 							</silva-extra:creationtime>
 							<silva-extra:creator>manager</silva-extra:creator>
-							<silva-extra:hide_from_tocs>do not hide
-							</silva-extra:hide_from_tocs>
 							<silva-extra:keywords />
 							<silva-extra:language />
 							<silva-extra:lastauthor>unknown</silva-extra:lastauthor>
@@ -57,6 +59,11 @@
 							</silva-extra:modificationtime>
 							<silva-extra:subject />
 						</set>
+                        <set xmlns:silvasettings="http://infrae.com/namespace/metadata/silva-settings" id="silva-settings">
+                          <silvasettings:hide_from_tocs>
+                            do not hide
+                          </silvasettings:hide_from_tocs>
+                        </set>
 					</metadata>
 					<contentlayout:design id="adesign">
 						<contentlayout:slot id="two">
