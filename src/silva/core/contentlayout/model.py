@@ -149,16 +149,13 @@ class PageModelEdit(PageREST):
                 "html_url": url}
 
 
-class PageModelDesignForm(silvaforms.SMISubForm):
+class PageModelDesignForm(silvaforms.SMISubEditForm):
     grok.context(IPageModel)
     grok.view(Settings)
     grok.order(10)
 
     label = _(u"Page template")
     fields = PageModelFields.omit('id', 'title')
-    actions = silvaforms.Actions(
-        silvaforms.CancelAction(),
-        silvaforms.EditAction())
 
 
 class EditMenu(ExpendableMenuItem):
