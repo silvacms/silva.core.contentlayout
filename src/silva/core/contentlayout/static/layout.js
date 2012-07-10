@@ -229,7 +229,7 @@
                         if (actions && actions.entries.length) {
                             var $menu = $('<div class="actions content-actions"><ol></ol></div>');
                             $menu.find('ol').render({data: actions});
-                            $content.prepend($menu);
+                            $content.append($menu);
                         };
                         infrae.ui.selection.disable($content);
                     },
