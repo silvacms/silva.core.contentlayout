@@ -51,7 +51,7 @@
 
     var EditorFeature = function(view, $layer, $components) {
         var selected = null;
-        var $actions = $layer.find('#contentlayout-actions');
+        var $actions = $layer.find('.contentlayout-actions');
         var $edit = $actions.find('#contentlayout-edit-block');
 
         var api = {
@@ -152,19 +152,34 @@
         return api;
     };
 
-    var LostFeature = function(view, data) {
+    var LostFeature = function(view, template, data) {
         var $lost = null,
+            $slots = null,
             slots = [];
 
         var add = function(slot) {
             // Add a new slot the to the $lost component.
             if ($lost === null) {
-                $lost = $('<div id="contentlayout-lost-slots">'
-                          + '<h2>Place those components</h2></div>');
+                $lost = $(template);
+                $lost.find('#contentlayout-remove-all-blocks').bind('click', function(event) {
+                    var selected = [];
+
+                    infrae.utils.each(slots, function(slot) {
+                        for (var index=slot.size(); index--;) {
+                            selected.push({
+                                slot: slot,
+                                current: slot.get(index)});
+                        };
+                    });
+                    view.mode(infrae.smi.layout.RemoveAllMode, selected);
+                    event.preventDefault();
+                    event.stopPropagation();
+                });
+                $slots = $lost.children('#contentlayout-lost-blocks');
                 view.$body.append($lost);
                 place();
             };
-            $lost.append(slot.$slot);
+            $slots.append(slot.$slot);
             slot.update();
             slots.push(slot);
             view.slots.add(slot);
@@ -174,7 +189,7 @@
             if ($lost !== null) {
                 var available_width = view.$body.width();
                 var current_width = $lost.width();
-                var new_width = Math.max(current_width, Math.min(500, available_width - 200));
+                var new_width = Math.min(500, available_width - 300);
 
                 if (new_width != current_width) {
                     $lost.width(new_width);
@@ -199,6 +214,7 @@
                 if (!slots.length) {
                     $lost.remove();
                     $lost = null;
+                    $slots = null;
                 };
             };
         };

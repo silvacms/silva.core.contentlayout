@@ -171,6 +171,7 @@
             editable = false;
             zIndex = 99;
         };
+
         if (!blocks.length && editable) {
             $slot.addClass('contentlayout-empty-slot');
         };

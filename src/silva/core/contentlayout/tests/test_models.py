@@ -27,89 +27,80 @@ class ModelsTestCase(unittest.TestCase):
         self.assertNotEqual(model, None)
         self.assertTrue(verifyObject(IPageModel, model))
 
+    def test_service_list_page_model(self):
+        assert False, "TBD"
 
-class PageToModelReferenceTestCase(unittest.TestCase):
+
+class ModelReferenceTestCase(unittest.TestCase):
     layer = FunctionalLayerWithService
 
     def setUp(self):
         self.root = self.layer.get_application()
         self.layer.login('manager')
-        self.reference_service = getUtility(IReferenceService)
-        self.model = self._create_model('model')
 
-    def _create_model(self, identifier):
         factory = self.root.manage_addProduct['silva.core.contentlayout']
-        factory.manage_addPageModel(identifier, 'Model')
-        model_content = self.root._getOb(identifier, None)
-        assert model_content, 'model creation failed'
-        IPublicationWorkflow(model_content).publish()
-        return model_content.get_viewable()
-
-    def _create_page_and_associate(self):
-        factory = self.root.manage_addProduct['silva.core.contentlayout']
-        factory.manage_addMockPage('apage', None)
-        page = self.root._getOb('apage')
-        version = page.get_editable()
-        version.set_design(self.model)
-        return version
+        factory.manage_addPageModel('model', 'Model')
+        IPublicationWorkflow(self.root.model).publish()
+        factory.manage_addMockPage('page', None)
+        version = self.root.page.get_editable()
+        version.set_design(self.root.model.get_viewable())
 
     def test_create_reference_when_associate(self):
-        version = self._create_page_and_associate()
-        ref = self.reference_service.get_reference(version,
-                                                   name=PAGE_TO_DESIGN_REF_NAME)
-        self.assertTrue(ref)
-        self.assertEquals(ref.target, self.model.get_silva_object())
+        get_reference = getUtility(IReferenceService).get_reference
+        version = self.root.page.get_editable()
+        reference = get_reference(version, name=PAGE_TO_DESIGN_REF_NAME)
+        self.assertIsNot(reference, None)
+        self.assertEquals(reference.target, self.root.model)
 
-        other_model = self._create_model('other')
-        version.set_design(other_model)
+        factory = self.root.manage_addProduct['silva.core.contentlayout']
+        factory.manage_addPageModel('other', 'Other Model')
+        IPublicationWorkflow(self.root.other).publish()
+        version.set_design(self.root.other.get_viewable())
 
-        ref = self.reference_service.get_reference(version,
-                                                   name=PAGE_TO_DESIGN_REF_NAME)
-        self.assertTrue(ref)
-        self.assertEquals(ref.target, other_model.get_silva_object())
+        reference = get_reference(version, name=PAGE_TO_DESIGN_REF_NAME)
+        self.assertIsNot(reference, None)
+        self.assertEquals(reference.target, self.root.other)
 
     def test_delete_reference_when_deassociate(self):
-        version = self._create_page_and_associate()
+        get_reference = getUtility(IReferenceService).get_reference
+        version = self.root.page.get_editable()
+
         version.set_design(None)
-        ref = self.reference_service.get_reference(version,
-                                                   name=PAGE_TO_DESIGN_REF_NAME)
-        self.assertFalse(ref)
+        reference = get_reference(version, name=PAGE_TO_DESIGN_REF_NAME)
+        self.assertIs(reference, None)
 
     def test_page_model_removal_raise(self):
-        self._create_page_and_associate()
-        IPublicationWorkflow(self.model.get_silva_object()).close()
-        def remove():
+        IPublicationWorkflow(self.root.model).close()
+
+        with self.assertRaises(BrokenReferenceError):
             self.root.manage_delObjects('model')
 
-        self.assertRaises(BrokenReferenceError, remove)
-
     def test_page_is_removed(self):
-        version = self._create_page_and_associate()
-        refs = list(self.reference_service.get_references_to(
-            self.model.get_silva_object(), name=PAGE_TO_DESIGN_REF_NAME))
-        self.assertEquals(version, refs[0].source)
-        self.root.manage_delObjects('apage')
-        refs = list(self.reference_service.get_references_to(
-            self.model.get_silva_object(), name=PAGE_TO_DESIGN_REF_NAME))
-        self.assertFalse(refs)
+        version = self.root.page.get_editable()
+        get_references_to = getUtility(IReferenceService).get_references_to
+        references = list(get_references_to(
+                self.root.model, name=PAGE_TO_DESIGN_REF_NAME))
+        self.assertEquals(len(references), 1)
+        self.assertEquals(version, references[0].source)
+        self.root.manage_delObjects('page')
+
+        references = list(get_references_to(
+                self.root.model, name=PAGE_TO_DESIGN_REF_NAME))
+        self.assertEquals(len(references), 0)
         self.root.manage_delObjects('model')
 
     def test_page_model_not_cached(self):
-        version = self._create_page_and_associate()
-        model_content = self.model.get_silva_object()
-        self.assertEquals(model_content.get_viewable(), version.get_design())
-        IPublicationWorkflow(model_content).new_version()
-        editable = model_content.get_editable()
+        version = self.root.page.get_editable()
+        self.assertEquals(self.root.model.get_viewable(), version.get_design())
+        IPublicationWorkflow(self.root.model).new_version()
+        editable = self.root.model.get_editable()
         self.assertNotEquals(editable, version.get_design())
-        IPublicationWorkflow(model_content).publish()
+        IPublicationWorkflow(self.root.model).publish()
         self.assertEquals(editable, version.get_design())
-
-    def test_service_list_page_model(self):
-        assert False, "TBD"
 
 
 def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(ModelsTestCase))
-    suite.addTest(unittest.makeSuite(PageToModelReferenceTestCase))
+    suite.addTest(unittest.makeSuite(ModelReferenceTestCase))
     return suite

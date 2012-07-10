@@ -39,6 +39,10 @@
 #contentlayout-lost-slots .contentlayout-edit-block {
   min-height: 20px;
 }
+#contentlayout-lost-blocks {
+  border-bottom: 1px solid #999;
+  margin: 4px 0px;
+}
 
 .contentlayout-component {
   padding: 2em;
@@ -81,7 +85,7 @@
   position: absolute;
 }
 
-#contentlayout-actions {
+.contentlayout-actions {
   background: #fff url(gradient20m.png) repeat-x top;
   border-radius: 3px;
   border: 1px solid #777;
@@ -89,7 +93,7 @@
   margin: 2px;
   position: relative;
 }
-#contentlayout-edit-layer a {
+.contentlayout-actions a {
   background: transparent url(icons.png) no-repeat;
   display: block;
   color: black;
@@ -112,10 +116,12 @@
   background-position: 0 0px !important;
   border-right: 1px solid #777;
 }
+#contentlayout-remove-all-blocks:hover,
 #contentlayout-remove-block:hover {
   background-color: #fff;
   border-radius: 0px 3px 3px 0px;
 }
+#contentlayout-remove-all-blocks,
 #contentlayout-remove-block {
   background-position: 0 -20px !important;
 }

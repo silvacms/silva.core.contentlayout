@@ -199,6 +199,29 @@
         };
     };
 
+    var RemoveAllMode = function(original) {
+        var view = this;
+
+        var deferred = infrae.ui.ConfirmationDialog({
+            title: 'Remove all components',
+            message: 'Please confirm the permanent deletion of all selected components ?'});
+
+        infrae.utils.each(original, function(original) {
+            deferred = deferred.pipe(function() {
+                return view.transport.remove(original);
+            }, function() {
+                return $.Deferred().reject();
+            });
+        });
+
+        return {
+            type: 'remove',
+            cancel: function() {},
+            save: function() {},
+            promise: deferred.promise
+        };
+    };
+
     var MoveMode = function(original) {
         var view = this;
         var $placeholder = $('<div class="contentlayout-placeholder"></div>');
@@ -358,6 +381,7 @@
     $.extend(infrae.smi.layout, {
         AddMode: AddMode,
         RemoveMode: RemoveMode,
+        RemoveAllMode: RemoveAllMode,
         MoveMode: MoveMode
     });
 

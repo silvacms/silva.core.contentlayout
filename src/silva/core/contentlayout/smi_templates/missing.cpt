@@ -1,0 +1,16 @@
+<div id="contentlayout-lost-slots"
+     i18n:domain="silva">
+  <h2 i18n:translate="">Spare components</h2>
+  <p i18n:translate="">
+    Below is a list of components left over from when switching the
+    template, you can drag them into a new position on your page, or
+    remove them completely.
+  </p>
+  <div id="contentlayout-lost-blocks">
+  </div>
+  <div class="contentlayout-actions">
+    <a id="contentlayout-remove-all-blocks" title="Remove all components"
+       i18n:attributes="title">Remove all</a>
+    <div style="clear:both"></div>
+  </div>
+</div>

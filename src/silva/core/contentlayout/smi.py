@@ -50,20 +50,27 @@ class EditorSMIConfiguration(silvaviews.Viewlet):
     grok.viewletmanager(SMIConfiguration)
 
 
+class EditorTemplates(object):
+
+    layer = ChameleonPageTemplate(
+        filename="smi_templates/layer.cpt")
+    components = ChameleonPageTemplate(
+        filename="smi_templates/components.cpt")
+    missing = ChameleonPageTemplate(
+        filename="smi_templates/missing.cpt")
+
+
 class EditorJSView(grok.MultiAdapter):
     grok.provides(IJSView)
     grok.adapts(Interface, Interface)
     grok.name('content-layout')
 
-    layer = ChameleonPageTemplate(
-        filename="smi_templates/layer.cpt")
-    blocks = ChameleonPageTemplate(
-        filename="smi_templates/blocks.cpt")
 
     def __init__(self, context, request):
         self.context = context
         self.request = request
         self.screen = None
+        self.templates = EditorTemplates()
 
     def namespace(self):
         return {}
@@ -72,37 +79,44 @@ class EditorJSView(grok.MultiAdapter):
         return {"view": self,
                 "target_language": self.screen.language}
 
-    def __call__(self, screen, identifier=None):
+    def update(self, screen):
         service = getUtility(IBlockGroupLookup)
-        self.root_url = IVirtualSite(self.request).get_root_url()
         self.screen = screen
+        self.available = False
+        self.block_missing = {}
         self.block_groups = service.lookup_block_groups(self)
+        self.root_url = IVirtualSite(self.request).get_root_url()
 
-        available = False
         design = self.context.get_design()
-        missing_blocks = {}
-        if design is not None:
-            render = design(self.context, self.request, [self.context])
-            if render is not None:
-                render.edition = True
-                available = True
-                slot = Slot()
-                blocks = getMultiAdapter(
-                    (self.context, self.request), IBoundBlockManager)
-                missing_slots = set(blocks.manager.get_slot_ids()).difference(
-                    set(render.slots.keys()))
-                for slot_id in missing_slots:
-                    missing_blocks[slot_id] = list(
-                        blocks.render(
-                            SlotView(slot_id, slot, render, self.context)))
+        if design is None:
+            return
+        render = design(self.context, self.request, [self.context])
+        if render is None:
+            return
+        render.edition = True
+        self.available = True
+        slot = Slot()
+        blocks = getMultiAdapter(
+            (self.context, self.request), IBoundBlockManager)
+        slot_missing = set(blocks.manager.get_slot_ids()).difference(
+            set(design.slots.keys()))
+        for slot_id in slot_missing:
+            missing = list(
+                blocks.render(SlotView(slot_id, slot, render, self.context)))
+            if missing:
+                self.block_missing[slot_id] = missing
+
+    def __call__(self, screen, identifier=None):
+        self.update(screen)
 
         return {
             "ifaces": ["content-layout"],
-            "available": available,
-            "layer": self.layer.render(self),
-            "blocks": {
-                "available": self.blocks.render(self),
-                "lost": missing_blocks},
+            "available": self.available,
+            "missing": self.block_missing,
+            "templates": {
+                "layer": self.templates.layer.render(self),
+                "components": self.templates.components.render(self),
+                "missing": self.templates.missing.render(self)},
             "identifier": identifier}
 
 

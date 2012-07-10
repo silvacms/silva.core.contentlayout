@@ -78,7 +78,6 @@
             add: function(slot) {
                 slots.push(slot);
                 sort();
-                console.log(slots);
             },
             size: function() {
                 return slots.length;
@@ -248,9 +247,9 @@
             factory: function($content, data, smi) {
                 var path = smi.opened.path + (data.identifier ? '/' + data.identifier : '');
                 var opened = false;
-                var $components = $(data.blocks.available);
+                var $components = $(data.templates.components);
                 var $listing = $components.children('.contentlayout-components');
-                var $layer = $(data.layer);
+                var $layer = $(data.templates.layer);
                 var active = null,
                     stopping = false;
                 var events = {
@@ -346,7 +345,7 @@
                             view.events.onresize(function () {
                                 view.slots.update();
                             });
-                            infrae.smi.layout.LostFeature(view, data.blocks.lost);
+                            infrae.smi.layout.LostFeature(view, data.templates.missing, data.missing);
 
                             // When the iframe is resize, positions need to be updated.
                             var timer = null;
