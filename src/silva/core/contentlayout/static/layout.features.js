@@ -24,11 +24,15 @@
         };
 
         var cover = function(selected) {
-            if (selected.current) {
-                api.$cover.zIndex(selected.current.zIndex + 5);
+            if (selected !== undefined) {
+                if (selected.current) {
+                    api.$cover.zIndex(selected.current.zIndex + 5);
+                } else {
+                    api.$cover.zIndex(selected.slot.zIndex + 5);
+                };
             } else {
-                api.$cover.zIndex(selected.slot.zIndex + 5);
-            };
+                api.$cover.zIndex(5);
+            }
         };
 
         api.add();
@@ -37,11 +41,14 @@
             event.preventDefault();
         });
         view.$body.disableSelection();
-        view.slots.events.onenter(function () {
+        view.slots.events.onenter(function() {
             cover(this);
         });
-        view.slots.events.onchange(function () {
+        view.slots.events.onchange(function() {
             cover(this);
+        });
+        view.slots.events.onleave(function() {
+            cover();
         });
         view.events.onresize(function() {
             api.update();
