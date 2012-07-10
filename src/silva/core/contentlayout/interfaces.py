@@ -165,14 +165,17 @@ def design_source(form):
    else:
       candidates = registry.lookup_design(form.context)
 
+   get_icon = iconRegistry.get_icon_by_identifier
+
    def make_term(design):
       identifier = design.get_identifier()
+      namespace = 'silva.core.contentlayout.designs'
+      if IPageModelVersion.providedBy(design):
+         namespace = 'silva.core.contentlayout.models'
       try:
-         icon = base_url + iconRegistry.get_icon_by_identifier(
-            ('silva.core.contentlayout.designs', identifier))
+         icon = base_url + get_icon((namespace, design.get_identifier(True)))
       except ValueError:
-         icon = base_url + iconRegistry.get_icon_by_identifier(
-            ('silva.core.contentlayout.designs', 'default'))
+         icon = base_url + get_icon((namespace, 'default'))
       return Term(value=design,
                   token=identifier,
                   title=design.get_title(),

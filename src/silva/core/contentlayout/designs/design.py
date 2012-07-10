@@ -61,7 +61,7 @@ class Design(object):
         self.edition = False
 
     @classmethod
-    def get_identifier(cls):
+    def get_identifier(cls, design=False):
         return grok.name.bind().get(cls)
 
     @classmethod

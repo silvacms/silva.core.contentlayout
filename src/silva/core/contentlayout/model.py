@@ -52,7 +52,12 @@ class PageModelVersion(Version, DesignAccessors):
     _allowed_content_types = None
     _role = None
 
-    def get_identifier(self):
+    def get_identifier(self, design=False):
+        if design:
+            design = self.get_design()
+            if design is not None:
+                return design.get_identifier(design=True)
+            return 'default'
         return getUtility(IIntIds).register(self.get_silva_object())
 
     def set_role(self, role):

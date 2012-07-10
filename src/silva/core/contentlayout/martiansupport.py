@@ -29,28 +29,31 @@ from Products.Silva.icon import registry as icon_registry
 def default_name(component, module=None, **data):
     return component.__name__.lower()
 
-def register_icon(self, config, cls, name, icon_path):
+def register_icon(self, config, cls, name, icons):
     """Register an icon.
     """
-    if not icon_path:
+    if not icons:
         return
-    base_dir = os.path.dirname(sys.modules[cls.__module__].__file__)
-    fs_path = os.path.join(base_dir, icon_path)
-    identifier = ''.join((
-            self.icon_prefix,
-            name.strip().replace(' ', '-'),
-            os.path.splitext(icon_path)[1] or '.png'))
 
-    factory = IconResourceFactory(name, fs_path)
-    config.action(
-        discriminator = ('resource', identifier, IHTTPRequest, Interface),
-        callable = provideAdapter,
-        args = (factory, (IHTTPRequest,), Interface, identifier))
+    base_path = os.path.dirname(sys.modules[cls.__module__].__file__)
+    for key, icon_prefix in self.icon_prefix.items():
+        icon_path = icons.get(key)
+        if not icon_path:
+            continue
+        fs_path = os.path.join(base_path, icon_path)
+        identifier = ''.join((
+                icon_prefix,
+                name.strip().replace(' ', '-'),
+                os.path.splitext(icon_path)[1] or '.png'))
 
-    resource_name = "++resource++" + identifier
+        factory = IconResourceFactory(name, fs_path)
+        config.action(
+            discriminator = ('resource', identifier, IHTTPRequest, Interface),
+            callable = provideAdapter,
+            args = (factory, (IHTTPRequest,), Interface, identifier))
 
-    icon_registry.register((self.icon_namespace, name), resource_name)
-    cls.icon = resource_name
+        icon_name = "++resource++" + identifier
+        icon_registry.register((self.icon_namespaces[key], name), icon_name)
 
 
 class RegisterDesignGrokker(martian.ClassGrokker):
@@ -58,8 +61,12 @@ class RegisterDesignGrokker(martian.ClassGrokker):
     martian.directive(silvaconf.icon)
     extension = '.upt'
 
-    icon_namespace = 'silva.core.contentlayout.designs'
-    icon_prefix = 'icon-designs-'
+    icon_namespaces = {
+        None: 'silva.core.contentlayout.designs',
+        'models': 'silva.core.contentlayout.models'}
+    icon_prefix = {
+        None: 'icon-designs-',
+        'models': 'icon-models-'}
 
     def grok(self, name, factory, module_info, **kw):
         # Need to store the module info to look for a template
@@ -114,8 +121,10 @@ class RegistryBlockGrokker(martian.ClassGrokker):
     martian.directive(grok.name, get_default=default_name)
     martian.directive(silvaconf.icon)
 
-    icon_namespace = 'silva.core.contentlayout.blocks'
-    icon_prefix = 'icon-blocks-'
+    icon_namespaces = {
+        None: 'silva.core.contentlayout.blocks'}
+    icon_prefix = {
+        None: 'icon-blocks-'}
 
     def execute(self, factory, name, icon, config, **kw):
         if icon is not None:
@@ -130,7 +139,8 @@ class AssociateBlockViewGrokker(TemplateGrokker):
 
 # Register default icons
 for category, icon in (
-    (('silva.core.contentlayout.designs', 'default'), 'design.png'),):
+    (('silva.core.contentlayout.designs', 'default'), 'design.png'),
+    (('silva.core.contentlayout.models', 'default'), 'model.png')):
     icon_registry.register(
         category,
         '++static++/silva.core.contentlayout/' + icon)
