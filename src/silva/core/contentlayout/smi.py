@@ -3,7 +3,7 @@ import urllib
 
 from five import grok
 from grokcore.chameleon.components import ChameleonPageTemplate
-from zope.cachedescriptors.property import CachedProperty
+from zope.cachedescriptors.property import Lazy
 from zope.component import getUtility, getMultiAdapter
 from zope.interface import Interface, implementedBy
 from zope.publisher.interfaces.browser import IBrowserRequest
@@ -219,7 +219,7 @@ class BlockREST(REST):
     block_id = None
     block_controller = None
 
-    @CachedProperty
+    @Lazy
     def manager(self):
         return getMultiAdapter(
             (self.context, self.request), IBoundBlockManager)
