@@ -1,31 +1,28 @@
 
 import sys
-import lxml.sax
 
 from five import grok
-from zope.component import getMultiAdapter
+from zope.publisher.browser import TestRequest
 
 from Products.Silva.silvaxml import xmlimport, NS_SILVA_URI
-from zope.publisher.browser import TestRequest
+from Products.SilvaExternalSources.interfaces import IExternalSourceManager
+from Products.SilvaExternalSources.silvaxml import NS_SOURCE_URI
+from Products.SilvaExternalSources.silvaxml.xmlimport import \
+    SourceParametersHandler
+
 from silva.core import conf as silvaconf
 from silva.core.editor.transform.silvaxml import NS_EDITOR_URI
 from silva.core.editor.transform.silvaxml.xmlimport import TextHandler
+from zeam.component import getWrapper
+
+from . import NS_URI
 from ..designs.registry import registry
 from ..interfaces import IBlockManager, IBlockController
 from ..blocks.slot import BlockSlot
 from ..blocks.text import TextBlock
 from ..blocks.contents import ReferenceBlock
+from ..blocks.source import SourceBlock
 from ..slots import restrictions
-
-
-from . import NS_URI
-from zeam.form.silva.interfaces import IXMLFormSerialization
-from Products.SilvaExternalSources.interfaces import IExternalSourceManager
-from zeam.component import getWrapper
-from Products.SilvaExternalSources.silvaxml import NS_SOURCE_URI
-from silva.core.contentlayout.blocks.source import SourceBlock
-from Products.SilvaExternalSources.silvaxml.xmlimport import \
-    SourceParametersHandler
 
 
 silvaconf.namespace(NS_URI)
@@ -60,7 +57,7 @@ class ReferenceBlockHandler(BlockHandler):
             self._block = block
 
             def set_target(target):
-                controller = getMultiAdapter(
+                controller = getWrapper(
                     (block, self.parentHandler().parent(), TestRequest()),
                     IBlockController)
                 controller.content = target

@@ -15,31 +15,32 @@ class Slot(object):
         self._restrictions = restrictions or []
 
     def is_new_block_allowed(self, configuration, context):
-        restriction = self.get_new_restriction(configuration)
-        if restriction is not None:
-            return restriction.allow_configuration(configuration, self, context)
+        for rule in self.get_new_restrictions(configuration):
+            status = rule.allow_configuration(configuration, self, context)
+            if status is not None:
+                return status
         return True
 
     def is_existing_block_allowed(self, block, controller, context):
-        restriction = self.get_existing_restriction(block)
-        if restriction is not None:
-            return restriction.allow_controller(controller, self, context)
+        for rule in self.get_existing_restrictions(block):
+            status = rule.allow_controller(controller, self, context)
+            if status is not None:
+                return status
         return True
 
     def get_restrictions(self):
         return list(self._restrictions)
 
-    def get_new_restriction(self, configuration):
-        return self._get_restriction(configuration.block)
+    def get_new_restrictions(self, configuration):
+        return self._get_restrictions(configuration.block)
 
-    def get_existing_restriction(self, block):
-        return self._get_restriction(block.__class__)
+    def get_existing_restrictions(self, block):
+        return self._get_restrictions(block.__class__)
 
-    def _get_restriction(self, block_type):
+    def _get_restrictions(self, block_type):
         for restriction in self._restrictions:
             if restriction.apply_to(block_type):
-                return restriction
-        return None
+                yield restriction
 
 
 class SlotView(object):

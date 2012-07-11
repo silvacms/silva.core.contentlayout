@@ -90,13 +90,13 @@ class ISlot(interface.Interface):
        """Return restrictions list set on this slot.
        """
 
-   def get_new_restriction(configuration):
+   def get_new_restrictions(configuration):
        """Lookup for the given ``configuration`` an existing
        :py:interface:`~silva.core.contentlayout.interfaces.ISlotRestriction`.
        Return the restriction or None if no restriction is found.
        """
 
-   def get_existing_restriction(block):
+   def get_existing_restrictions(block):
        """Lookup for the given ``block`` an existing
        :py:interface:`~silva.core.contentlayout.interfaces.ISlotRestriction`.
        Return the restriction or None if no restriction is found.
@@ -119,7 +119,8 @@ class ISlotRestriction(interface.Interface):
        created using the given ``configuration`` to be added in the
        given ``slot``, located on the given ``context`` object.
 
-       Must return True to allow the block, false to prevent it.
+       Must return True to allow the block, False to prevent it, and
+       None if it has nothing to say.
        """
 
    def allow_controller(controller, slot, context):
@@ -127,7 +128,8 @@ class ISlotRestriction(interface.Interface):
         ``controller`` to be moved or added to the given ``slot``,
         located on the given ``context`` object.
 
-        Must return True to allow the block, false to prevent it.
+        Must return True to allow the block, False to prevent it, and
+        None if it has nothing to say.
         """
 
    def apply_to(block_type):

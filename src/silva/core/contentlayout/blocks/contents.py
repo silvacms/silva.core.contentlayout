@@ -135,15 +135,16 @@ class AddExternalBlock(silvaforms.RESTPopupForm):
         silvaforms.CancelAction(),
         AddExternalBlockAction())
 
-    def __init__(self, context, request, configuration, restriction):
+    def __init__(self, context, request, configuration, restrictions):
         super(AddExternalBlock, self).__init__(context, request)
-        self.restriction = restriction
+        self.restrictions = restrictions
         self.configuration = configuration
 
     def update(self):
         field = self.baseFields['content'].clone()
-        if IContentSlotRestriction.providedBy(self.restriction):
-            field.schema = self.restriction.schema
+        for restriction in self.restrictions:
+            if IContentSlotRestriction.providedBy(restriction):
+                field.schema = restriction.schema
         self.fields = silvaforms.Fields(field)
 
 
@@ -181,9 +182,9 @@ class EditExternalBlock(AddExternalBlock):
         EditExternalBlockAction())
     ignoreContent = False
 
-    def __init__(self, block, context, request, controller, restriction):
+    def __init__(self, block, context, request, controller, restrictions):
         super(AddExternalBlock, self).__init__(context, request)
-        self.restriction = restriction
+        self.restrictions = restrictions
         self.block = block
         self.setContentData(controller)
 

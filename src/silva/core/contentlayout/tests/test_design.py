@@ -4,9 +4,8 @@ import unittest
 from Products.Silva.ExtensionRegistry import extensionRegistry
 from zope.interface.verify import verifyObject, verifyClass
 
-from .. import restrictions, Slot, Block
-from ..interfaces import ISlot, IDesign, IDesignLookup
 from ..designs.registry import registry as design_registry
+from ..interfaces import IDesign, IDesignLookup
 from ..testing import FunctionalLayer
 
 
@@ -16,7 +15,7 @@ class DesignTestCase(unittest.TestCase):
     def setUp(self):
         self.root = self.layer.get_application()
         factory = self.root.manage_addProduct['silva.core.contentlayout']
-        factory.manage_addMockPage('page', 'Page')
+        factory.manage_addMockupPage('page', 'Page')
 
     def test_registry(self):
         """Test the different lookup methods on the registry.
@@ -41,30 +40,8 @@ class DesignTestCase(unittest.TestCase):
         self.assertItemsEqual(
             design_registry.lookup_design_by_addable(
                 self.root,
-                extensionRegistry.get_addable('Mock Page')),
+                extensionRegistry.get_addable('Mockup Page')),
             demo_designs)
-
-    def test_slot(self):
-        """Test slot definition.
-        """
-        slot = Slot()
-        content_restriction = restrictions.Content()
-        all_restriction = restrictions.BlockAll()
-        slot_with_restriction = Slot(
-            tag='nav',
-            css_class='navigation',
-            restrictions=[content_restriction, all_restriction])
-        self.assertTrue(verifyObject(ISlot, slot))
-        self.assertEqual(slot.tag, 'div')
-        self.assertEqual(slot.css_class, None)
-        self.assertEqual(slot.get_existing_restriction(Block()), None)
-        self.assertTrue(verifyObject(ISlot, slot_with_restriction))
-        self.assertEqual(slot_with_restriction.tag, 'nav')
-        self.assertEqual(slot_with_restriction.css_class, 'navigation')
-        self.assertEqual(
-            slot_with_restriction.get_existing_restriction(Block()),
-            all_restriction)
-
 
 def test_suite():
     suite = unittest.TestSuite()

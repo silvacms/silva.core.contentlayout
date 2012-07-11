@@ -324,12 +324,12 @@ class AddBlockSlot(silvaforms.RESTPopupForm):
     ignoreContent = True
     ignoreRequest = False
 
-    def __init__(self, context, request, configuration, restriction):
+    def __init__(self, context, request, configuration, restrictions):
         super(AddBlockSlot, self).__init__(context, request)
         controller = BlockSlotController(BlockSlot(), context, request)
         self.setContentData(controller)
         self.configuration = configuration
-        self.restriction = restriction
+        self.restrictions = restrictions
 
     def update(self):
         super(AddBlockSlot, self).update()

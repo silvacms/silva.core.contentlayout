@@ -17,7 +17,7 @@ from silva.core import conf as silvaconf
 from silva.core.conf.interfaces import ITitledContent
 from silva.translations import translate as _
 from silva.ui.rest.exceptions import RESTRedirectHandler
-from zeam.component import Component, getWrapper
+from zeam.component import Component, getWrapper, component
 from zeam.form import silva as silvaforms
 
 from . import Block
@@ -83,15 +83,11 @@ class SourceBlockConfigurations(Component):
             yield SourceBlockConfiguration(self.prefix, source, self.block)
 
 
+@component(SourceBlock, Interface, Interface, provides=IBlockController)
 def source_controller(block, context, request):
     source = getWrapper(context, IExternalSourceManager)
     return source(request, instance=block.identifier)
 
-
-grok.global_adapter(
-    source_controller,
-    (SourceBlock, Interface, Interface),
-    IBlockController)
 
 
 class AddSourceBlockAction(silvaforms.Action):
@@ -141,9 +137,9 @@ class AddSourceBlock(silvaforms.RESTPopupForm):
         silvaforms.CancelAction(),
         AddSourceBlockAction())
 
-    def __init__(self, context, request, configuration, restriction):
+    def __init__(self, context, request, configuration, restrictions):
         super(AddSourceBlock, self).__init__(context, request)
-        self.restriction = restriction
+        self.restrictions = restrictions
         self.configuration = configuration
         manager = getWrapper(self.context, IExternalSourceManager)
         self.controller = manager(self.request, name=configuration.source.id)
@@ -219,10 +215,10 @@ class EditSourceBlock(silvaforms.RESTPopupForm):
     fields = silvaforms.Fields()
     actions = silvaforms.Actions(silvaforms.CancelAction())
 
-    def __init__(self, block, context, request, controller, restriction):
+    def __init__(self, block, context, request, controller, restrictions):
         super(EditSourceBlock, self).__init__(context, request)
         self.block = block
-        self.restriction = restriction
+        self.restrictions = restrictions
         self.controller = controller
 
     @property

@@ -13,14 +13,14 @@ from .. import Design, Slot
 from .. import interfaces
 
 
-class MockPageVersion(DesignAccessors, Version):
-    meta_type = 'Mock Page Version'
+class MockupPageVersion(DesignAccessors, Version):
+    meta_type = 'Mockup Page Version'
     grok.implements(interfaces.IPage)
 
 
-class MockPage(VersionedContent):
-    meta_type = 'Mock Page'
-    silvaconf.version_class(MockPageVersion)
+class MockupPage(VersionedContent):
+    meta_type = 'Mockup Page'
+    silvaconf.version_class(MockupPageVersion)
     grok.implements(interfaces.IPageAware)
 
 
@@ -35,8 +35,8 @@ class MockOtherPage(VersionedContent):
     grok.implements(interfaces.IPageAware)
 
 
-class MockPageProducer(xmlexport.VersionedContentProducer):
-    grok.adapts(MockPage, Interface)
+class MockupPageProducer(xmlexport.VersionedContentProducer):
+    grok.adapts(MockupPage, Interface)
 
     def sax(self):
         self.startElement('page', {'id': self.context.id})
@@ -45,8 +45,8 @@ class MockPageProducer(xmlexport.VersionedContentProducer):
         self.endElement('page')
 
 
-class MockPageVersionProducer(BasePageProducer):
-    grok.adapts(MockPageVersion, Interface)
+class MockupPageVersionProducer(BasePageProducer):
+    grok.adapts(MockupPageVersion, Interface)
 
     def sax(self):
         self.startElement('content', {'version_id': self.context.id})
@@ -67,6 +67,6 @@ class MockDesign(Design):
 
 def install_mockers(root):
     root.service_metadata.addTypesMapping(
-        [MockPageVersion.meta_type], ('silva-content', 'silva-extra',))
+        [MockupPageVersion.meta_type], ('silva-content', 'silva-extra',))
     root.service_metadata.addTypesMapping(
         [MockOtherPageVersion.meta_type], ('silva-content', 'silva-extra',))

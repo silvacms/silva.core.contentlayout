@@ -4,7 +4,6 @@ import uuid
 import logging
 
 from five import grok
-from zope.component import getMultiAdapter
 from zope.interface import Interface
 from zeam import component
 
@@ -24,6 +23,7 @@ class Block(object):
 
 
 class BlockConfiguration(object):
+    grok.implements(IBlockConfiguration)
     grok.provides(IBlockConfiguration)
 
     def __init__(self, block):
@@ -46,6 +46,7 @@ class BlockConfiguration(object):
 
 
 class BlockConfigurations(component.Component):
+    grok.implements(IBlockConfigurations)
     grok.provides(IBlockConfigurations)
     grok.adapts(IBlock, Interface)
 
@@ -60,8 +61,9 @@ class BlockConfigurations(component.Component):
         return [self.get_by_identifier()]
 
 
-class BlockController(grok.MultiAdapter):
+class BlockController(component.Component):
     grok.baseclass()
+    grok.implements(IBlockController)
     grok.provides(IBlockController)
 
     def __init__(self, block, context, request):
@@ -117,21 +119,21 @@ class BoundBlockManager(grok.MultiAdapter):
     def get(self, block_id):
         block = self.manager.get_block(block_id)
         if block is not None:
-            return block, getMultiAdapter(
+            return block, component.getMultiAdapter(
                 (block, self.context, self.request),
                 IBlockController)
         return None, None
 
     def visit(self, function):
         for block_id, block in self.manager.get_all():
-            controller = getMultiAdapter(
+            controller = component.getWrapper(
                 (block, self.context, self.request), IBlockController)
             function(block_id, controller)
 
     def render(self, view):
         for block_id, block in self.manager.get_slot(view.slot_id):
             if block is not None:
-                controller = getMultiAdapter(
+                controller = component.getWrapper(
                     (block, self.context, self.request), IBlockController)
                 try:
                     yield {"block_id": block_id,

@@ -1,29 +1,32 @@
 
-from zope.publisher.browser import TestRequest
-from zope.component import getMultiAdapter, getUtility
+from zope.component import getUtility
 
+from Products.Silva.testing import TestRequest
 from Products.Silva.tests.test_xml_import import SilvaXMLTestCase
-from silva.core.messages.interfaces import IMessageService
-from silva.core.contentlayout.slots import restrictions as restrict
-from silva.core.interfaces.content import IImage, ILinkVersion, ILink
-from silva.core.contentlayout.blocks.slot import BlockSlot
-from silva.core.contentlayout.blocks.source import SourceBlock
 
-from ..testing import FunctionalLayerWithService
-from ..model import PageModel, PageModelVersion
-from ..interfaces import IBlockManager, IBlockController
-from ..blocks.text import TextBlock
-from ..blocks.contents import ReferenceBlock
+from silva.core.interfaces.content import IImage, ILink
 from silva.core.references.reference import ReferenceSet
 from silva.core.references.interfaces import IReferenceService
+from zeam.component import getWrapper
+
+from ..blocks.contents import ReferenceBlock
+from ..blocks.slot import BlockSlot
+from ..blocks.source import SourceBlock
+from ..blocks.text import TextBlock
+from ..interfaces import IBlockManager, IBlockController
+from ..model import PageModel, PageModelVersion
+from ..slots import restrictions as restrict
+from ..testing import FunctionalLayer
 
 
 class PageModelImportTest(SilvaXMLTestCase):
-    layer = FunctionalLayerWithService
+    layer = FunctionalLayer
 
     def setUp(self):
         self.root = self.layer.get_application()
         self.layer.login('editor')
+        factory = self.root.manage_addProduct['silva.core.contentlayout']
+        factory.manage_addContentLayoutService()
 
     def test_import_page_model(self):
         self.import_file('test_import_pagemodel.silvaxml',
@@ -61,27 +64,30 @@ class PageModelImportTest(SilvaXMLTestCase):
         self.assertEquals(3, len(slot2))
         _, text_block = slot2[1]
         self.assertIsInstance(text_block, TextBlock)
-        controller = getMultiAdapter((text_block, version, TestRequest()),
-                                     IBlockController)
+        controller = getWrapper(
+            (text_block, version, TestRequest()),
+            IBlockController)
         self.assertXMLEqual("<div>text</div>", controller.text)
 
         _, ref_block = slot1[1]
         self.assertIsInstance(ref_block, ReferenceBlock)
-        controller = getMultiAdapter((ref_block, version, TestRequest()),
-                                     IBlockController)
+        controller = getWrapper(
+            (ref_block, version, TestRequest()),
+            IBlockController)
         self.assertEquals(controller.content, self.root.image)
 
         _, source_block = slot1[2]
         self.assertIsInstance(source_block, SourceBlock)
-        controller = getMultiAdapter((source_block, version, TestRequest()),
-                                     IBlockController)
+        controller = getWrapper(
+            (source_block, version, TestRequest()),
+            IBlockController)
         params, _ = controller.manager.get_parameters(source_block.identifier)
         self.assertEquals('A joke is a very serious thing.', params.citation)
         self.assertEquals('Winston Churchill', params.author)
 
         _, source_block_with_ref = slot2[2]
         self.assertIsInstance(source_block_with_ref, SourceBlock)
-        controller = getMultiAdapter(
+        controller = getWrapper(
             (source_block_with_ref, version, TestRequest()),
             IBlockController)
         params, _ = controller.manager.get_parameters(

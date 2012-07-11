@@ -8,16 +8,18 @@ from silva.core.references.interfaces import IReferenceService
 from silva.core.interfaces.adapters import IPublicationWorkflow
 
 from ..interfaces import IPageModel
-from ..testing import FunctionalLayerWithService
+from ..testing import FunctionalLayer
 from silva.core.contentlayout.model import PAGE_TO_DESIGN_REF_NAME
 from silva.core.references.reference import BrokenReferenceError
 
 
 class ModelsTestCase(unittest.TestCase):
-    layer = FunctionalLayerWithService
+    layer = FunctionalLayer
 
     def setUp(self):
         self.root = self.layer.get_application()
+        factory = self.root.manage_addProduct['silva.core.contentlayout']
+        factory.manage_addContentLayoutService()
 
     def test_model(self):
         factory = self.root.manage_addProduct['silva.core.contentlayout']
@@ -32,18 +34,22 @@ class ModelsTestCase(unittest.TestCase):
 
 
 class ModelReferenceTestCase(unittest.TestCase):
-    layer = FunctionalLayerWithService
+    layer = FunctionalLayer
 
     def setUp(self):
         self.root = self.layer.get_application()
         self.layer.login('manager')
-
+        factory = self.root.manage_addProduct['silva.core.contentlayout']
+        factory.manage_addContentLayoutService()
         factory = self.root.manage_addProduct['silva.core.contentlayout']
         factory.manage_addPageModel('model', 'Model')
         IPublicationWorkflow(self.root.model).publish()
-        factory.manage_addMockPage('page', None)
+        factory.manage_addMockupPage('page', None)
         version = self.root.page.get_editable()
         version.set_design(self.root.model.get_viewable())
+
+        self.layer.login('manager')
+
 
     def test_create_reference_when_associate(self):
         get_reference = getUtility(IReferenceService).get_reference

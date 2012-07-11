@@ -165,10 +165,10 @@ class AddBlock(REST):
             service = getUtility(IBlockGroupLookup)
             configuration = service.lookup_block_by_name(self, name)
             if configuration is not None:
-                restriction = self.slot.get_new_restriction(configuration)
+                restrictions = self.slot.get_new_restrictions(configuration)
                 adder = queryRESTComponent(
                     (implementedBy(configuration.block), self.context),
-                    (self.context, request, configuration, restriction),
+                    (self.context, request, configuration, restrictions),
                     name='add',
                     parent=self,
                     id=name)
@@ -271,10 +271,10 @@ class EditBlock(BlockREST):
     grok.name('edit')
 
     def publishBlock(self, name, request):
-        restriction = self.slot.get_existing_restriction(self.block)
+        restrictions = self.slot.get_existing_restrictions(self.block)
         return queryRESTComponent(
             (self.block, self.context),
-            (self.block, self.context, request, self.block_controller, restriction),
+            (self.block, self.context, request, self.block_controller, restrictions),
             name='edit',
             parent=self,
             id=name)

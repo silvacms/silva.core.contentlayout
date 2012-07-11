@@ -88,10 +88,14 @@ class Permission(SlotRestriction):
         self.permission = permission
 
     def allow_configuration(self, configuration, slot, context):
-        return checkPermission(self.premission, context)
+        if checkPermission(self.permission, context):
+            return None
+        return False
 
     def allow_controller(self, controller, slot, context):
-        return checkPermission(self.premission, context)
+        if checkPermission(self.permission, context):
+            return None
+        return False
 
     def apply_to(self, block_type):
         return True

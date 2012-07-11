@@ -1,10 +1,9 @@
 
-from Products.Silva.tests.helpers import open_test_file
 from Products.Silva.silvaxml.xmlexport import exportToString
+from Products.Silva.testing import TestRequest
+from Products.Silva.tests.helpers import open_test_file
 from Products.Silva.tests.test_xml_export import SilvaXMLTestCase
 
-from zope.publisher.browser import TestRequest
-from zope.component import getMultiAdapter
 from zope.intid.interfaces import IIntIds
 from zope.component import getUtility
 
@@ -20,19 +19,21 @@ from ..blocks.contents import ReferenceBlock
 from ..blocks.slot import BlockSlot
 from ..blocks.text import TextBlock
 from ..designs.registry import registry
-from ..testing import FunctionalLayerWithService
+from ..testing import FunctionalLayer
 
 
 class TestExportPage(SilvaXMLTestCase):
-    layer = FunctionalLayerWithService
+    layer = FunctionalLayer
 
     def setUp(self):
         self.root = self.layer.get_application()
+        factory = self.root.manage_addProduct['silva.core.contentlayout']
+        factory.manage_addContentLayoutService()
         factory = self.root.manage_addProduct['Silva']
         factory.manage_addFolder('exportbase', 'Export base')
         self.base_folder = self.root.exportbase
         factory = self.base_folder.manage_addProduct['silva.core.contentlayout']
-        factory.manage_addMockPage('page', 'Page')
+        factory.manage_addMockupPage('page', 'Page')
         self.page = self.base_folder.page.get_editable()
         self.design = registry.lookup_design_by_name('adesign')
         self.page.set_design(self.design)
@@ -49,8 +50,9 @@ class TestExportPage(SilvaXMLTestCase):
         image = self.base_folder.image
 
         block = ReferenceBlock()
-        controller = getMultiAdapter((block, self.page, TestRequest()),
-                                     interfaces.IBlockController)
+        controller = getWrapper(
+            (block, self.page, TestRequest()),
+            interfaces.IBlockController)
         controller.content = image
         manager = interfaces.IBlockManager(self.page)
         manager.add('one', block)
@@ -61,8 +63,9 @@ class TestExportPage(SilvaXMLTestCase):
 
     def test_export_text_block(self):
         block = TextBlock(identifier='text block 1')
-        controller = getMultiAdapter((block, self.page, TestRequest()),
-                                     interfaces.IBlockController)
+        controller = getWrapper(
+            (block, self.page, TestRequest()),
+            interfaces.IBlockController)
         controller.text = "<div>text</div>"
         manager = interfaces.IBlockManager(self.page)
         manager.add('two', block)
@@ -116,8 +119,9 @@ class TestExportPage(SilvaXMLTestCase):
         version.set_design(self.design)
 
         text_block = TextBlock(identifier='text block 1')
-        controller = getMultiAdapter((text_block, self.page, TestRequest()),
-                                     interfaces.IBlockController)
+        controller = getWrapper(
+            (text_block, self.page, TestRequest()),
+            interfaces.IBlockController)
         controller.text = "<div>text</div>"
 
         manager = interfaces.IBlockManager(version)
