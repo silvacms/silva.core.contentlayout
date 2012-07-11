@@ -14,10 +14,12 @@ from zeam.component import getWrapper
 from .. import Block
 from ..blocks.contents import ReferenceBlock
 from ..blocks.text import TextBlock
+from ..blocks.slot import BlockSlot
 from ..blocks.registry import get_block_configuration
-from ..interfaces import IBlock, IBlockController
+from ..interfaces import IBlock, ISlot, IBlockController
 from ..interfaces import IBlockConfiguration, IBlockConfigurations
 from ..testing import FunctionalLayer
+
 
 class MockView(object):
 
@@ -401,9 +403,65 @@ class TextBlockTestCase(TestCase):
             [])
 
 
+class BlockSlotTestCase(unittest.TestCase):
+    layer = FunctionalLayer
+
+
+    def setUp(self):
+        self.root = self.layer.get_application()
+        factory = self.root.manage_addProduct['silva.core.contentlayout']
+        factory.manage_addContentLayoutService()
+        factory.manage_addMockupPage('page', 'Page')
+        factory.manage_addPageModel('model', 'Model')
+
+    def test_block(self):
+        """Verify slot block, that is a block, and a slot.
+        """
+        block = BlockSlot()
+        self.assertTrue(verifyObject(IBlock, block))
+        self.assertTrue(verifyObject(ISlot, block))
+
+        # By default the tag is section here.
+        self.assertEqual(block.tag, 'section')
+        self.assertEqual(block.css_class, '')
+
+    def test_configuration(self):
+        """Verify slot block configuration.
+        """
+        context = self.root.page.get_editable()
+        view = MockView(context)
+
+        configurations = get_block_configuration(BlockSlot, context)
+        self.assertTrue(verifyObject(IBlockConfigurations, configurations))
+        self.assertEqual(len(configurations.get_all()), 1)
+
+        configuration = configurations.get_by_identifier()
+        self.assertTrue(verifyObject(IBlockConfiguration, configuration))
+        self.assertEqual(
+            configuration.identifier,
+            'slot')
+        self.assertEqual(
+            configuration.title,
+            'Slot')
+        self.assertEqual(
+            configuration.block,
+            BlockSlot)
+        self.assertEqual(
+            configuration.get_icon(view),
+            'http://localhost/++resource++icon-blocks-slot.png')
+
+        # This block is only available on models.
+        self.assertFalse(configuration.is_available(view))
+
+        context = self.root.model.get_editable()
+        view = MockView(context)
+        self.assertTrue(configuration.is_available(view))
+
+
 def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(BlockTestCase))
     suite.addTest(unittest.makeSuite(ReferenceBlockTestCase))
     suite.addTest(unittest.makeSuite(TextBlockTestCase))
+    suite.addTest(unittest.makeSuite(BlockSlotTestCase))
     return suite
