@@ -20,6 +20,9 @@ class RestrictionsTestCase(unittest.TestCase):
                 restrictions.BlockAll()))
         self.assertTrue(verifyObject(
                 ISlotRestriction,
+                restrictions.Permission()))
+        self.assertTrue(verifyObject(
+                ISlotRestriction,
                 restrictions.CodeSourceName()))
         self.assertTrue(verifyObject(
                 ISlotRestriction,

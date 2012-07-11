@@ -1,3 +1,6 @@
+
+from AccessControl.security import checkPermission
+
 from five import grok
 from zope.interface.interfaces import IInterface
 from zope.interface import Interface
@@ -42,6 +45,9 @@ class BlockAll(SlotRestriction):
     def allow_controller(self, controller, slot, context):
         return False
 
+    def apply_to(self, block_type):
+        return True
+
 
 class CodeSource(SlotRestriction):
     """Block code source type block.
@@ -68,6 +74,27 @@ class CodeSourceName(CodeSource):
         if self.allowed:
             return identifier in self.allowed
         return identifier not in self.disallowed
+
+
+class Permission(SlotRestriction):
+    """Block any type of block based on a permission that the editor
+    must have.
+    """
+    grok.context(Interface)
+
+    permission = None
+
+    def __init__(self, permission='silva.ChangeSilvaContent'):
+        self.permission = permission
+
+    def allow_configuration(self, configuration, slot, context):
+        return checkPermission(self.premission, context)
+
+    def allow_controller(self, controller, slot, context):
+        return checkPermission(self.premission, context)
+
+    def apply_to(self, block_type):
+        return True
 
 
 class Content(SlotRestriction):

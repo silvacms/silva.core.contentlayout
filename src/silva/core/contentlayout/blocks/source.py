@@ -24,7 +24,7 @@ from . import Block
 from .contents import ReferenceBlock
 from ..interfaces import IPage, IBlock
 from ..interfaces import IBlockConfiguration, IBlockConfigurations
-from ..interfaces import IBlockManager, IBlockController
+from ..interfaces import IBlockController
 
 
 class SourceBlock(Block):
