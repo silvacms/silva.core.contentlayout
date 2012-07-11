@@ -251,6 +251,9 @@ class IBlockSlot(IBlock, ISlot):
 
 
 class IBlockConfiguration(interface.Interface):
+   """Describe a given block configuration for a given block, i.e. a
+   unique scenario in which the block can be used.
+   """
    identifier = interface.Attribute('Unique block identifier')
    title = interface.Attribute('Block configuration title')
    block = interface.Attribute('Associated block class')
@@ -265,8 +268,8 @@ class IBlockConfiguration(interface.Interface):
 
 
 class IBlockConfigurations(interface.Interface):
-   """Return available block configuration (i.e. different scenarios
-   in which the block can be used).
+   """Return available block configurations for a given block,
+   i.e. different scenarios in which the block can be used.
    """
 
    def get_by_identifier(identifier):
