@@ -119,7 +119,7 @@ class BoundBlockManager(grok.MultiAdapter):
     def get(self, block_id):
         block = self.manager.get_block(block_id)
         if block is not None:
-            return block, component.getMultiAdapter(
+            return block, component.getWrapper(
                 (block, self.context, self.request),
                 IBlockController)
         return None, None
