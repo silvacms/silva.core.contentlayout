@@ -62,6 +62,12 @@ class TextBlockController(BlockController):
 
         return property(getter, setter)
 
+    def remove(self):
+        self.block.truncate(
+            self.context,
+            self.request,
+            type=ISaveEditorFilter)
+
     def indexes(self):
         return ITextIndexEntries(self.block).entries
 
