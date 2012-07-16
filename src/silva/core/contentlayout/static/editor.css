@@ -36,12 +36,30 @@
   border-radius: 3px;
   overflow: hidden;
 }
+
+#contentlayout-lost-slots .contentlayout-label {
+  border: 1px solid #AAA;
+  border-radius: 4px;
+  background: #CCC url(gradient-title.png) 50% 50% repeat-x;
+  color: #222;
+  font-weight: bold;
+  padding: 0.4em 1em;
+  margin-top: 0;
+}
+#contentlayout-lost-slots .contentlayout-description {
+  margin: 0.5em 1em;
+}
 #contentlayout-lost-slots .contentlayout-edit-block {
   min-height: 20px;
 }
+#contentlayout-lost-slots .contentlayout-actions {
+  margin: 0em 1em;
+}
 #contentlayout-lost-blocks {
+  border-top: 1px solid #999;
   border-bottom: 1px solid #999;
-  margin: 4px 0px;
+  margin: 1em;
+  padding: 0.5em 0px;
 }
 
 .contentlayout-component {

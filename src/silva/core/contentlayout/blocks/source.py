@@ -184,7 +184,7 @@ class EditSourceBlockAction(silvaforms.Action):
         silvaforms.IDefaultAction,
         silvaforms.IRESTExtraPayloadProvider,
         silvaforms.IRESTCloseOnSuccessAction)
-    title = _('Edit')
+    title = _('Save changes')
 
     def get_extra_payload(self, form):
         if form.controller is None:

@@ -153,7 +153,7 @@ class EditExternalBlockAction(silvaforms.Action):
         silvaforms.IDefaultAction,
         silvaforms.IRESTExtraPayloadProvider,
         silvaforms.IRESTCloseOnSuccessAction)
-    title = _('Edit')
+    title = _('Save changes')
 
     def get_extra_payload(self, form):
         # This is kind of an hack, but the name of the form is the block id.
