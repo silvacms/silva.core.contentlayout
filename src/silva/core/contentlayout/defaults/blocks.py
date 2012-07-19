@@ -22,8 +22,8 @@ class ImageBlock(BlockView):
 
 # Source block
 
-from Products.SilvaExternalSources.interfaces import SourceError
 from Products.SilvaExternalSources.SourceAsset import SourceAsset
+from Products.SilvaExternalSources.errors import SourceError
 
 classImplements(SourceAsset, IBlockable)
 
@@ -39,7 +39,7 @@ class SourceBlock(BlockView):
             try:
                 self.controller = viewable.get_controller(self.request)
             except SourceError, error:
-                self.msg = error.to_html()
+                self.msg = error.to_html(request=self.request)
         else:
             self.msg = _(u"This component is not available.")
 

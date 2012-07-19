@@ -8,9 +8,9 @@ from zope.traversing.browser import absoluteURL
 from Acquisition import aq_base
 
 from Products.Silva.icon import registry as icon_registry
+from Products.SilvaExternalSources.errors import SourceError
 from Products.SilvaExternalSources.interfaces import IExternalSource
 from Products.SilvaExternalSources.interfaces import IExternalSourceManager
-from Products.SilvaExternalSources.interfaces import SourceError
 from Products.SilvaExternalSources.interfaces import availableSources
 
 from silva.core import conf as silvaconf

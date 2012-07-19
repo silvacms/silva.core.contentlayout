@@ -12,7 +12,7 @@ from zeam.component.site import getWrapper
 
 from Products.Silva.silvaxml import xmlexport, NS_SILVA_URI
 from Products.SilvaExternalSources.interfaces import IExternalSourceManager
-from Products.SilvaExternalSources.interfaces import SourceError
+from Products.SilvaExternalSources.errors import SourceError
 from Products.SilvaExternalSources.silvaxml.xmlexport import \
     SourceParametersProducer
 
