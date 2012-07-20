@@ -6,6 +6,7 @@ from zope.event import notify
 from zope.interface import Interface
 from zope.lifecycleevent import ObjectModifiedEvent
 from zope.publisher.interfaces.http import IHTTPRequest
+from zope.publisher.browser import TestRequest
 
 from silva.core import conf as silvaconf
 from silva.core.conf import schema as silvaschema
@@ -72,7 +73,7 @@ class TextBlockController(BlockController):
         return ITextIndexEntries(self.block).entries
 
     def fulltext(self):
-        return [self.block.fulltext()]
+        return [self.block.fulltext(self.context, TestRequest())]
 
     def render(self, view=None):
         return self.block.render(self.context, self.request)
