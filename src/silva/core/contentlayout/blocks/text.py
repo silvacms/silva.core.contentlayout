@@ -6,7 +6,6 @@ from zope.event import notify
 from zope.interface import Interface
 from zope.lifecycleevent import ObjectModifiedEvent
 from zope.publisher.interfaces.http import IHTTPRequest
-from zope.publisher.browser import TestRequest
 
 from silva.core import conf as silvaconf
 from silva.core.conf import schema as silvaschema
