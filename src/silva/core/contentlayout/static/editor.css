@@ -30,10 +30,10 @@
   z-index: 399999;
   position: absolute;
   left: 100px;
-  padding: 10px;
+  padding: 0.2em;
   background-color: white;
   border: 1px solid #777;
-  border-radius: 3px;
+  border-radius: 4px;
   overflow: hidden;
 }
 
@@ -42,7 +42,7 @@
   border-radius: 4px;
   background: #CCC url(gradient-title.png) 50% 50% repeat-x;
   color: #222;
-  font-weight: bold;
+  font-weight: 700;
   padding: 0.4em 1em;
   margin-top: 0;
 }
@@ -58,8 +58,8 @@
 #contentlayout-lost-blocks {
   border-top: 1px solid #999;
   border-bottom: 1px solid #999;
-  margin: 1em;
-  padding: 0.5em 0px;
+  margin: 0.3em 1em;
+  padding: 0.5em 0em;
 }
 
 .contentlayout-component {

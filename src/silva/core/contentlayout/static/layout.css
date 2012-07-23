@@ -10,8 +10,6 @@ div.contentlayout-components .ui-accordion-content {
   padding: 0.5em 1em;
 }
 div.contentlayout-components div.contentlayout-component {
-  border: 1px solid #FFF;
-  margin: 0.1em;
   padding: 0.3em;
 }
 div.contentlayout-components div.contentlayout-component:hover {
