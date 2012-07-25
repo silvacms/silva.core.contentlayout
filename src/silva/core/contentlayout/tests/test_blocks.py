@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 
 import unittest
 
@@ -221,7 +222,7 @@ class TextBlockTestCase(TestCase):
             [])
         self.assertEqual(
             controller.fulltext(),
-            [u''])
+            [])
         self.assertEqual(
             list(service.get_references_from(context)),
             [])
@@ -266,10 +267,9 @@ class TextBlockTestCase(TestCase):
         self.assertEqual(
             controller.indexes(),
             [])
-        # Cleanup fulltext.
-        # self.assertEqual(
-        #     controller.fulltext(),
-        #     ['This is some rich text.'])
+        self.assertEqual(
+            controller.fulltext(),
+            ['This is some rich text.'])
         self.assertEqual(
             list(service.get_references_from(context)),
             [])
@@ -303,12 +303,12 @@ class TextBlockTestCase(TestCase):
         self.assertEqual(controller.editable(), True)
 
         # Change the text with a reference.
-        TEXT_LINK = """
+        TEXT_LINK = u"""
 <p>
    <a class="link"
       href="javascript:void()"
       data-silva-reference="new"
-      data-silva-target="%s">Test document</a>
+      data-silva-target="%s">Test élaboré</a>
 </p>
 """ % (get_content_id(self.root.test))
         controller.text = TEXT_LINK
@@ -330,23 +330,22 @@ class TextBlockTestCase(TestCase):
 
         self.assertXMLEqual(
             controller.text,
-            """
+            u"""
 <p>
-   <a class="link" data-silva-reference="%s" data-silva-target="%s" href="javascript:void()">Test document</a>
+   <a class="link" data-silva-reference="%s" data-silva-target="%s" href="javascript:void()">Test &#233;labor&#233;</a>
 </p>""" % (reference_name, reference_target))
         self.assertXMLEqual(
             controller.render(view),
-            """
+            u"""
 <p>
-   <a class="link" href="http://localhost/root/test">Test document</a>
+   <a class="link" href="http://localhost/root/test">Test &#233;labor&#233;</a>
 </p>""")
         self.assertEqual(
             controller.indexes(),
             [])
-        # Cleanup fulltext
-        # self.assertEqual(
-        #     controller.fulltext(),
-        #     ['Test document'])
+        self.assertEqual(
+            controller.fulltext(),
+            [u'Test élaboré'])
 
         # Remove the text. This should clean the reference.
         controller.remove()

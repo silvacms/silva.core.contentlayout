@@ -72,7 +72,7 @@ class TextBlockController(BlockController):
         return ITextIndexEntries(self.block).entries
 
     def fulltext(self):
-        return [self.block.fulltext(self.context, self.request)]
+        return self.block.fulltext(self.context, self.request)
 
     def render(self, view=None):
         return self.block.render(self.context, self.request)
