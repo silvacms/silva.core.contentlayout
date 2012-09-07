@@ -8,6 +8,7 @@ from five import grok
 from zope.interface import Interface
 
 from silva.core.editor.transform.silvaxml.xmlexport import TextProducerProxy
+from silva.translations import translate as _
 from zeam.component.site import getWrapper
 
 from Products.Silva.silvaxml import xmlexport, NS_SILVA_URI
@@ -76,9 +77,8 @@ class SourceBlockProducer(xmlexport.SilvaProducer, SourceParametersProducer):
             source = manager(
                 self.getInfo().request, instance=self.context.identifier)
         except SourceError:
-            logger.error(
-                u"Broken source block in page %s",
-                '/'.join(parent.context.getPhysicalPath()))
+            self.getInfo().reportError(
+                _(u"Broken source block in page"), content=parent.context)
             return
         self.startElementNS(NS_URI, 'sourceblock',
             {"id": source.getSourceId()})
