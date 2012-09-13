@@ -129,7 +129,7 @@ class AddExternalBlock(silvaforms.RESTPopupForm):
     grok.adapts(ReferenceBlock, IPage)
     grok.name('add')
 
-    label = _(u"Add a site content component ")
+    label = _(u"Add a site content component")
     baseFields = silvaforms.Fields(IExternalBlockFields)
     actions = silvaforms.Actions(
         silvaforms.CancelAction(),
