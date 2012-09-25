@@ -1,7 +1,7 @@
 Changelog
 =========
 
-1.0dev (unreleased)
--------------------
+3.0c1 (2012/09/25)
+------------------
 
-- Initial release
+- Initial release of the refactored extension for Silva 3.0.

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-# (c) 2012 Infrae. All rights reserved.
+# Copyright (c) 2012  Infrae. All rights reserved.
 # See also LICENSE.txt
+# (c) 2012 Infrae. All rights reserved.
 
 import operator
 

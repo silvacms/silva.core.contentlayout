@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2012  Infrae. All rights reserved.
+# See also LICENSE.txt
 from setuptools import setup, find_packages
 import os
 
-version = '2.0dev'
+version = '3.0c1'
 
 tests_require = [
     'Products.Silva [test]',
@@ -22,7 +25,7 @@ setup(name='silva.core.contentlayout',
       keywords='',
       author='Andrew Altepeter',
       author_email='aaltepet@bethel.edu',
-      url='',
+      url='http://infrae.com/products/silva',
       license='GPL',
       package_dir={'': 'src'},
       packages=find_packages('src'),
@@ -30,18 +33,31 @@ setup(name='silva.core.contentlayout',
       include_package_data=True,
       zip_safe=False,
       install_requires=[
+          'five.grok',
+          'grokcore.chameleon',
+          'grokcore.component',
+          'grokcore.view',
           'setuptools',
-          'silva.core.interfaces',
-          'silva.core.services',
           'silva.core.conf',
+          'silva.core.editor',
+          'silva.core.interfaces',
           'silva.core.references',
+          'silva.core.services',
           'silva.core.views',
+          'silva.ui',
           'zeam.component',
           'zeam.form.silva',
+          'zope.annotation',
+          'zope.cachedescriptors',
           'zope.component',
           'zope.event',
+          'zope.i18n',
           'zope.interface',
+          'zope.intid',
+          'zope.lifecycleevent',
+          'zope.publisher',
           'zope.schema',
+          'zope.traversing',
       ],
       tests_require = tests_require,
       extras_require = {'test': tests_require},
