@@ -384,10 +384,21 @@ class TextBlockTestCase(TestCase):
 
 </p>
 """
+
+        TEXT_ANCHOR_STORED = """
+<p>
+   <a class="anchor" name="simple" title="Simple Anchor" href="javascript:void()">Simple Anchor</a>
+   The ultimate store of the anchors.
+
+   <a class="anchor" name="advanced" title="Advanced Anchor" href="javascript:void()">Advanced Anchor</a>
+
+</p>
+"""
+
         controller.text = TEXT_ANCHOR
         self.assertXMLEqual(
             controller.text,
-            TEXT_ANCHOR)
+            TEXT_ANCHOR_STORED)
         self.assertXMLEqual(
             controller.render(view),
             TEXT_ANCHOR)
