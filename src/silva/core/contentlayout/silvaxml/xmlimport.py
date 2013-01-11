@@ -7,18 +7,19 @@ import sys
 from five import grok
 from zope.publisher.browser import TestRequest
 
-from Products.Silva.silvaxml import xmlimport, NS_SILVA_URI
+
 from Products.SilvaExternalSources.interfaces import IExternalSourceManager
 from Products.SilvaExternalSources.silvaxml import NS_SOURCE_URI
 from Products.SilvaExternalSources.silvaxml.xmlimport import \
     SourceParametersHandler
 
+from silva.core.xml import NS_SILVA_URI, handlers
 from silva.core import conf as silvaconf
 from silva.core.editor.transform.silvaxml import NS_EDITOR_URI
 from silva.core.editor.transform.silvaxml.xmlimport import TextHandler
 from zeam.component import getWrapper
 
-from . import NS_URI
+from . import NS_LAYOUT_URI
 from ..designs.registry import registry
 from ..interfaces import IBlockManager, IBlockController
 from ..blocks.slot import BlockSlot
@@ -28,18 +29,18 @@ from ..blocks.source import SourceBlock
 from ..slots import restrictions
 
 
-silvaconf.namespace(NS_URI)
+silvaconf.namespace(NS_LAYOUT_URI)
 
 
-class SlotHandler(xmlimport.SilvaBaseHandler):
+class SlotHandler(handlers.SilvaHandler):
     silvaconf.name('slot')
 
     def startElementNS(self, name, qname, attrs):
-        if (NS_URI, 'slot') == name:
+        if (NS_LAYOUT_URI, 'slot') == name:
             self.setResult(attrs[(None, 'id')])
 
 
-class BlockHandler(xmlimport.SilvaBaseHandler):
+class BlockHandler(handlers.SilvaHandler):
     grok.baseclass()
 
     def add_block(self, block):
@@ -54,22 +55,23 @@ class ReferenceBlockHandler(BlockHandler):
     silvaconf.name('referenceblock')
 
     def startElementNS(self, name, qname, attrs):
-        if name == (NS_URI, 'referenceblock'):
+        if name == (NS_LAYOUT_URI, 'referenceblock'):
             path = attrs[(None, 'ref')]
             block = ReferenceBlock()
+            page = self.parentHandler().parent()
+            importer = self.getExtra()
             self._block = block
 
             def set_target(target):
                 controller = getWrapper(
-                    (block, self.parentHandler().parent(), TestRequest()),
+                    (block, page, TestRequest()),
                     IBlockController)
                 controller.content = target
 
-            info = self.getInfo()
-            info.addAction(xmlimport.resolve_path, [set_target, info, path])
+            importer.resolveImportedPath(page, set_target, path)
 
     def endElementNS(self, name, qname):
-        if name == (NS_URI, 'referenceblock'):
+        if name == (NS_LAYOUT_URI, 'referenceblock'):
             self.add_block(self._block)
             self._block = None
 
@@ -83,8 +85,8 @@ class SourceBlockHandler(BlockHandler):
         return {(NS_SOURCE_URI, 'fields'): SourceParametersHandler}
 
     def startElementNS(self, name, qname, attrs):
-        if name == (NS_URI, 'sourceblock'):
-            request = self.getInfo().request
+        if name == (NS_LAYOUT_URI, 'sourceblock'):
+            request = self.getExtra().request
             manager = getWrapper(self.parentHandler().parent(),
                                  IExternalSourceManager)
             identifier = attrs[(None, 'id')]
@@ -94,45 +96,45 @@ class SourceBlockHandler(BlockHandler):
             self.setResult(self.source)
 
     def endElementNS(self, name, qname):
-        if name == (NS_URI, 'sourceblock'):
+        if name == (NS_LAYOUT_URI, 'sourceblock'):
             self.add_block(self._block)
             self.source = None
             del self._block
 
 
-class AllowedCodeSourceNameHandler(xmlimport.SilvaBaseHandler):
+class AllowedCodeSourceNameHandler(handlers.SilvaHandler):
 
     def startElementNS(self, name, qname, attrs):
-        if name == (NS_URI, 'allowed'):
+        if name == (NS_LAYOUT_URI, 'allowed'):
             name = attrs[(None, 'name')]
             self.parentHandler().restriction.allowed.add(name)
-        if name == (NS_URI, 'disallowed'):
+        if name == (NS_LAYOUT_URI, 'disallowed'):
             name = attrs[(None, 'name')]
             self.parentHandler().restriction.disallowed.add(name)
 
 
-class CodeSourceNameRestrictionHandler(xmlimport.SilvaBaseHandler):
+class CodeSourceNameRestrictionHandler(handlers.SilvaHandler):
     silvaconf.name('codesourcename-restriction')
 
     def getOverrides(self):
-        return {(NS_URI, 'allowed'): AllowedCodeSourceNameHandler,
-                (NS_URI, 'disallowed'): AllowedCodeSourceNameHandler}
+        return {(NS_LAYOUT_URI, 'allowed'): AllowedCodeSourceNameHandler,
+                (NS_LAYOUT_URI, 'disallowed'): AllowedCodeSourceNameHandler}
 
     def startElementNS(self, name, qname, attrs):
-        if name == (NS_URI, 'codesourcename-restriction'):
+        if name == (NS_LAYOUT_URI, 'codesourcename-restriction'):
             self.restriction = restrictions.CodeSourceName()
 
     def endElementNS(self, name, qname):
-        if name == (NS_URI, 'codesourcename-restriction'):
+        if name == (NS_LAYOUT_URI, 'codesourcename-restriction'):
             self.parent()._restrictions.append(self.restriction)
             del self.restriction
 
 
-class ContentRestrictionHandler(xmlimport.SilvaBaseHandler):
+class ContentRestrictionHandler(handlers.SilvaHandler):
     silvaconf.name('content-restriction')
 
     def startElementNS(self, name, qname, attrs):
-        if name == (NS_URI, 'content-restriction'):
+        if name == (NS_LAYOUT_URI, 'content-restriction'):
             class_path = attrs[(None, 'schema')]
             module, name = class_path.split(':', 1)
             __import__(module)
@@ -142,11 +144,11 @@ class ContentRestrictionHandler(xmlimport.SilvaBaseHandler):
             self.parent()._restrictions.append(restrictions.Content(schema))
 
 
-class BlockAllRestrictionHandler(xmlimport.SilvaBaseHandler):
+class BlockAllRestrictionHandler(handlers.SilvaHandler):
     silvaconf.name('blockall-restriction')
 
     def endElementNS(self, name, qname):
-        if name == (NS_URI, 'blockall-restriction'):
+        if name == (NS_LAYOUT_URI, 'blockall-restriction'):
             self.parent()._restrictions.append(restrictions.BlockAll())
 
 
@@ -154,7 +156,7 @@ class BlockSlotHandler(BlockHandler):
     silvaconf.name('slotblock')
 
     def startElementNS(self, name, qname, attrs):
-        if name == (NS_URI, 'slotblock'):
+        if name == (NS_LAYOUT_URI, 'slotblock'):
             options = {}
             # XXX: handle restrictions
             for option_name in ('tag', 'css_class'):
@@ -166,7 +168,7 @@ class BlockSlotHandler(BlockHandler):
             self.setResult(self.block)
 
     def endElementNS(self, name, qname):
-        if name == (NS_URI, 'slotblock'):
+        if name == (NS_LAYOUT_URI, 'slotblock'):
             self.add_block(self.block)
             del self.block
 
@@ -178,61 +180,60 @@ class TextBlockHandler(BlockHandler):
         return {(NS_EDITOR_URI, 'text'): TextHandler}
 
     def startElementNS(self, name, qname, attrs):
-        if name == (NS_URI, 'textblock'):
+        if name == (NS_LAYOUT_URI, 'textblock'):
             identifier = attrs[(None, 'identifier')]
             self.block = TextBlock(identifier)
             self.setResult(self.block)
 
     def endElementNS(self, name, qname):
-        if name == (NS_URI, 'textblock'):
+        if name == (NS_LAYOUT_URI, 'textblock'):
             self.add_block(self.block)
             del self.block
 
 
-class DesignHandler(xmlimport.SilvaBaseHandler):
+class DesignHandler(handlers.SilvaHandler):
 
     def startElementNS(self, name, qname, attrs):
-        if name == (NS_URI, 'design'):
+        if name == (NS_LAYOUT_URI, 'design'):
             id = attrs.get((None, 'id'))
-            design = registry.lookup_design_by_name(id)
+            page = self.parent()
             if id is not None:
-                self.parent().set_design(design)
+                # XXX handle case when design is not here
+                design = registry.lookup_design_by_name(id)
+                page.set_design(design)
             else:
                 path = attrs.get((None, 'path'))
-                if path is not None:
-                    info = self.getInfo()
-                    content = self.parent()
+                importer = self.getExtra()
 
-                    def set_design(design):
-                        content.set_design(design)
+                def set_design(design):
+                    page.set_design(design)
 
-                    info.addAction(
-                        xmlimport.resolve_path, [set_design, info, path])
+                importer.resolveImportedPath(page, set_design, path)
 
 
-class PageModelHandler(xmlimport.SilvaBaseHandler):
+class PageModelHandler(handlers.SilvaHandler):
     silvaconf.name('pagemodel')
 
     def getOverrides(self):
         return {(NS_SILVA_URI, 'content'): PageModelVersionHandler}
 
     def startElementNS(self, name, qname, attrs):
-        if name == (NS_URI, 'pagemodel'):
-            uid = self.generateOrReplaceId(attrs[(None, 'id')].encode('utf-8'))
+        if name == (NS_LAYOUT_URI, 'pagemodel'):
+            uid = self.generateIdentifier(attrs)
             factory = self.parent().manage_addProduct[
                 'silva.core.contentlayout']
             factory.manage_addPageModel(uid, '', no_default_version=True)
             self.setResultId(uid)
 
     def endElementNS(self, name, qname):
-        if name == (NS_URI, 'pagemodel'):
+        if name == (NS_LAYOUT_URI, 'pagemodel'):
             self.notifyImport()
 
 
-class PageModelVersionHandler(xmlimport.SilvaBaseHandler):
+class PageModelVersionHandler(handlers.SilvaVersionHandler):
 
     def getOverrides(self):
-        return {(NS_URI, 'design'): DesignHandler}
+        return {(NS_LAYOUT_URI, 'design'): DesignHandler}
 
     def startElementNS(self, name, qname, attrs):
         if (NS_SILVA_URI, 'content') == name:
@@ -244,7 +245,7 @@ class PageModelVersionHandler(xmlimport.SilvaBaseHandler):
 
     def endElementNS(self, name, qname):
         if (NS_SILVA_URI, 'content') == name:
-            xmlimport.updateVersionCount(self)
+            self.updateVersionCount()
             self.storeMetadata()
             self.storeWorkflow()
 

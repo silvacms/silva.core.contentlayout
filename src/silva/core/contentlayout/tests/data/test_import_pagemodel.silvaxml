@@ -6,7 +6,7 @@
 	xmlns:silva-external-sources="http://infrae.com/namespace/silva-external-sources"
 	xmlns:silva-extra="http://infrae.com/namespace/metadata/silva-extra"
 	silva_version="Silva 3.0dev">
-	<folder id="somefolder">
+	<folder id="folder">
     <metadata>
       <set id="silva-content">
         <silva-content:maintitle>Some folder</silva-content:maintitle>
@@ -30,7 +30,7 @@
     <content>
     </content>
     </folder>
-	<contentlayout:pagemodel id="pm">
+	<contentlayout:pagemodel id="model">
 		<workflow>
 			<version id="0">
 				<status>unapproved</status>
@@ -63,7 +63,7 @@
 					<contentlayout:sourceblock id="cs_toc">
 						<silva-external-sources:fields>
 						<silva-external-sources:field xmlns="http://infrae.com/namespace/silva-references" id="paths">
-						<path>somefolder</path>
+						<path>folder</path>
 						</silva-external-sources:field>
 						<silva-external-sources:field xmlns="http://infrae.com/namespace/formulator" id="toc_types">
 						<value>Silva Folder</value>

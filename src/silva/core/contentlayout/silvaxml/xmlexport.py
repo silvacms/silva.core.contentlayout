@@ -11,13 +11,13 @@ from silva.core.editor.transform.silvaxml.xmlexport import TextProducerProxy
 from silva.translations import translate as _
 from zeam.component.site import getWrapper
 
-from Products.Silva.silvaxml import xmlexport, NS_SILVA_URI
 from Products.SilvaExternalSources.interfaces import IExternalSourceManager
 from Products.SilvaExternalSources.errors import SourceError
 from Products.SilvaExternalSources.silvaxml.xmlexport import \
     SourceParametersProducer
+from silva.core.xml import producers, NS_SILVA_URI
 
-from . import NS_URI
+from . import NS_LAYOUT_URI
 from .. import interfaces
 from ..blocks.slot import BlockSlot
 from ..blocks.source import SourceBlock
@@ -29,29 +29,30 @@ from ..slots.restrictions import BlockAll, CodeSourceName,Content
 logger = logging.getLogger('silva.core.xml')
 
 
-class BasePageProducer(xmlexport.SilvaProducer):
+class BasePageProducer(producers.SilvaProducer):
     grok.adapts(interfaces.IPage, Interface)
     grok.baseclass()
 
-    def design(self):
+    def sax_design(self):
         design = self.context.get_design()
         if design is not None:
             attrs = {}
             if IPageModelVersion.providedBy(design):
-                attrs['path'] = self.relative_path_to(design)
+                # XXX extern
+                attrs['path'] = self.get_relative_path_to(design)
             else:
                 attrs['id'] = design.get_identifier()
-            self.startElementNS(NS_URI, 'design', attrs)
+            self.startElementNS(NS_LAYOUT_URI, 'design', attrs)
             manager = interfaces.IBlockManager(self.context)
             for slot_id in manager.get_slot_ids():
-                self.startElementNS(NS_URI, 'slot', {'id': slot_id})
+                self.startElementNS(NS_LAYOUT_URI, 'slot', {'id': slot_id})
                 for block_id, block in manager.get_slot(slot_id):
                     self.subsax(block, parent=self)
-                self.endElementNS(NS_URI, 'slot')
-            self.endElementNS(NS_URI, 'design')
+                self.endElementNS(NS_LAYOUT_URI, 'slot')
+            self.endElementNS(NS_LAYOUT_URI, 'design')
 
 
-class BlockProducer(xmlexport.SilvaProducer):
+class BlockProducer(producers.SilvaProducer):
     grok.adapts(interfaces.IBlock, Interface)
 
     def sax(self, parent):
@@ -59,68 +60,70 @@ class BlockProducer(xmlexport.SilvaProducer):
             % self.context.__class__.__name__)
 
 
-class ReferenceBlockProducer(xmlexport.SilvaProducer):
+class ReferenceBlockProducer(producers.SilvaProducer):
     grok.adapts(interfaces.IReferenceBlock, Interface)
 
     def sax(self, parent):
-        self.startElementNS(NS_URI, 'referenceblock',
-            {'ref': parent.reference(self.context.identifier)})
-        self.endElementNS(NS_URI, 'referenceblock')
+        self.startElementNS(
+            NS_LAYOUT_URI, 'referenceblock',
+            {'ref': parent.get_reference(self.context.identifier)})
+        self.endElementNS(NS_LAYOUT_URI, 'referenceblock')
 
 
-class SourceBlockProducer(xmlexport.SilvaProducer, SourceParametersProducer):
+class SourceBlockProducer(producers.SilvaProducer, SourceParametersProducer):
     grok.adapts(SourceBlock, Interface)
 
     def sax(self, parent):
+        exported = self.getExported()
         manager = getWrapper(parent.context, IExternalSourceManager)
         try:
             source = manager(
-                self.getInfo().request, instance=self.context.identifier)
+                exported.request, instance=self.context.identifier)
         except SourceError:
-            self.getInfo().reportError(
+            exported.reportError(
                 _(u"Broken source block in page"), content=parent.context)
             return
-        self.startElementNS(NS_URI, 'sourceblock',
-            {"id": source.getSourceId()})
-        self.source_parameters(source)
-        self.endElementNS(NS_URI, 'sourceblock')
+        self.startElementNS(NS_LAYOUT_URI, 'sourceblock',
+                            {"id": source.getSourceId()})
+        self.sax_source_parameters(source)
+        self.endElementNS(NS_LAYOUT_URI, 'sourceblock')
 
 
-class TextBlockProducer(xmlexport.SilvaProducer):
+class TextBlockProducer(producers.SilvaProducer):
     grok.adapts(TextBlock, Interface)
 
     def sax(self, parent):
-        self.startElementNS(NS_URI, 'textblock',
+        self.startElementNS(NS_LAYOUT_URI, 'textblock',
                             {"identifier": self.context.identifier})
         TextProducerProxy(parent.context, self.context).sax(self)
-        self.endElementNS(NS_URI, 'textblock')
+        self.endElementNS(NS_LAYOUT_URI, 'textblock')
 
 
-class SlotBlockProducer(xmlexport.SilvaProducer):
+class SlotBlockProducer(producers.SilvaProducer):
     grok.adapts(BlockSlot, Interface)
 
     def sax(self, parent):
-        self.startElementNS(NS_URI, 'slotblock',
+        self.startElementNS(NS_LAYOUT_URI, 'slotblock',
             {'css_class': self.context.css_class,
              'tag': self.context.tag})
         restrictions = self.context._restrictions
         if restrictions:
-            self.startElementNS(NS_URI, 'restrictions')
+            self.startElementNS(NS_LAYOUT_URI, 'restrictions')
             for restriction in restrictions:
                 self.subsax(restriction)
-            self.endElementNS(NS_URI, 'restrictions')
-        self.endElementNS(NS_URI, 'slotblock')
+            self.endElementNS(NS_LAYOUT_URI, 'restrictions')
+        self.endElementNS(NS_LAYOUT_URI, 'slotblock')
 
 
-class PageModel(xmlexport.SilvaVersionedContentProducer):
+class PageModel(producers.SilvaVersionedContentProducer):
     grok.adapts(interfaces.IPageModel, Interface)
 
     def sax(self):
         self.startElementNS(
-            NS_URI, 'pagemodel', {'id': self.context.id})
-        self.workflow()
-        self.versions()
-        self.endElementNS(NS_URI, 'pagemodel')
+            NS_LAYOUT_URI, 'pagemodel', {'id': self.context.id})
+        self.sax_workflow()
+        self.sax_versions()
+        self.endElementNS(NS_LAYOUT_URI, 'pagemodel')
 
 
 class PageModelVersionProducer(BasePageProducer):
@@ -129,42 +132,42 @@ class PageModelVersionProducer(BasePageProducer):
     def sax(self):
         self.startElementNS(
             NS_SILVA_URI, 'content', {'version_id': self.context.id})
-        self.metadata()
-        self.design()
+        self.sax_metadata()
+        self.sax_design()
         self.endElementNS(NS_SILVA_URI, 'content')
 
 
-class CodeSourceNameRestriction(xmlexport.SilvaBaseProducer):
+class CodeSourceNameRestriction(producers.SilvaProducer):
     grok.adapts(CodeSourceName, Interface)
 
     def sax(self):
-        self.startElementNS(NS_URI, 'codesourcename-restriction')
+        self.startElementNS(NS_LAYOUT_URI, 'codesourcename-restriction')
         for name in self.context.allowed:
-            self.startElementNS(NS_URI, 'allowed', {'name': name})
-            self.endElementNS(NS_URI, 'allowed')
+            self.startElementNS(NS_LAYOUT_URI, 'allowed', {'name': name})
+            self.endElementNS(NS_LAYOUT_URI, 'allowed')
         for name in self.context.disallowed:
-            self.startElementNS(NS_URI, 'disallowed', {'name': name})
-            self.endElementNS(NS_URI, 'disallowed')
-        self.endElementNS(NS_URI, 'codesourcename-restriction')
+            self.startElementNS(NS_LAYOUT_URI, 'disallowed', {'name': name})
+            self.endElementNS(NS_LAYOUT_URI, 'disallowed')
+        self.endElementNS(NS_LAYOUT_URI, 'codesourcename-restriction')
 
 
-class ContentRestrictionProvider(xmlexport.SilvaBaseProducer):
+class ContentRestrictionProvider(producers.SilvaProducer):
     grok.adapts(Content, Interface)
 
     def sax(self):
         self.startElementNS(
-            NS_URI, 'content-restriction', {'schema': self.get_schema()})
-        self.endElementNS(NS_URI, 'content-restriction')
+            NS_LAYOUT_URI, 'content-restriction', {'schema': self.get_schema()})
+        self.endElementNS(NS_LAYOUT_URI, 'content-restriction')
 
     def get_schema(self):
         return ":".join([self.context.schema.__module__,
                          self.context.schema.__name__])
 
 
-class BlockAllRestrictionProducer(xmlexport.SilvaBaseProducer):
+class BlockAllRestrictionProducer(producers.SilvaProducer):
     grok.adapts(BlockAll, Interface)
 
     def sax(self):
-        self.startElementNS(NS_URI, 'blockall-restriction')
-        self.endElementNS(NS_URI, 'blockall-restriction')
+        self.startElementNS(NS_LAYOUT_URI, 'blockall-restriction')
+        self.endElementNS(NS_LAYOUT_URI, 'blockall-restriction')
 

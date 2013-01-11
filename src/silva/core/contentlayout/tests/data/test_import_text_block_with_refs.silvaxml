@@ -6,7 +6,7 @@
 	xmlns:silva-external-sources="http://infrae.com/namespace/silva-external-sources"
 	xmlns:silva-extra="http://infrae.com/namespace/metadata/silva-extra"
 	silva_version="Silva 3.0dev">
-  <contentlayout:pagemodel id="pm">
+  <contentlayout:pagemodel id="model">
     <workflow>
       <version id="0">
         <status>unapproved</status>
@@ -20,9 +20,9 @@
         <contentlayout:slot id="one">
           <contentlayout:textblock identifier="text block 1233520e-b4a9-11e1-8724-aa0004000a04">
             <silva-core-editor:text><html:p>
-                <html:a class="link" reference="alink"
+                <html:a class="link" reference="link"
                   reference-type="text block 1233520e-b4a9-11e1-8724-aa0004000a04 link"
-                  target="_self" title="alink">alink</html:a>
+                  target="_self" title="link">alink</html:a>
               </html:p>
             </silva-core-editor:text>
           </contentlayout:textblock>
@@ -30,7 +30,7 @@
       </contentlayout:design>
     </content>
   </contentlayout:pagemodel>
-  <link id="alink">
+  <link id="link">
     <workflow>
       <version id="0">
         <status>unapproved</status>

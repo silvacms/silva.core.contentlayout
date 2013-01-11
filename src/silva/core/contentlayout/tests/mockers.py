@@ -9,7 +9,7 @@ from Products.Silva.VersionedContent import VersionedContent
 from Products.Silva.Version import Version
 
 from silva.core import conf as silvaconf
-from Products.Silva.silvaxml import xmlexport
+from silva.core.xml import producers
 from ..silvaxml.xmlexport import BasePageProducer
 from ..designs.design import DesignAccessors
 from .. import Design, Slot
@@ -38,13 +38,13 @@ class MockOtherPage(VersionedContent):
     grok.implements(interfaces.IPageAware)
 
 
-class MockupPageProducer(xmlexport.VersionedContentProducer):
+class MockupPageProducer(producers.SilvaVersionedContentProducer):
     grok.adapts(MockupPage, Interface)
 
     def sax(self):
         self.startElement('page', {'id': self.context.id})
-        self.workflow()
-        self.versions()
+        self.sax_workflow()
+        self.sax_versions()
         self.endElement('page')
 
 
@@ -53,8 +53,8 @@ class MockupPageVersionProducer(BasePageProducer):
 
     def sax(self):
         self.startElement('content', {'version_id': self.context.id})
-        self.metadata()
-        self.design()
+        self.sax_metadata()
+        self.sax_design()
         self.endElement('content')
 
 

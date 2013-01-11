@@ -2,6 +2,8 @@
 # Copyright (c) 2012  Infrae. All rights reserved.
 # See also LICENSE.txt
 
+import unittest
+
 from zope.component import getUtility
 
 from Products.Silva.testing import TestRequest
@@ -22,7 +24,7 @@ from ..slots import restrictions as restrict
 from ..testing import FunctionalLayer
 
 
-class PageModelImportTest(SilvaXMLTestCase):
+class PageModelImportTestCase(SilvaXMLTestCase):
     layer = FunctionalLayer
 
     def setUp(self):
@@ -32,11 +34,16 @@ class PageModelImportTest(SilvaXMLTestCase):
         factory.manage_addContentLayoutService()
 
     def test_import_page_model(self):
-        self.import_file('test_import_pagemodel.silvaxml',
-                         globs=globals(),
-                         check_warnings=True)
+        importer = self.assertImportFile(
+            'test_import_pagemodel.silvaxml',
+            ['/root/folder',
+             '/root/model',
+             '/root/image'])
+        self.assertEqual(
+            importer.getProblems(),
+            [('Missing image file in the import: assets/1.', self.root.image)])
 
-        page_model = self.root._getOb('pm')
+        page_model = self.root._getOb('model')
         self.assertTrue(page_model is not None)
         version = page_model._getOb('0')
         self.assertIsInstance(page_model, PageModel)
@@ -95,17 +102,18 @@ class PageModelImportTest(SilvaXMLTestCase):
             IBlockController)
         params, _ = controller.manager.get_parameters(
             source_block_with_ref.identifier)
-        ref_name = params.paths
-        ref_set = ReferenceSet(version, ref_name)
-        assert self.root.somefolder in ref_set
+        self.assertIn(self.root.folder,  ReferenceSet(version, params.paths))
         self.assertEquals(set(['Silva Publication', 'Silva Folder']),
                           set(params.toc_types))
 
     def test_import_text_block_with_refs(self):
-        self.import_file('test_import_text_block_with_refs.silvaxml',
-                         globs=globals(), check_warnings=True)
+        importer = self.assertImportFile(
+            'test_import_text_block_with_refs.silvaxml',
+            ['/root/model',
+             '/root/link'])
+        self.assertEqual(importer.getProblems(), [])
 
-        model = self.root.pm.get_editable()
+        model = self.root.model.get_editable()
         self.assertIsInstance(model, PageModelVersion)
         manager = IBlockManager(model)
         slot1 = manager.get_slot('one')
@@ -122,3 +130,9 @@ class PageModelImportTest(SilvaXMLTestCase):
         reference_type = reference.tags[0]
         reference_name = reference.tags[1]
         self.assertEquals("%s link" % text_block.identifier, reference_type)
+
+
+def test_suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(PageModelImportTestCase))
+    return suite
