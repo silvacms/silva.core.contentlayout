@@ -8,6 +8,7 @@ import uuid
 from AccessControl import getSecurityManager
 
 from five import grok
+from persistent import Persistent
 from zope.interface import Interface
 from zope.publisher.interfaces.http import IHTTPRequest
 from zope import schema
@@ -30,7 +31,7 @@ from ..slots.slot import Slot, SlotView
 from ..slots import restrictions as restrict
 
 
-class BlockSlot(Slot, Block):
+class BlockSlot(Persistent, Slot, Block):
     grok.implements(IBlockSlot)
     grok.name('slot')
     grok.title(_('Slot'))
