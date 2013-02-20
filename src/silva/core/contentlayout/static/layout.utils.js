@@ -107,7 +107,8 @@
                     slot_cache = validation_add[state.slot.id] = {};
                 };
                 block_cache = slot_cache[state.name];
-                if (block_cache !== undefined && !block_cache.isRejected()) {
+                if (block_cache !== undefined && block_cache.state() == 'resolved') {
+                    // Return cached success
                     return block_cache.pipe(function (data) {
                         return $.extend(response, {
                             success: data.success,
@@ -179,7 +180,8 @@
                     block_cache = validation_move[state.current.id] = {};
                 };
                 slot_cache = block_cache[state.slot.id];
-                if (slot_cache !== undefined && !slot_cache.isRejected()) {
+                if (slot_cache !== undefined && slot_cache.state() == 'resolved') {
+                    // Return cached success
                     return slot_cache.pipe(function (data) {
                         return $.extend(response, {
                             success: data.success,
