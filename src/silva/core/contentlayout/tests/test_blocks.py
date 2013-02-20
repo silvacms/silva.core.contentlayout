@@ -387,10 +387,10 @@ class TextBlockTestCase(TestCase):
 
         TEXT_ANCHOR_STORED = """
 <p>
-   <a class="anchor" name="simple" title="Simple Anchor" href="javascript:void()">Simple Anchor</a>
+   <a class="anchor" name="simple" title="Simple Anchor">Simple Anchor</a>
    The ultimate store of the anchors.
 
-   <a class="anchor" name="advanced" title="Advanced Anchor" href="javascript:void()">Advanced Anchor</a>
+   <a class="anchor" name="advanced" title="Advanced Anchor">Advanced Anchor</a>
 
 </p>
 """
