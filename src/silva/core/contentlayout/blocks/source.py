@@ -4,9 +4,9 @@
 
 from five import grok
 from zope.event import notify
+from zope.component import getMultiAdapter
 from zope.interface import Interface
 from zope.lifecycleevent import ObjectModifiedEvent
-from zope.traversing.browser import absoluteURL
 
 from Acquisition import aq_base
 
@@ -18,6 +18,7 @@ from Products.SilvaExternalSources.interfaces import availableSources
 
 from silva.core import conf as silvaconf
 from silva.core.conf.interfaces import ITitledContent
+from silva.core.views.interfaces import IContentURL
 from silva.translations import translate as _
 from silva.ui.rest.exceptions import RESTRedirectHandler
 from zeam.component import Component, getWrapper, component
@@ -53,7 +54,8 @@ class SourceBlockConfiguration(object):
     def get_icon(self, view):
         icon = self.source.get_icon()
         if icon is not None:
-            return absoluteURL(icon, view.request)
+            url = getMultiAdapter((icon, view.request), IContentURL)
+            return str(url)
         try:
             icon = icon_registry.get_icon_by_identifier(
                 ('silva.core.contentlayout.blocks', self.prefix))

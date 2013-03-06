@@ -4,7 +4,7 @@
 from setuptools import setup, find_packages
 import os
 
-version = '3.0.1dev'
+version = '3.0.1'
 
 tests_require = [
     'Products.Silva [test]',
@@ -44,6 +44,7 @@ setup(name='silva.core.contentlayout',
           'silva.core.references',
           'silva.core.services',
           'silva.core.views',
+          'silva.core.xml',
           'silva.ui',
           'zeam.component',
           'zeam.form.silva',

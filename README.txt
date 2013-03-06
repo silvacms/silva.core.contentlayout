@@ -22,6 +22,6 @@ You can find the code of this extension in Mercurial:
 https://hg.infrae.com/silva.core.contentlayout/.
 
 .. _UCL: http://www.ucl.ac.uk/
-.. _extension developer documentation: http://docs.infrae.com/silva/trunk/addons/contentlayout/index.html
+.. _extension developer documentation: http://docs.silvacms.org/trunk/addons/contentlayout/index.html
 
 
