@@ -22,7 +22,6 @@ from silva.core.interfaces.events import IContentClosedEvent
 from silva.core.interfaces.events import IContentPublishedEvent
 from silva.core.interfaces.events import IContentImported
 from silva.core.views import views as silvaviews
-from silva.core.views.interfaces import ISilvaURL
 from silva.core.smi.settings import Settings
 from silva.translations import translate as _
 from silva.ui.interfaces import IJSView
@@ -33,6 +32,7 @@ from zeam.form import silva as silvaforms
 
 from Products.Silva.VersionedContent import VersionedObject
 from Products.Silva.Version import Version
+from Products.Silva import SilvaPermissions
 
 from .interfaces import IPageModel, IPageModelVersion, PageModelFields
 from .interfaces import IContentLayoutService, IBlockSlot, IBlockManager
@@ -40,7 +40,6 @@ from .designs.design import DesignAccessors
 from silva.core.contentlayout.interfaces import IDesignAssociatedEvent, IPage,\
     IDesignDeassociatedEvent
 from silva.core.references.interfaces import IReferenceService
-
 
 
 class PageModelVersion(Version, DesignAccessors):
@@ -53,23 +52,54 @@ class PageModelVersion(Version, DesignAccessors):
     _allowed_content_types = None
     _role = None
 
-    def get_identifier(self, design=False):
-        if design:
-            design = self.get_design()
-            if design is not None:
-                return design.get_identifier(design=True)
-            return 'default'
+    security.declareProtected(
+        SilvaPermissions.View, 'get_design_title')
+    def get_design_title(self):
+        # Return Silva title as design title.
+        return self.get_title()
+
+    security.declareProtected(
+        SilvaPermissions.View, 'get_design_identifier')
+    def get_design_identifier(self):
+        # Return the IntID of the model as identifier.
         return getUtility(IIntIds).register(self.get_silva_object())
 
+    security.declareProtected(
+        SilvaPermissions.View, 'get_all_design_identifiers')
+    def get_all_design_identifiers(self, known=None):
+        # We have to build this method passing a list as argument, in
+        # order to prevent infinite recursion if there is a loop in
+        # the designs.
+        if known is None:
+            known = []
+        identifier = self.get_design_identifier()
+        if identifier not in known:
+            known.append(identifier)
+            design = self.get_design()
+            if design is not None:
+                return design.get_all_design_identifiers(known)
+            else:
+                # Broken design fallback to default.
+                known.append('default')
+        return known
+
+    security.declareProtected(
+        SilvaPermissions.ChangeSilvaContent, 'set_role')
     def set_role(self, role):
         self._role = role
 
+    security.declareProtected(
+        SilvaPermissions.View, 'get_role')
     def get_role(self):
         return self._role
 
+    security.declareProtected(
+        SilvaPermissions.View, 'get_allowed_content_types')
     def get_allowed_content_types(self):
         return self._allowed_content_types
 
+    security.declareProtected(
+        SilvaPermissions.ChangeSilvaContent, 'set_allowed_content_types')
     def set_allowed_content_types(self, types):
         self._allowed_content_types = set(types)
         return self._allowed_content_types
@@ -125,9 +155,7 @@ class PageModelListing(ContainerListing):
     @classmethod
     def configuration(cls, screen):
         cfg = super(PageModelListing, cls).configuration(screen)
-        cfg.update({
-                'content_match': ['equal', 'access', 'manage']
-                })
+        cfg.update({'content_match': ['equal', 'access', 'manage']})
         return cfg
 
 

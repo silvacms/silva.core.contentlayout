@@ -30,7 +30,7 @@ class DesignTestCase(unittest.TestCase):
         self.assertEqual(len(demo_designs), 4)
         for design in demo_designs:
             self.assertTrue(verifyClass(IDesign, design))
-            demo_designs_by_id[design.get_identifier()] = design
+            demo_designs_by_id[design.get_design_identifier()] = design
         self.assertEqual(len(demo_designs_by_id), 4)
 
         # Test lookup_design_by_name

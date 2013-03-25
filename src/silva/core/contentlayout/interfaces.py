@@ -43,20 +43,23 @@ class IDesign(interface.Interface):
    markers = interface.Attribute(
       u"List of customization markers to apply when the design is used.")
 
-   def get_identifier():
+   def get_design_identifier():
       """Return a unique identifier for the template.
       """
 
-   def get_title():
+   def get_all_design_identifiers(known=None):
+      """Return every identifier used for this template as a list,
+      meaning the identifier of this template, and of templates used
+      by one.
+      """
+
+   def get_design_title():
       """Return template title to be used in the Silva Management Interface.
       """
 
-   def update():
-      """Method called before the design is rendered.
-      """
 
 class ICachableDesign(interface.Interface):
-    """ Marker to tell if the design won't change and can be cached
+    """ Marker to tell if the design won't change and can be cached.
     """
 
 
@@ -152,41 +155,62 @@ def design_identifier_source(context):
     registry = getUtility(IDesignLookup)
 
     def make_term(design):
-        return Term(value=design.get_identifier(),
-                    token=design.get_identifier(),
-                    title=design.get_title())
+       identifier = design.get_design_identifier()
+       title = design.get_design_title()
+       return Term(value=identifier, token=identifier, title=title)
 
     return Vocabulary(map(make_term, registry.lookup_design(None)))
 
 @grok.provider(IFormSourceBinder)
 def design_source(form):
+   """Source vocabulary for design.
+   """
    registry = getUtility(IDesignLookup)
-   candidates = None
    base_url = IVirtualSite(form.request).get_root_url() + '/'
+   candidates = []
+   blacklist_identifier = None
+   current_identifier = None
 
    if isinstance(form, SMIAddForm):
       candidates = registry.lookup_design_by_addable(
          form.context, extensionRegistry.get_addable(form._content_type))
    else:
       candidates = registry.lookup_design(form.context)
+      content = form.getContent()
+      current = content.get_design()
+      if current is not None:
+         current_identifier = current.get_design_identifier()
+      if IDesign.providedBy(content):
+         # You cannot set a design used by this design here.
+         blacklist_identifier = content.get_design_identifier()
 
    get_icon = iconRegistry.get_icon_by_identifier
 
-   def make_term(design):
-      identifier = design.get_identifier()
-      namespace = 'silva.core.contentlayout.designs'
-      if IPageModelVersion.providedBy(design):
-         namespace = 'silva.core.contentlayout.models'
-      try:
-         icon = base_url + get_icon((namespace, design.get_identifier(True)))
-      except ValueError:
-         icon = base_url + get_icon((namespace, 'default'))
-      return Term(value=design,
-                  token=identifier,
-                  title=design.get_title(),
-                  icon=icon)
+   def make_terms():
+      for candidate in candidates:
+         namespace = 'silva.core.contentlayout.designs'
+         if IPageModelVersion.providedBy(candidate):
+            namespace = 'silva.core.contentlayout.models'
+         candidate_identifier = candidate.get_design_identifier()
+         used_candidates = candidate.get_all_design_identifiers()
+         if (blacklist_identifier is not None and
+             blacklist_identifier in used_candidates and
+             candidate_identifier != current_identifier):
+            continue
+         if used_candidates:
+            icon_identifier = used_candidates[-1]
+         else:
+            icon_identifier = 'default'
+         try:
+            icon = base_url + get_icon((namespace, icon_identifier))
+         except ValueError:
+            icon = base_url + get_icon((namespace, 'default'))
+         yield Term(value=candidate,
+                    token=candidate_identifier,
+                    title=candidate.get_design_title(),
+                    icon=icon)
 
-   return Vocabulary(map(make_term, candidates))
+   return Vocabulary(list(make_terms()))
 
 
 class ITitledPage(ITitledContent):
@@ -544,7 +568,7 @@ class IPageModel(IVersionedObject):
    """
 
 
-class IPageModelVersion(IVersion, IPage):
+class IPageModelVersion(IVersion, IPage, IDesign):
    """ A page model version.
 
    This version store the blocks and slots predefined in the model.

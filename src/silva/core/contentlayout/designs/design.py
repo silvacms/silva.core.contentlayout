@@ -17,7 +17,9 @@ from zope.component import getUtility
 from zope.event import notify
 
 from silva.core.interfaces import IVersion
+from silva.core.interfaces.errors import ContentError
 from silva.fanstatic import need
+from silva.translations import translate as _
 
 from ..interfaces import IDesign, IDesignLookup, IPage, IEditionResources
 from ..interfaces import IDesignAssociatedEvent, IDesignDeassociatedEvent
@@ -64,11 +66,18 @@ class Design(object):
         self.edition = False
 
     @classmethod
-    def get_identifier(cls, design=False):
+    def get_design_identifier(cls):
         return grok.name.bind().get(cls)
 
     @classmethod
-    def get_title(cls):
+    def get_all_design_identifiers(cls, known=None):
+        if known is None:
+            known = []
+        known.append(cls.get_design_identifier())
+        return known
+
+    @classmethod
+    def get_design_title(cls):
         return grok.title.bind().get(cls)
 
     def default_namespace(self):
@@ -99,33 +108,46 @@ class Design(object):
 class DesignAccessors(object):
     """ A mixin class to provide get/set design methods
     """
-
     _design_name = None
 
     def get_design(self):
-        if not hasattr(aq_base(self), '_v_design'):
-            design = None
-            if self._design_name is not None:
-                service = getUtility(IDesignLookup)
-                design = service.lookup_design_by_name(
-                    self._design_name)
-                if ICachableDesign.providedBy(design):
-                    self._v_design = design
-            return design
-        return self._v_design
+        if hasattr(aq_base(self), '_v_design'):
+            return self._v_design
+        design = None
+        if self._design_name is not None:
+            service = getUtility(IDesignLookup)
+            design = service.lookup_design_by_name(self._design_name)
+            if ICachableDesign.providedBy(design):
+                self._v_design = design
+        return design
 
     def set_design(self, design):
         previous = self.get_design()
-        if hasattr(aq_base(self), '_v_design'):
-            del self._v_design
-        if design is None:
-            identifier = None
+        if previous is None:
+            previous_identifier = None
         else:
-            identifier = design.get_identifier()
-        self._design_name = identifier
-        if previous != design:
+            previous_identifier = previous.get_design_identifier()
+        if design is None:
+            new_identifier = None
+        else:
+            new_identifier = design.get_design_identifier()
+            # Check the new design is not using it self.
+            if IDesign.providedBy(self):
+                local_identifier = self.get_design_identifier()
+                if local_identifier in design.get_all_design_identifiers():
+                    raise ContentError(
+                        _(u"This template cannot be used for this model"),
+                        content=self.get_silva_object())
+
+        if previous_identifier != new_identifier:
+            # If there is a change
+            if hasattr(aq_base(self), '_v_design'):
+                del self._v_design
+
             if previous is not None:
                 notify(DesignDeassociatedEvent(self, previous))
+            # Change
+            self._design_name = new_identifier
             if design is not None:
                 notify(DesignAssociatedEvent(self, design))
         return design

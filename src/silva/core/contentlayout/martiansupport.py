@@ -81,7 +81,8 @@ class RegisterDesignGrokker(martian.ClassGrokker):
         if factory.template is None:
             self.associate_template(factory)
         if icon is not None:
-            register_icon(self, config, factory, factory.get_identifier(), icon)
+            identifier = factory.get_design_identifier()
+            register_icon(self, config, factory, identifier, icon)
         design_registry.register_design(factory)
         return True
 

@@ -41,7 +41,7 @@ class BasePageProducer(producers.SilvaProducer):
                 # XXX extern
                 attrs['path'] = self.get_relative_path_to(design)
             else:
-                attrs['id'] = design.get_identifier()
+                attrs['id'] = design.get_design_identifier()
             self.startElementNS(NS_LAYOUT_URI, 'design', attrs)
             manager = interfaces.IBlockManager(self.context)
             for slot_id in manager.get_slot_ids():

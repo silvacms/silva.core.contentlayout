@@ -49,7 +49,7 @@ class PageModelImportTestCase(SilvaXMLTestCase):
         self.assertIsInstance(page_model, PageModel)
         self.assertIsInstance(version, PageModelVersion)
         design = version.get_design()
-        self.assertEquals('adesign', design.get_identifier())
+        self.assertEquals('adesign', design.get_design_identifier())
         slots = version.slots
         self.assertEquals(2, len(slots))
         manager = IBlockManager(version)

@@ -95,13 +95,13 @@ class ContentLayoutService(SilvaService):
         'View Management Screens', 'register_page_model')
     def register_page_model(self, model):
         int_id = getUtility(IIntIds).register(model)
-        self._page_models[model.get_identifier()] = int_id
+        self._page_models[model.get_design_identifier()] = int_id
         self._p_changed = True
 
     security.declareProtected(
         'View Management Screens', 'unregister_page_model')
     def unregister_page_model(self, model):
-        identifier = model.get_identifier()
+        identifier = model.get_design_identifier()
         if identifier in self._page_models:
             del self._page_models[identifier]
             self._p_changed = True
@@ -131,7 +131,7 @@ class ContentLayoutService(SilvaService):
         return models
 
     def _design_allowed(self, design, context, meta_type):
-        rules = self._restrictions_index.get(design.get_identifier())
+        rules = self._restrictions_index.get(design.get_design_identifier())
         if rules is None:
             return True
         user_role = IAuthorizationManager(context).get_user_role()
@@ -276,7 +276,7 @@ class DesignContentRule(object):
             raise ValueError(
                 _(u'Template ${design} restricts its usage to ${require} '
                   u'objects, however ${content} do not comply.',
-                  mapping=dict(design=design.get_title(),
+                  mapping=dict(design=design.get_design_title(),
                                require=require.__name__,
                                content=self.content_type)))
 
