@@ -148,7 +148,11 @@ class BlockSlotController(BlockController):
             next_view = SlotView(
                 self.block.identifier, self.block, design, next_content)
             return next_view()
-        return '<div>This is a slot for pages using this model.</div>'
+        msg = '<div>Slot <b>{0}</b> (<i>{1}</i> tag and <i>{2}</i> css class) for pages using this model.</div>'
+        return msg.format(
+            self.get_identifier(),
+            self.get_tag(),
+            self.get_css_class())
 
     def get_identifier(self):
         return self.block.identifier
