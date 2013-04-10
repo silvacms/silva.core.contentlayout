@@ -17,6 +17,7 @@ from zope.lifecycleevent import ObjectModifiedEvent
 from zope.schema.interfaces import IContextSourceBinder
 from zope.schema.vocabulary import SimpleVocabulary, SimpleTerm
 from zeam.form.ztk import EditAction
+from grokcore.chameleon.components import ChameleonPageTemplate
 
 from silva.core import conf as silvaconf
 from silva.translations import translate as _
@@ -138,8 +139,18 @@ class IBlockSlotFields(Interface):
 class BlockSlotController(BlockController):
     grok.adapts(IBlockSlot, Interface, IHTTPRequest)
 
+    edit_template = ChameleonPageTemplate(
+        filename="edit_slot.cpt")
+
     def editable(self):
         return True
+
+    def namespace(self):
+        return {}
+
+    def default_namespace(self):
+        return {"slot": self,
+                "request": self.request}
 
     def render(self, view=None):
         if view is not None and not view.final:
@@ -148,11 +159,7 @@ class BlockSlotController(BlockController):
             next_view = SlotView(
                 self.block.identifier, self.block, design, next_content)
             return next_view()
-        msg = '<div>Slot <b>{0}</b> (<i>{1}</i> tag and <i>{2}</i> css class) for pages using this model.</div>'
-        return msg.format(
-            self.get_identifier(),
-            self.get_tag(),
-            self.get_css_class())
+        return self.edit_template.render(self)
 
     def get_identifier(self):
         return self.block.identifier
@@ -205,6 +212,14 @@ class BlockSlotController(BlockController):
         if restriction is None:
             return None
         return restriction.schema
+
+    def get_content_restriction_name(self):
+        schema = self.get_content_restriction()
+        if schema is not None:
+            for addable in extensionRegistry.get_addables(requires=[IBlockable,]):
+                if schema is addable['interfaces'][0]:
+                    return addable['name']
+        return None
 
     def set_content_restriction(self, schema):
         restriction = self._find_restriction_with_type(restrict.Content)

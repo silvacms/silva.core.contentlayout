@@ -54,7 +54,6 @@ class EditorSMIConfiguration(silvaviews.Viewlet):
 
 
 class EditorTemplates(object):
-
     layer = ChameleonPageTemplate(
         filename="smi_templates/layer.cpt")
     components = ChameleonPageTemplate(

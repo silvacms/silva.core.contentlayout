@@ -1,0 +1,38 @@
+<div i18n:domain="silva">
+  <span i18n:translate="">
+    Slot <b tal:content="slot.get_identifier()" i18n:name="identifier">Identifier</b> for pages using this model:
+  </span>
+  <ul>
+    <li tal:define="tag slot.get_tag()"
+        tal:condition="tag"
+        i18n:translate="">
+      Use HTML tag <i tal:content="tag" i18n:name="tag">tag</i>.
+    </li>
+    <li tal:define="css_class slot.get_css_class()"
+        tal:condition="css_class"
+        i18n:translate="">
+      Use HTML CSS class <i tal:content="css_class" i18n:name="css_class">css_class</i>.
+    </li>
+    <li tal:define="code_sources slot.get_cs_whitelist()"
+        tal:condition="code_sources"
+        i18n:translate="">
+      This slot only allows to use the sources
+      <tal:source tal:repeat="code_source code_sources" i18n:name="code_sources"><i tal:content="code_source">Code souce</i><tal:comma tal:condition="not repeat.code_source.end">, </tal:comma></tal:source>.
+    </li>
+    <li tal:define="code_sources slot.get_cs_blacklist()"
+        tal:condition="code_sources"
+        i18n:translate="">
+      This slot doesn't allow to use the sources
+      <tal:source tal:repeat="code_source code_sources" i18n:name="code_sources"><i tal:content="code_source">Code souce</i><tal:comma tal:condition="not repeat.code_source.end">, </tal:comma></tal:source>.
+    </li>
+    <li tal:define="content slot.get_content_restriction_name()"
+        tal:condition="content"
+        i18n:translate="">
+      This slot allows <i tal:content="content" i18n:name="content">content</i> to be added in it.
+    </li>
+    <li tal:condition="slot.get_block_all()"
+        i18n:translate="">
+      All other components cannot be added.
+    </li>
+  </ul>
+</div>
