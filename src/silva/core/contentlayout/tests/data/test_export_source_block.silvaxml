@@ -65,17 +65,17 @@
                           </silvasettings:hide_from_tocs>
                         </set>
 					</metadata>
-					<contentlayout:design id="adesign">
-						<contentlayout:slot id="one">
-							<contentlayout:sourceblock id="cs_citation">
+					<silva-core-contentlayout:design id="adesign">
+						<silva-core-contentlayout:slot id="one">
+							<silva-core-contentlayout:sourceblock id="cs_citation">
 								<silva-external-sources:fields>
 									<silva-external-sources:field id="citation">A joke is a very serious thing.</silva-external-sources:field>
 									<silva-external-sources:field id="author">Winston Churchill</silva-external-sources:field>
 									<silva-external-sources:field id="source" />
 								</silva-external-sources:fields>
-							</contentlayout:sourceblock>
-						</contentlayout:slot>
-					</contentlayout:design>
+							</silva-core-contentlayout:sourceblock>
+						</silva-core-contentlayout:slot>
+					</silva-core-contentlayout:design>
 				</content>
 			</page>
 		</content>

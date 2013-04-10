@@ -59,7 +59,7 @@
               </silvasettings:hide_from_tocs>
             </set>
           </metadata>
-          <contentlayout:design id="adesign"/>
+          <silva-core-contentlayout:design id="adesign"/>
         </content>
       </page>
     </content>

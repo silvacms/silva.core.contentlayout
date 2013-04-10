@@ -3,9 +3,9 @@
 # See also LICENSE.txt
 # package
 
-from silva.core.xml import NS_SILVA_URI, registerNamespace
+from silva.core.xml import registerNamespace
 
-NS_LAYOUT_URI = NS_SILVA_URI + '/silva-core-contentlayout'
-registerNamespace('contentlayout', NS_LAYOUT_URI)
+NS_LAYOUT_URI = 'http://infrae.com/namespace/silva-core-contentlayout'
+registerNamespace('silva-core-contentlayout', NS_LAYOUT_URI)
 
 

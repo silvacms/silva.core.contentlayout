@@ -217,13 +217,13 @@ class PageModelHandler(handlers.SilvaHandler):
     def getOverrides(self):
         return {(NS_SILVA_URI, 'content'): PageModelVersionHandler}
 
+    def _createContent(self, identifier):
+        factory = self.parent().manage_addProduct['silva.core.contentlayout']
+        factory.manage_addPageModel(identifier, '', no_default_version=True)
+
     def startElementNS(self, name, qname, attrs):
         if name == (NS_LAYOUT_URI, 'pagemodel'):
-            uid = self.generateIdentifier(attrs)
-            factory = self.parent().manage_addProduct[
-                'silva.core.contentlayout']
-            factory.manage_addPageModel(uid, '', no_default_version=True)
-            self.setResultId(uid)
+            self.createContent(attrs)
 
     def endElementNS(self, name, qname):
         if name == (NS_LAYOUT_URI, 'pagemodel'):
@@ -235,13 +235,13 @@ class PageModelVersionHandler(handlers.SilvaVersionHandler):
     def getOverrides(self):
         return {(NS_LAYOUT_URI, 'design'): DesignHandler}
 
+    def _createVersion(self, identifier):
+        factory = self.parent().manage_addProduct['silva.core.contentlayout']
+        factory.manage_addPageModelVersion(identifier, '')
+
     def startElementNS(self, name, qname, attrs):
         if (NS_SILVA_URI, 'content') == name:
-            uid = attrs[(None, 'version_id')].encode('utf-8')
-            factory = self.parent().manage_addProduct[
-                'silva.core.contentlayout']
-            factory.manage_addPageModelVersion(uid, '')
-            self.setResultId(uid)
+            self.createVersion(attrs)
 
     def endElementNS(self, name, qname):
         if (NS_SILVA_URI, 'content') == name:

@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <silva xmlns="http://infrae.com/namespace/silva"
-	xmlns:contentlayout="http://infrae.com/namespace/silva/silva-core-contentlayout"
-	xmlns:html="http://www.w3.org/1999/xhtml" xmlns:silva-content="http://infrae.com/namespace/metadata/silva-content"
+	xmlns:html="http://www.w3.org/1999/xhtml"
+    xmlns:silva-content="http://infrae.com/namespace/metadata/silva-content"
+	xmlns:silva-core-contentlayout="http://infrae.com/namespace/silva-core-contentlayout"
 	xmlns:silva-core-editor="http://infrae.com/namespace/silva-core-editor"
 	xmlns:silva-external-sources="http://infrae.com/namespace/silva-external-sources"
 	xmlns:silva-extra="http://infrae.com/namespace/metadata/silva-extra"
 	silva_version="Silva 3.0dev">
-  <contentlayout:pagemodel id="model">
+  <silva-core-contentlayout:pagemodel id="model">
     <workflow>
       <version id="0">
         <status>unapproved</status>
@@ -16,20 +17,20 @@
     </workflow>
     <content version_id="0">
       <title>A Page Model</title>
-      <contentlayout:design id="adesign">
-        <contentlayout:slot id="one">
-          <contentlayout:textblock identifier="text block 1233520e-b4a9-11e1-8724-aa0004000a04">
+      <silva-core-contentlayout:design id="adesign">
+        <silva-core-contentlayout:slot id="one">
+          <silva-core-contentlayout:textblock identifier="text block 1233520e-b4a9-11e1-8724-aa0004000a04">
             <silva-core-editor:text><html:p>
                 <html:a class="link" reference="link"
                   reference-type="text block 1233520e-b4a9-11e1-8724-aa0004000a04 link"
                   target="_self" title="link">alink</html:a>
               </html:p>
             </silva-core-editor:text>
-          </contentlayout:textblock>
-        </contentlayout:slot>
-      </contentlayout:design>
+          </silva-core-contentlayout:textblock>
+        </silva-core-contentlayout:slot>
+      </silva-core-contentlayout:design>
     </content>
-  </contentlayout:pagemodel>
+  </silva-core-contentlayout:pagemodel>
   <link id="link">
     <workflow>
       <version id="0">
