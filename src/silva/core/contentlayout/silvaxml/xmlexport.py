@@ -66,7 +66,7 @@ class ReferenceBlockProducer(producers.SilvaProducer):
     def sax(self, parent):
         self.startElementNS(
             NS_LAYOUT_URI, 'referenceblock',
-            {'ref': parent.get_reference(self.context.identifier)})
+            {'target': parent.get_reference(self.context.identifier)})
         self.endElementNS(NS_LAYOUT_URI, 'referenceblock')
 
 
@@ -79,9 +79,11 @@ class SourceBlockProducer(producers.SilvaProducer, SourceParametersProducer):
         try:
             source = manager(
                 exported.request, instance=self.context.identifier)
-        except SourceError:
+        except SourceError, error:
             exported.reportError(
-                _(u"Broken source block in page"), content=parent.context)
+                u"Broken source block in page while exporting: "
+                u"{0}.".format(error),
+                content=parent.context)
             return
         self.startElementNS(NS_LAYOUT_URI, 'sourceblock',
                             {"id": source.getSourceId()})

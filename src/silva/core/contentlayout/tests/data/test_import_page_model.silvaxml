@@ -85,7 +85,7 @@
 				</silva-core-contentlayout:slot>
 				<silva-core-contentlayout:slot id="one">
 					<silva-core-contentlayout:slotblock css_class="" tag="div" />
-					<silva-core-contentlayout:referenceblock ref="image" />
+					<silva-core-contentlayout:referenceblock target="image" />
 					<silva-core-contentlayout:sourceblock id="cs_citation">
 						<silva-external-sources:fields>
 							<silva-external-sources:field id="citation">A joke is a very serious thing.</silva-external-sources:field>
