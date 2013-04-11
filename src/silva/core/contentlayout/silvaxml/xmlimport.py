@@ -8,6 +8,7 @@ from five import grok
 from zope.publisher.browser import TestRequest
 
 
+from Products.SilvaExternalSources.errors import SourceError
 from Products.SilvaExternalSources.interfaces import IExternalSourceManager
 from Products.SilvaExternalSources.silvaxml import NS_SOURCE_URI
 from Products.SilvaExternalSources.silvaxml.xmlimport import \
@@ -79,6 +80,7 @@ class ReferenceBlockHandler(BlockHandler):
 class SourceBlockHandler(BlockHandler):
     silvaconf.name('sourceblock')
 
+    block = None
     source = None
 
     def getOverrides(self):
@@ -86,20 +88,26 @@ class SourceBlockHandler(BlockHandler):
 
     def startElementNS(self, name, qname, attrs):
         if name == (NS_LAYOUT_URI, 'sourceblock'):
-            request = self.getExtra().request
+            importer = self.getExtra()
             manager = getWrapper(self.parentHandler().parent(),
                                  IExternalSourceManager)
             identifier = attrs[(None, 'id')]
-            self.source = manager(request, name=identifier)
-            instance_identifier = self.source.new()
-            self._block = SourceBlock(instance_identifier)
-            self.setResult(self.source)
+            try:
+                source = manager(importer.request, name=identifier)
+            except SourceError as error:
+                importer.reportProblem(
+                    u"Broken source in import: {0}".format(error),
+                    self.context)
+            else:
+                self.block = SourceBlock(source.new())
+                self.setResult(source)
 
     def endElementNS(self, name, qname):
         if name == (NS_LAYOUT_URI, 'sourceblock'):
-            self.add_block(self._block)
-            self.source = None
-            del self._block
+            if self.block is not None:
+                self.add_block(self.block)
+                self.block = None
+
 
 
 class AllowedCodeSourceNameHandler(handlers.SilvaHandler):
@@ -176,6 +184,8 @@ class BlockSlotHandler(BlockHandler):
 class TextBlockHandler(BlockHandler):
     silvaconf.name('textblock')
 
+    block = None
+
     def getOverrides(self):
         return {(NS_EDITOR_URI, 'text'): TextHandler}
 
@@ -187,9 +197,9 @@ class TextBlockHandler(BlockHandler):
 
     def endElementNS(self, name, qname):
         if name == (NS_LAYOUT_URI, 'textblock'):
-            self.add_block(self.block)
-            del self.block
-
+            if self.block is not None:
+                self.add_block(self.block)
+                self.block = None
 
 class DesignHandler(handlers.SilvaHandler):
 
