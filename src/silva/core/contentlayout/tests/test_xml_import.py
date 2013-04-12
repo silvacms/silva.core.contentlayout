@@ -5,6 +5,7 @@
 import unittest
 
 from zope.component import getUtility
+from zope.interface.verify import verifyObject
 
 from Products.Silva.testing import TestRequest
 from Products.Silva.tests.test_xml_import import SilvaXMLTestCase
@@ -15,11 +16,10 @@ from silva.core.references.interfaces import IReferenceService
 from zeam.component import getWrapper
 
 from ..blocks.contents import ReferenceBlock
-from ..blocks.slot import BlockSlot
 from ..blocks.source import SourceBlock
 from ..blocks.text import TextBlock
-from ..interfaces import IBlockManager, IBlockController
-from ..model import PageModel, PageModelVersion
+from ..interfaces import IBlockManager, IBlockController, IBlockSlot
+from ..interfaces import IPageModel, IPageModelVersion
 from ..slots import restrictions as restrict
 from ..testing import FunctionalLayer
 
@@ -44,41 +44,50 @@ class PageModelImportTestCase(SilvaXMLTestCase):
             [('Missing image file in the import: assets/1.', self.root.image)])
 
         page_model = self.root._getOb('model')
-        self.assertTrue(page_model is not None)
-        version = page_model._getOb('0')
-        self.assertIsInstance(page_model, PageModel)
-        self.assertIsInstance(version, PageModelVersion)
-        design = version.get_design()
-        self.assertEqual('adesign', design.get_design_identifier())
-        slots = version.slots
-        self.assertEqual(2, len(slots))
-        manager = IBlockManager(version)
-        slot1 = manager.get_slot('one')
-        self.assertEqual(3, len(slot1))
-        slot2 = manager.get_slot('two')
-        _, slot_block = slot2[0]
-        self.assertIsInstance(slot_block, BlockSlot)
-        # restrictions
-        restrictions = slot_block._restrictions
-        self.assertEqual([restrict.CodeSourceName,
-                           restrict.Content,
-                           restrict.BlockAll],
-                          [r.__class__ for r in restrictions])
-        self.assertEqual(set(['allow1', 'allow2']),
-                          restrictions[0].allowed)
-        self.assertEqual(set(['dis1', 'dis2']),
-                          restrictions[0].disallowed)
-        self.assertEqual(IImage, restrictions[1].schema)
+        self.assertTrue(verifyObject(IPageModel, page_model))
+        version = page_model.get_editable()
+        self.assertTrue(verifyObject(IPageModelVersion, version))
 
-        # text block
-        self.assertEqual(3, len(slot2))
+        design = version.get_design()
+        self.assertEqual(design.get_design_identifier(), 'adesign')
+
+        manager = IBlockManager(version)
+        self.assertTrue(verifyObject(IBlockManager, manager))
+        self.assertItemsEqual(manager.get_slot_ids(), ['one', 'two'])
+
+        slot1 = manager.get_slot('one')
+        self.assertEqual(len(slot1), 3)
+        slot2 = manager.get_slot('two')
+        self.assertEqual(len(slot2), 3)
+
+        # Slot block
+        _, slot_block = slot2[0]
+        self.assertTrue(verifyObject(IBlockSlot, slot_block))
+        controller = getWrapper(
+            (slot_block, version, TestRequest()),
+            IBlockController)
+        self.assertEqual(
+            controller.get_cs_blacklist(),
+            set(['dis1', 'dis2']))
+        self.assertEqual(
+            controller.get_cs_whitelist(),
+            set(['allow1', 'allow2']))
+        self.assertEqual(
+            controller.get_content_restriction_name(),
+            'Silva Image')
+        self.assertEqual(
+            controller.get_block_all(),
+            True)
+
+        # Text block
         _, text_block = slot2[1]
         self.assertIsInstance(text_block, TextBlock)
         controller = getWrapper(
             (text_block, version, TestRequest()),
             IBlockController)
-        self.assertXMLEqual("<div>text</div>", controller.text)
+        self.assertXMLEqual(controller.text, "<div>text</div>")
 
+        # Reference block
         _, ref_block = slot1[1]
         self.assertIsInstance(ref_block, ReferenceBlock)
         controller = getWrapper(
@@ -86,25 +95,26 @@ class PageModelImportTestCase(SilvaXMLTestCase):
             IBlockController)
         self.assertEqual(controller.content, self.root.image)
 
+        # Source block
         _, source_block = slot1[2]
         self.assertIsInstance(source_block, SourceBlock)
         controller = getWrapper(
             (source_block, version, TestRequest()),
             IBlockController)
-        params, _ = controller.manager.get_parameters(source_block.identifier)
-        self.assertEqual('A joke is a very serious thing.', params.citation)
-        self.assertEqual('Winston Churchill', params.author)
+        params = controller.getContent()
+        self.assertEqual(params.citation, 'A joke is a very serious thing.')
+        self.assertEqual(params.author, 'Winston Churchill')
 
         _, source_block_with_ref = slot2[2]
         self.assertIsInstance(source_block_with_ref, SourceBlock)
         controller = getWrapper(
             (source_block_with_ref, version, TestRequest()),
             IBlockController)
-        params, _ = controller.manager.get_parameters(
-            source_block_with_ref.identifier)
-        self.assertIn(self.root.folder,  ReferenceSet(version, params.paths))
-        self.assertEqual(set(['Silva Publication', 'Silva Folder']),
-                          set(params.toc_types))
+        params = controller.getContent()
+        self.assertIn(self.root.folder, ReferenceSet(version, params.paths))
+        self.assertEqual(
+            set(params.toc_types),
+            set(['Silva Publication', 'Silva Folder']))
 
     def test_import_text_block_with_references(self):
         importer = self.assertImportFile(
@@ -113,15 +123,18 @@ class PageModelImportTestCase(SilvaXMLTestCase):
              '/root/link'])
         self.assertEqual(importer.getProblems(), [])
 
-        model = self.root.model.get_editable()
-        self.assertIsInstance(model, PageModelVersion)
-        manager = IBlockManager(model)
+        model = self.root._getOb('model')
+        self.assertTrue(verifyObject(IPageModel, model))
+        version = model.get_editable()
+        self.assertTrue(verifyObject(IPageModelVersion, version))
+
+        manager = IBlockManager(version)
         slot1 = manager.get_slot('one')
         self.assertEqual(1, len(slot1))
         _, text_block = slot1[0]
         self.assertIsInstance(text_block, TextBlock)
         references = list(
-            getUtility(IReferenceService).get_references_from(model))
+            getUtility(IReferenceService).get_references_from(version))
         self.assertEqual(1, len(references))
         reference = references[0]
         link = reference.target

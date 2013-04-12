@@ -163,6 +163,7 @@ class ModelReferenceTestCase(unittest.TestCase):
         self.assertNotIn(identifier, (None, 'default'))
         self.assertEqual(viewable.get_all_design_identifiers(), [identifier])
 
+
 def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(ModelsTestCase))

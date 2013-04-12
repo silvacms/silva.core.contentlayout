@@ -10,6 +10,7 @@ from zope.component import getUtility
 from Acquisition import aq_chain
 from Products.Silva.testing import TestRequest, TestCase
 
+from silva.core.interfaces import IImage
 from silva.core.references.interfaces import IReferenceService
 from silva.core.references.reference import get_content_id
 from zeam.component import getWrapper
@@ -19,7 +20,7 @@ from ..blocks.contents import ReferenceBlock
 from ..blocks.text import TextBlock
 from ..blocks.slot import BlockSlot
 from ..blocks.registry import get_block_configuration
-from ..interfaces import IBlock, ISlot, IBlockController
+from ..interfaces import IBlock, ISlot, IBlockController, IBlockSlot
 from ..interfaces import IBlockConfiguration, IBlockConfigurations
 from ..testing import FunctionalLayer
 
@@ -418,7 +419,6 @@ class TextBlockTestCase(TestCase):
 class BlockSlotTestCase(unittest.TestCase):
     layer = FunctionalLayer
 
-
     def setUp(self):
         self.root = self.layer.get_application()
         factory = self.root.manage_addProduct['silva.core.contentlayout']
@@ -432,6 +432,7 @@ class BlockSlotTestCase(unittest.TestCase):
         block = BlockSlot()
         self.assertTrue(verifyObject(IBlock, block))
         self.assertTrue(verifyObject(ISlot, block))
+        self.assertTrue(verifyObject(IBlockSlot, block))
 
         # By default the tag is section here.
         self.assertEqual(block.tag, 'section')
@@ -465,9 +466,52 @@ class BlockSlotTestCase(unittest.TestCase):
         # This block is only available on models.
         self.assertFalse(configuration.is_available(view))
 
-        context = self.root.model.get_editable()
-        view = MockView(context)
+        view = MockView(self.root.model.get_editable())
         self.assertTrue(configuration.is_available(view))
+
+    def test_controller(self):
+        """Test block slot controller.
+        """
+        view = MockView(self.root.page.get_editable())
+        block = BlockSlot()
+
+        controller = getWrapper(
+            (block, view.context, view.request),
+            IBlockController,
+            default=None)
+        self.assertTrue(verifyObject(IBlockController, controller))
+
+        self.assertEqual(controller.get_tag(), 'section')
+        self.assertEqual(controller.get_css_class(), '')
+        controller.set_identifier('modified-identifier')
+        self.assertEqual(controller.get_identifier(), 'modified-identifier')
+
+        # Check cs_blacklist and cs_whitelist
+        self.assertEqual(controller.get_cs_blacklist(), set())
+        self.assertEqual(controller.get_cs_whitelist(), set())
+
+        # Check content_restriction
+        self.assertIs(controller.get_content_restriction(), None)
+        self.assertIs(controller.get_content_restriction_name(), None)
+
+        controller.set_content_restriction(IImage)
+        self.assertIs(controller.get_content_restriction(), IImage)
+        self.assertEqual(
+            controller.get_content_restriction_name(),
+            'Silva Image')
+
+        controller.set_content_restriction(None)
+        self.assertIs(controller.get_content_restriction(), None)
+        self.assertIs(controller.get_content_restriction_name(), None)
+
+        # Check block_all
+        self.assertFalse(controller.get_block_all())
+
+        controller.set_block_all(True)
+        self.assertTrue(controller.get_block_all())
+
+        controller.set_block_all(False)
+        self.assertFalse(controller.get_block_all())
 
 
 def test_suite():

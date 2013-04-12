@@ -271,8 +271,6 @@ class IBlock(interface.Interface):
 class IBlockSlot(IBlock, ISlot):
    """ A block usable as a slot inside a  page models.
    """
-   name = interface.Attribute(
-      u'Slot identifier on the design')
    identifier = interface.Attribute(
       u'Reprensent the slot id when used as a slot')
 
@@ -338,16 +336,42 @@ class IBlockManager(interface.Interface):
     """Manage blocks for a content.
     """
 
-    def add(slot_id, block):
-       """Add the block to the slot_it, return a new block_id.
+    def get_slot_ids():
+       """Return a list of all the slot identifiers available.
        """
 
-    def moveable(block_id, slot_id, content):
-       """Return True if the block identified by block_id is moveable
-       into the slot identified by slot_id on the given content.
+    def get_block_ids():
+       """Return a list of all the block identifiers available.
        """
 
-    def remove(block_id, content, request):
+    def get_block(block_id):
+       """Return the block identified by block_id.
+       """
+
+    def get_slot(slot_id):
+       """Return the slot identified by slot_id.
+       """
+
+    def get_all():
+       """Return a list containing all the blocks themselves.
+       """
+
+    def add(slot_id, block, index=0):
+       """Add the block to the slot identified by slot_id, return a
+       new block_id. index defines the position in the slot the block
+       is added.
+       """
+
+    def replace(block_id, new_block):
+       """Replace the block identified by block_id with the new_block.
+       """
+
+    def move(slot_id, block_id, index):
+       """Inside the slot identified by slot_id move the block
+       identified by block_id to the given index.
+       """
+
+    def remove(block_id):
        """Remove the given block_id, on the given content, using the
        given request.
        """
