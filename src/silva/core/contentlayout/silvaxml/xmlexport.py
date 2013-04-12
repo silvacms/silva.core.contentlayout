@@ -38,7 +38,7 @@ class BasePageProducer(producers.SilvaProducer):
             attrs = {}
             if IPageModelVersion.providedBy(design):
                 # XXX extern
-                attrs['path'] = self.get_relative_path_to(design)
+                attrs['path'] = self.get_path_to(design)
             else:
                 attrs['id'] = design.get_design_identifier()
             self.startElementNS(NS_LAYOUT_URI, 'design', attrs)
