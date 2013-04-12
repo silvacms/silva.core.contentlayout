@@ -33,8 +33,8 @@ class PageXMLExportTestCase(SilvaXMLTestCase):
         factory = self.root.manage_addProduct['silva.core.contentlayout']
         factory.manage_addContentLayoutService()
         factory = self.root.manage_addProduct['Silva']
-        factory.manage_addFolder('exportbase', 'Export base')
-        self.base_folder = self.root.exportbase
+        factory.manage_addFolder('export', 'Export base')
+        self.base_folder = self.root.export
         factory = self.base_folder.manage_addProduct['silva.core.contentlayout']
         factory.manage_addMockupPage('page', 'Page')
         self.page = self.base_folder.page.get_editable()
@@ -43,14 +43,14 @@ class PageXMLExportTestCase(SilvaXMLTestCase):
 
     def test_export_design(self):
         exporter = self.assertExportEqual(
-            self.root.exportbase,
+            self.root.export,
             'test_export_design.silvaxml')
         self.assertEqual(exporter.getZexpPaths(), [])
         self.assertEqual(exporter.getAssetPaths(), [])
         self.assertEqual(exporter.getProblems(), [])
 
     def test_export_design_and_reference_block(self):
-        factory = self.root.exportbase.manage_addProduct['Silva']
+        factory = self.root.export.manage_addProduct['Silva']
         with self.layer.open_fixture('image.png') as image_file:
             factory.manage_addImage('image', 'Image', image_file)
 
@@ -58,19 +58,19 @@ class PageXMLExportTestCase(SilvaXMLTestCase):
         controller = getWrapper(
             (block, self.page, TestRequest()),
             interfaces.IBlockController)
-        controller.content = self.root.exportbase.image
+        controller.content = self.root.export.image
         manager = interfaces.IBlockManager(self.page)
         manager.add('one', block)
 
         exporter = self.assertExportEqual(
-            self.root.exportbase,
+            self.root.export,
             'test_export_ref_block.silvaxml')
         self.assertEqual(
             exporter.getZexpPaths(),
             [])
         self.assertEqual(
             exporter.getAssetPaths(),
-            [(('', 'root', 'exportbase', 'image'), '1')])
+            [(('', 'root', 'export', 'image'), '1')])
         self.assertEqual(
             exporter.getProblems(),
             [])
@@ -85,7 +85,7 @@ class PageXMLExportTestCase(SilvaXMLTestCase):
         manager.add('two', block)
 
         exporter = self.assertExportEqual(
-            self.root.exportbase,
+            self.root.export,
             'test_export_text_block.silvaxml')
         self.assertEqual(exporter.getZexpPaths(), [])
         self.assertEqual(exporter.getAssetPaths(), [])
@@ -103,7 +103,7 @@ class PageXMLExportTestCase(SilvaXMLTestCase):
         manager.add('one', SourceBlock(controller.getId()))
 
         exporter = self.assertExportEqual(
-            self.root.exportbase,
+            self.root.export,
             'test_export_source_block.silvaxml')
         self.assertEqual(exporter.getZexpPaths(), [])
         self.assertEqual(exporter.getAssetPaths(), [])
@@ -127,16 +127,16 @@ class PageXMLExportTestCase(SilvaXMLTestCase):
         manager.add('two', SourceBlock(controller.getId()))
 
         exporter = self.assertExportEqual(
-            self.root.exportbase,
+            self.root.export,
             'test_export_source_block_with_reference.silvaxml')
         self.assertEqual(exporter.getZexpPaths(), [])
         self.assertEqual(exporter.getAssetPaths(), [])
         self.assertEqual(exporter.getProblems(), [])
 
     def test_export_page_model(self):
-        factory = self.root.exportbase.manage_addProduct['silva.core.contentlayout']
+        factory = self.root.export.manage_addProduct['silva.core.contentlayout']
         factory.manage_addPageModel('model', 'A Page Model')
-        version = self.root.exportbase.model.get_editable()
+        version = self.root.export.model.get_editable()
         version.set_design(self.design)
 
         text_block = TextBlock(identifier='text block 1')
@@ -147,15 +147,20 @@ class PageXMLExportTestCase(SilvaXMLTestCase):
 
         manager = interfaces.IBlockManager(version)
         manager.add('two', text_block)
-        manager.add('two', BlockSlot())
-        manager.add('one', BlockSlot(restrictions=[
-            restrictions.CodeSourceName(allowed=set(['allow1', 'allow2']),
-                                        disallowed=set(['dis1', 'dis2'])),
-            restrictions.Content(schema=IImage),
-            restrictions.BlockAll()]))
+        manager.add('two', BlockSlot(
+                identifier='slot-two',
+                css_class="large"))
+        manager.add('one', BlockSlot(
+                identifier='slot-one',
+                restrictions=[
+                    restrictions.CodeSourceName(
+                        allowed=set(['allow1', 'allow2']),
+                        disallowed=set(['dis1', 'dis2'])),
+                    restrictions.Content(schema=IImage),
+                    restrictions.BlockAll()]))
 
         exporter = self.assertExportEqual(
-            self.root.exportbase,
+            self.root.export,
             'test_export_page_model.silvaxml')
         self.assertEqual(exporter.getZexpPaths(), [])
         self.assertEqual(exporter.getAssetPaths(), [])

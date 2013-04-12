@@ -40,11 +40,31 @@ class BlockSlot(Persistent, Slot, Block):
     grok.order(50)
     silvaconf.icon('slot.png')
 
-    def __init__(self, tag='section', css_class='', restrictions=None):
+    def __init__(self, identifier=None, tag='section', css_class='',
+                 restrictions=None):
         Slot.__init__(self, tag=tag,
                       css_class=css_class,
                       restrictions=restrictions)
-        self.identifier = unicode(uuid.uuid1())
+        if identifier is None:
+            identifier = unicode(uuid.uuid1())
+        self.identifier = identifier
+
+    def set_restrictions(self, restrictions):
+        self._restrictions = list(restrictions)
+
+    def add_restriction(self, restriction, index=None):
+        if index is None:
+            self._restrictions.append(restriction)
+        else:
+            self._restrictions.insert(index, restriction)
+        self._p_changed = True
+
+    def remove_restriction(self, restriction):
+        try:
+            self._restrictions.remove(restriction)
+            self._p_changed = True
+        except ValueError:
+            pass
 
 
 @grok.provider(IContextSourceBinder)
@@ -188,8 +208,8 @@ class BlockSlotController(BlockController):
     def set_cs_whitelist(self, whitelist):
         restriction = self._find_restriction_with_type(restrict.CodeSourceName)
         if restriction is None:
-            self.block._restrictions.insert(
-                0, restrict.CodeSourceName(allowed=whitelist))
+            self.block.add_restriction(
+                restrict.CodeSourceName(allowed=whitelist), index=0)
         else:
             restriction.allowed = whitelist
 
@@ -202,8 +222,8 @@ class BlockSlotController(BlockController):
     def set_cs_blacklist(self, blacklist):
         restriction = self._find_restriction_with_type(restrict.CodeSourceName)
         if restriction is None:
-            self.block._restrictions.insert(
-                0, restrict.CodeSourceName(disallowed=blacklist))
+            self.block.add_restriction(
+                restrict.CodeSourceName(disallowed=blacklist), index=0)
         else:
             restriction.disallowed = blacklist
 
@@ -224,8 +244,7 @@ class BlockSlotController(BlockController):
     def set_content_restriction(self, schema):
         restriction = self._find_restriction_with_type(restrict.Content)
         if restriction is None:
-            self.block._restrictions.insert(
-                0, restrict.Content(schema))
+            self.block.add_restriction(restrict.Content(schema), index=0)
         else:
             restriction.schema = schema
 
@@ -237,12 +256,12 @@ class BlockSlotController(BlockController):
         restriction = self._find_restriction_with_type(restrict.BlockAll)
         if block_all:
             if not restriction:
-                self.block._restrictions.append(restrict.BlockAll())
+                self.block.add_restriction(restrict.BlockAll())
         elif restriction:
-            self.block._restrictions.remove(restriction)
+            self.block.remove_restriction(restriction)
 
     def _find_restriction_with_type(self, rtype):
-        for restriction in self.block._restrictions:
+        for restriction in self.block.get_restrictions():
             if isinstance(restriction, rtype):
                 return restriction
         return None

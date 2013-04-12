@@ -66,6 +66,9 @@ class PageModelImportTestCase(SilvaXMLTestCase):
         controller = getWrapper(
             (slot_block, version, TestRequest()),
             IBlockController)
+        self.assertEqual(controller.get_tag(), 'div')
+        self.assertEqual(controller.get_css_class(), 'large-area')
+        self.assertEqual(controller.get_identifier(), 'content-area')
         self.assertEqual(
             controller.get_cs_blacklist(),
             set(['dis1', 'dis2']))
@@ -75,9 +78,7 @@ class PageModelImportTestCase(SilvaXMLTestCase):
         self.assertEqual(
             controller.get_content_restriction_name(),
             'Silva Image')
-        self.assertEqual(
-            controller.get_block_all(),
-            True)
+        self.assertEqual(controller.get_block_all(), True)
 
         # Text block
         _, text_block = slot2[1]

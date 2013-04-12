@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <silva xmlns="http://infrae.com/namespace/silva" {namespaces} silva_version="{version}">
-  <folder id="exportbase">
+  <folder id="export">
     <metadata>
       <set id="silva-content">
         <silva-content:maintitle>Export base</silva-content:maintitle>
@@ -61,7 +61,7 @@
           </metadata>
           <silva-core-contentlayout:design id="adesign">
             <silva-core-contentlayout:slot id="one">
-              <silva-core-contentlayout:referenceblock target="exportbase/image"/>
+              <silva-core-contentlayout:referenceblock target="export/image"/>
             </silva-core-contentlayout:slot>
           </silva-core-contentlayout:design>
         </content>

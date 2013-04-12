@@ -274,6 +274,18 @@ class IBlockSlot(IBlock, ISlot):
    identifier = interface.Attribute(
       u'Reprensent the slot id when used as a slot')
 
+   def set_restrictions(restrictions):
+       """Set the restrictions to apply on the slot.
+       """
+
+   def add_restriction(restriction, index=None):
+       """Add the restriction (at the optional given order) to the slot.
+       """
+
+   def remove_restriction(restriction):
+      """Remove the given restriction from the slot.
+      """
+
 
 class IBlockConfiguration(interface.Interface):
    """Describe a given block configuration for a given block, i.e. a

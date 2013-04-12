@@ -8,7 +8,6 @@ from five import grok
 from zope.interface import Interface
 
 from silva.core.editor.transform.silvaxml.xmlexport import TextProducerProxy
-from silva.translations import translate as _
 from zeam.component.site import getWrapper
 
 from Products.SilvaExternalSources.interfaces import IExternalSourceManager
@@ -95,8 +94,8 @@ class TextBlockProducer(producers.SilvaProducer):
     grok.adapts(TextBlock, Interface)
 
     def sax(self, parent):
-        self.startElementNS(NS_LAYOUT_URI, 'textblock',
-                            {"identifier": self.context.identifier})
+        self.startElementNS(NS_LAYOUT_URI, 'textblock', {
+                'id': self.context.identifier})
         TextProducerProxy(parent.context, self.context).sax(self)
         self.endElementNS(NS_LAYOUT_URI, 'textblock')
 
@@ -105,10 +104,11 @@ class SlotBlockProducer(producers.SilvaProducer):
     grok.adapts(BlockSlot, Interface)
 
     def sax(self, parent):
-        self.startElementNS(NS_LAYOUT_URI, 'slotblock',
-            {'css_class': self.context.css_class,
-             'tag': self.context.tag})
-        restrictions = self.context._restrictions
+        self.startElementNS(NS_LAYOUT_URI, 'slotblock', {
+                'id': self.context.identifier,
+                'css_class': self.context.css_class,
+                'tag': self.context.tag})
+        restrictions = self.context.get_restrictions()
         if restrictions:
             self.startElementNS(NS_LAYOUT_URI, 'restrictions')
             for restriction in restrictions:
@@ -121,11 +121,11 @@ class PageModel(producers.SilvaVersionedContentProducer):
     grok.adapts(interfaces.IPageModel, Interface)
 
     def sax(self):
-        self.startElementNS(
-            NS_LAYOUT_URI, 'pagemodel', {'id': self.context.id})
+        self.startElementNS(NS_LAYOUT_URI, 'page_model', {
+                'id': self.context.id})
         self.sax_workflow()
         self.sax_versions()
-        self.endElementNS(NS_LAYOUT_URI, 'pagemodel')
+        self.endElementNS(NS_LAYOUT_URI, 'page_model')
 
 
 class PageModelVersionProducer(BasePageProducer):

@@ -45,7 +45,6 @@ class BlockHandler(handlers.SilvaHandler):
         context = self.parentHandler().parent()
         manager = IBlockManager(context)
         manager.add(slot_id, block, index=-1)
-        self.setResult(block)
 
     # BBB
     add_block = addBlock
@@ -113,6 +112,8 @@ class AllowedCodeSourceNameHandler(handlers.SilvaHandler):
 class CodeSourceNameRestrictionHandler(handlers.SilvaHandler):
     silvaconf.name('codesourcename-restriction')
 
+    restriction = None
+
     def getOverrides(self):
         return {(NS_LAYOUT_URI, 'allowed'): AllowedCodeSourceNameHandler,
                 (NS_LAYOUT_URI, 'disallowed'): AllowedCodeSourceNameHandler}
@@ -123,8 +124,8 @@ class CodeSourceNameRestrictionHandler(handlers.SilvaHandler):
 
     def endElementNS(self, name, qname):
         if name == (NS_LAYOUT_URI, 'codesourcename-restriction'):
-            self.parent()._restrictions.append(self.restriction)
-            del self.restriction
+            self.parentHandler().addRestriction(self.restriction)
+            self.restriction = None
 
 
 class ContentRestrictionHandler(handlers.SilvaHandler):
@@ -138,7 +139,7 @@ class ContentRestrictionHandler(handlers.SilvaHandler):
             schema = getattr(sys.modules[module], name, None)
             if schema is None:
                 raise ImportError('unable to import %s' % class_path)
-            self.parent()._restrictions.append(restrictions.Content(schema))
+            self.parentHandler().addRestriction(restrictions.Content(schema))
 
 
 class BlockAllRestrictionHandler(handlers.SilvaHandler):
@@ -146,31 +147,32 @@ class BlockAllRestrictionHandler(handlers.SilvaHandler):
 
     def endElementNS(self, name, qname):
         if name == (NS_LAYOUT_URI, 'blockall-restriction'):
-            self.parent()._restrictions.append(restrictions.BlockAll())
+            self.parentHandler().addRestriction(restrictions.BlockAll())
 
 
 class BlockSlotHandler(BlockHandler):
     silvaconf.name('slotblock')
 
-    block = None
+    def addRestriction(self, restriction):
+        restrictions = self.getData('restrictions')
+        if restrictions is not None:
+            restrictions.append(restriction)
 
     def startElementNS(self, name, qname, attrs):
         if name == (NS_LAYOUT_URI, 'slotblock'):
-            options = {}
-            # XXX: handle restrictions
-            for option_name in ('tag', 'css_class'):
-                value = attrs.get((None, option_name))
-                if value is not None:
-                    options[option_name] = value
-
-            self.block = BlockSlot(**options)
-            self.setResult(self.block)
+            for option in ('id', 'tag', 'css_class'):
+                self.setData(option, attrs.get((None, option)))
+            self.setData('restrictions', [])
 
     def endElementNS(self, name, qname):
         if name == (NS_LAYOUT_URI, 'slotblock'):
-            if self.block is not None:
-                self.addBlock(self.block)
-                self.block = None
+            self.addBlock(
+                BlockSlot(
+                    identifier=self.getData('id'),
+                    css_class=self.getData('css_class'),
+                    tag=self.getData('tag'),
+                    restrictions=self.getData('restrictions')))
+            self.clearData()
 
 
 class TextBlockHandler(BlockHandler):
@@ -183,8 +185,7 @@ class TextBlockHandler(BlockHandler):
 
     def startElementNS(self, name, qname, attrs):
         if name == (NS_LAYOUT_URI, 'textblock'):
-            identifier = attrs[(None, 'identifier')]
-            self.block = TextBlock(identifier)
+            self.block = TextBlock(attrs.get((None, 'id')))
             self.setResult(self.block)
 
     def endElementNS(self, name, qname):
@@ -192,6 +193,7 @@ class TextBlockHandler(BlockHandler):
             if self.block is not None:
                 self.addBlock(self.block)
                 self.block = None
+
 
 class DesignHandler(handlers.SilvaHandler):
 
@@ -214,7 +216,7 @@ class DesignHandler(handlers.SilvaHandler):
 
 
 class PageModelHandler(handlers.SilvaHandler):
-    silvaconf.name('pagemodel')
+    silvaconf.name('page_model')
 
     def getOverrides(self):
         return {(NS_SILVA_URI, 'content'): PageModelVersionHandler}
@@ -224,11 +226,11 @@ class PageModelHandler(handlers.SilvaHandler):
         factory.manage_addPageModel(identifier, '', no_default_version=True)
 
     def startElementNS(self, name, qname, attrs):
-        if name == (NS_LAYOUT_URI, 'pagemodel'):
+        if name == (NS_LAYOUT_URI, 'page_model'):
             self.createContent(attrs)
 
     def endElementNS(self, name, qname):
-        if name == (NS_LAYOUT_URI, 'pagemodel'):
+        if name == (NS_LAYOUT_URI, 'page_model'):
             self.notifyImport()
 
 
