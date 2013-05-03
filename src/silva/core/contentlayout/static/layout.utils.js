@@ -75,7 +75,7 @@
                         block_name: state.name
                     }),
                     payload: [{name: 'index', value: state.index}]
-                }).pipe(
+                }).then(
                     function(data) {
                         if (data.extra !== undefined) {
                             return data.extra;
@@ -109,7 +109,7 @@
                 block_cache = slot_cache[state.name];
                 if (block_cache !== undefined && block_cache.state() == 'resolved') {
                     // Return cached success
-                    return block_cache.pipe(function (data) {
+                    return block_cache.then(function (data) {
                         return $.extend(response, {
                             success: data.success,
                             failed: data.failed,
@@ -123,7 +123,7 @@
                         slot_id: state.slot.id,
                         block_name: state.name
                     })
-                ).pipe(function(data) {
+                ).then(function(data) {
                     return $.extend(response, {
                         success: data.success,
                         failed: !data.success,
@@ -182,7 +182,7 @@
                 slot_cache = block_cache[state.slot.id];
                 if (slot_cache !== undefined && slot_cache.state() == 'resolved') {
                     // Return cached success
-                    return slot_cache.pipe(function (data) {
+                    return slot_cache.then(function (data) {
                         return $.extend(response, {
                             success: data.success,
                             failed: data.failed,
@@ -196,7 +196,7 @@
                         slot_id: state.slot.id,
                         block_id: state.current.id
                     })
-                ).pipe(function(data) {
+                ).then(function(data) {
                     return $.extend(response, {
                         success: data.success,
                         failed: !data.success,
@@ -219,7 +219,7 @@
                         block_id: state.current.id
                     }),
                     [{name: 'index', value: state.index}]
-                ).pipe(function(data) {
+                ).then(function(data) {
                     return $.Deferred().resolve({
                         success: data.success,
                         failed: !data.success,

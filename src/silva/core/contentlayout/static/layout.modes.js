@@ -44,7 +44,7 @@
                  if ($helper !== null) {
                      $helper.remove();
                  };
-             }).pipe(view.transport.add, function() {
+             }).then(view.transport.add, function() {
                  return $.Deferred().reject();
              })
              : $.Deferred().reject().always(function() {
@@ -52,7 +52,7 @@
                      $helper.remove();
                  };
              })
-            ).pipe(function (data) {
+            ).then(function (data) {
                 if (data.block_id) {
                     block.set(data);
                     return data;
@@ -122,7 +122,7 @@
                     block: block,
                     name: $component.data('block-name'),
                     index: index
-                }).pipe(function(data) {
+                }).then(function(data) {
                     var result = $.Deferred();
 
                     if (data.success) {
@@ -185,7 +185,7 @@
         var deferred = infrae.ui.ConfirmationDialog({
             title: 'Remove component',
             message: 'Please confirm the permanent deletion of the component ?'
-        }).pipe(function () {
+        }).then(function () {
             return view.transport.remove(original);
         }, function () {
             return $.Deferred().reject();
@@ -207,7 +207,7 @@
             message: 'Please confirm the permanent deletion of all selected components ?'});
 
         infrae.utils.each(original, function(original) {
-            deferred = deferred.pipe(function() {
+            deferred = deferred.then(function() {
                 return view.transport.remove(original);
             }, function() {
                 return $.Deferred().reject();
@@ -260,7 +260,7 @@
             return (validator !== null && failed !== true
              ?  validator.done(function() {
                  $placeholder.attr('class', 'contentlayout-placeholder');
-             }).pipe(view.transport.move, function() {
+             }).then(view.transport.move, function() {
                  return $.Deferred().reject();
              })
              : $.Deferred().reject({
@@ -292,7 +292,7 @@
                 slot: slot,
                 current: block,
                 index: index
-            }).pipe(function(data) {
+            }).then(function(data) {
                 var result = $.Deferred();
 
                 if (data.success) {
