@@ -1,10 +1,20 @@
 Changelog
 =========
 
-3.0.2 (unreleased)
+3.0.2 (2013/05/23)
 ------------------
 
-- ...
+- Fix compatilbility with jQuery 1.9.
+
+- Fix various Silva XML improt and export issues when the models are
+  not exported with the content, missing or others settings differs.
+
+- Prevent to select as design for a model the same model or a model
+  used by the current model, preventing loops.
+
+- Improve slot block user interface.
+
+- Improve tests.
 
 3.0.1 (2013/03/06)
 ------------------
