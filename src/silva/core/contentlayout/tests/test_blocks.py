@@ -309,7 +309,7 @@ class TextBlockTestCase(TestCase):
         TEXT_LINK = u"""
 <p>
    <a class="link"
-      href="javascript:void()"
+      href="javascript:void(0)"
       data-silva-reference="new"
       data-silva-target="%s">Test élaboré</a>
 </p>
@@ -335,7 +335,7 @@ class TextBlockTestCase(TestCase):
             controller.text,
             u"""
 <p>
-   <a class="link" data-silva-reference="%s" data-silva-target="%s" href="javascript:void()">Test &#233;labor&#233;</a>
+   <a class="link" data-silva-reference="%s" data-silva-target="%s" href="javascript:void(0)">Test &#233;labor&#233;</a>
 </p>""" % (reference_name, reference_target))
         self.assertXMLEqual(
             controller.render(view),
