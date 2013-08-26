@@ -2,7 +2,7 @@
 silva.core.contentlayout
 ========================
 
-``silva.core.contentlayout`` is a core Silva extension that let users
+``silva.core.contentlayout`` is a core `Silva`_ extension that let users
 define content layout (called template or designs) in SMI or on the
 filesystem, that can be used as model for pages built with the
 extension ``silva.app.page``.
@@ -21,6 +21,7 @@ Code repository
 You can find the code of this extension in Mercurial:
 https://hg.infrae.com/silva.core.contentlayout/.
 
+.. _Silva: http://silvacms.org/
 .. _UCL: http://www.ucl.ac.uk/
 .. _extension developer documentation: http://docs.silvacms.org/trunk/addons/contentlayout/index.html
 
