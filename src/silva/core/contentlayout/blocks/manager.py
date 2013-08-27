@@ -35,13 +35,12 @@ class BlockConfiguration(object):
         self.block = block
 
     def get_icon(self, view):
-        icon = None
         try:
-            icon = icon_registry.get_icon_by_identifier(
+            icon = icon_registry.get(
                 ('silva.core.contentlayout.blocks', self.identifier))
         except ValueError:
             return None
-        return '/'.join((view.root_url, icon))
+        return icon.get_url(view, self.block)
 
     def is_available(self, view):
         comply, require = verify_context(self.block, view.context)

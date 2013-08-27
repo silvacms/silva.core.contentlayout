@@ -57,11 +57,11 @@ class SourceBlockConfiguration(object):
             url = getMultiAdapter((icon, view.request), IContentURL)
             return str(url)
         try:
-            icon = icon_registry.get_icon_by_identifier(
+            icon = icon_registry.get(
                 ('silva.core.contentlayout.blocks', self.prefix))
         except ValueError:
             return None
-        return '/'.join((view.root_url, icon))
+        return icon.get_url(view, self.source)
 
     def is_available(self, view):
         found_source = getattr(view.context, self.source.getId(), None)
