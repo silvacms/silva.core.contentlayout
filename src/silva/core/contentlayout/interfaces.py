@@ -15,7 +15,7 @@ from zope.component.interfaces import IObjectEvent, ObjectEvent
 from silva.core import conf as silvaconf
 from silva.core.conf.interfaces import ITitledContent
 from silva.core.conf.schema import Vocabulary, Term
-from silva.core.interfaces import IAddableContents
+from silva.core.interfaces import IAddableContents, IIconResolver
 from silva.core.interfaces import IVersion,  IVersionedObject
 from silva.core.interfaces import IViewableObject, ISilvaLocalService
 from silva.core.views.interfaces import IVirtualSite
@@ -166,7 +166,6 @@ def design_source(form):
    """Source vocabulary for design.
    """
    registry = getUtility(IDesignLookup)
-   base_url = IVirtualSite(form.request).get_root_url() + '/'
    candidates = []
    blacklist_identifier = None
    current_identifier = None
@@ -184,7 +183,7 @@ def design_source(form):
          # You cannot set a design used by this design here.
          blacklist_identifier = content.get_design_identifier()
 
-   get_icon = iconRegistry.get_icon_by_identifier
+   get_icon = IIconResolver(form.request).get_identifier_url
 
    def make_terms():
       for candidate in candidates:
@@ -198,13 +197,10 @@ def design_source(form):
              candidate_identifier != current_identifier):
             continue
          if used_candidates:
-            icon_identifier = used_candidates[-1]
+            identifier = (namespace, used_candidates[-1])
          else:
-            icon_identifier = 'default'
-         try:
-            icon = base_url + get_icon((namespace, icon_identifier))
-         except ValueError:
-            icon = base_url + get_icon((namespace, 'default'))
+            identifier = ('default', namespace)
+         icon = get_icon(identifier, default=namespace)
          yield Term(value=candidate,
                     token=candidate_identifier,
                     title=candidate.get_design_title(),

@@ -143,8 +143,8 @@ class AssociateBlockViewGrokker(TemplateGrokker):
 
 # Register default icons
 for category, icon in (
-    (('silva.core.contentlayout.designs', 'default'), 'design.png'),
-    (('silva.core.contentlayout.models', 'default'), 'model.png')):
+    (('default', 'silva.core.contentlayout.designs'), 'design.png'),
+    (('default', 'silva.core.contentlayout.models'), 'model.png')):
     icon_registry.register(
         category,
         '++static++/silva.core.contentlayout/' + icon)
