@@ -23,6 +23,6 @@ https://hg.infrae.com/silva.core.contentlayout/.
 
 .. _Silva: http://silvacms.org/
 .. _UCL: http://www.ucl.ac.uk/
-.. _extension developer documentation: http://docs.silvacms.org/trunk/addons/contentlayout/index.html
+.. _extension developer documentation: http://docs.silvacms.org/latest/addons/contentlayout/index.html
 
 

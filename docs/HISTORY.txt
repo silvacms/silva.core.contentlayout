@@ -1,10 +1,15 @@
 Changelog
 =========
 
-3.0.4 (unreleased)
+3.0.4 (2013/10/08)
 ------------------
 
-- ...
+- Update tests to be ran inside a transaction to ensure the last
+  author is properly set.
+
+- Update to use new icon API.
+
+- Improve tests.
 
 3.0.3 (2013/08/26)
 ------------------
