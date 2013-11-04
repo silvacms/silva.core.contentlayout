@@ -17,8 +17,10 @@ from Acquisition import aq_parent
 
 from silva.core import conf as silvaconf
 from silva.core.interfaces import IAuthorizationManager, IRoot
+from silva.core.interfaces import ISilvaConfigurableService
 from silva.core.services.base import SilvaService
 from silva.translations import translate as _
+from silva.ui import menu
 from zeam.form import silva as silvaforms
 
 from Products.Silva.ExtensionRegistry import extensionRegistry
@@ -42,7 +44,7 @@ class ContentLayoutService(SilvaService):
     """Design service provides security and other settings for content
     layout designs
     """
-    grok.implements(interfaces.IContentLayoutService)
+    grok.implements(interfaces.IContentLayoutService, ISilvaConfigurableService)
     grok.name('service_contentlayout')
     silvaconf.icon('service.png')
     meta_type = 'Silva ContentLayout Service'
@@ -240,9 +242,26 @@ class ContentLayoutServiceManageTemplates(silvaforms.ZMIComposedForm):
     grok.name('manage_templates')
     grok.context(ContentLayoutService)
 
-    label = _(u"Template Service configuration")
+    label = _(u"Template configuration")
     description = _(u"Configure restrictions and defaults"
-                    u" for content layout tempates")
+                    u" for content layout tempates.")
+
+
+
+class ContentLayoutServiceTemplatesConfiguration(silvaforms.ComposedConfigurationForm):
+    grok.name('admin-templates')
+    grok.context(ContentLayoutService)
+
+    label = _(u"Template configuration")
+    description = _(u"Configure restrictions and defaults"
+                    u" for content layout tempates.")
+
+
+class ContentLayoutServiceTemplatesConfigurationMenu(menu.MenuItem):
+    grok.adapts(menu.ContentMenu, ContentLayoutService)
+    grok.order(20)
+    name = _('Templates')
+    screen = ContentLayoutServiceTemplatesConfiguration
 
 
 class DesignContentRule(object):
@@ -312,6 +331,22 @@ class DesignRestrictionsSettings(silvaforms.ZMISubForm):
     ignoreContent = False
 
 
+class DesignRestrictionsConfiguration(silvaforms.SMISubForm):
+    """Configure designs access restrictions.
+    """
+    grok.context(ContentLayoutService)
+    grok.view(ContentLayoutServiceTemplatesConfiguration)
+    grok.order(10)
+
+    label = _(u"Define templates access restrictions")
+    fields = silvaforms.Fields(interfaces.IDesignRestrictions)
+    actions = silvaforms.Actions(
+        silvaforms.CancelConfigurationAction(),
+        silvaforms.EditAction())
+    dataManager = silvaforms.SilvaDataManager
+    ignoreContent = False
+
+
 class DefaultDesignRule(DesignContentRule):
     """Default design for a content type.
     """
@@ -335,6 +370,23 @@ class ContentDefaultDesignSettings(silvaforms.ZMISubForm):
     label = _(u"Define default template for content types")
     fields = silvaforms.Fields(interfaces.IContentDefaultDesigns)
     actions = silvaforms.Actions(silvaforms.EditAction())
+    dataManager = silvaforms.SilvaDataManager
+    ignoreContent = False
+
+
+
+class ContentDefaultDesignConfiguration(silvaforms.SMISubForm):
+    """Configure default design for content types
+    """
+    grok.context(ContentLayoutService)
+    grok.view(ContentLayoutServiceTemplatesConfiguration)
+    grok.order(10)
+
+    label = _(u"Define default template for content types")
+    fields = silvaforms.Fields(interfaces.IContentDefaultDesigns)
+    actions = silvaforms.Actions(
+        silvaforms.CancelConfigurationAction(),
+        silvaforms.EditAction())
     dataManager = silvaforms.SilvaDataManager
     ignoreContent = False
 
@@ -372,6 +424,24 @@ class ContentLayoutServiceManageBlocks(silvaforms.ZMIForm):
     actions = silvaforms.Actions(silvaforms.EditAction())
     dataManager = silvaforms.SilvaDataManager
     ignoreContent = False
+
+
+class ContentLayoutServiceBlocksConfiguration(silvaforms.ConfigurationForm):
+    grok.context(ContentLayoutService)
+
+    label = _(u"Component palette configuration")
+    description = _(u"Sort possible components into groups.")
+    fields = silvaforms.Fields(interfaces.IBlockGroupsFields)
+    actions = silvaforms.Actions(
+        silvaforms.CancelConfigurationAction(),
+        silvaforms.EditAction())
+
+
+class ContentLayoutServiceBlocksConfigurationMenu(menu.MenuItem):
+    grok.adapts(menu.ContentMenu, ContentLayoutService)
+    grok.order(10)
+    name = _('Component palette')
+    screen = ContentLayoutServiceBlocksConfiguration
 
 
 @grok.subscribe(interfaces.IContentLayoutService, IObjectAddedEvent)
