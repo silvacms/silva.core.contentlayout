@@ -13,7 +13,7 @@ tests_require = [
 
 setup(name='silva.core.contentlayout',
       version=version,
-      description="Silva Content Layout base functionality",
+      description="Silva Content Layout engine for Silva CMS",
       long_description=open("README.txt").read() + "\n" +
                        open(os.path.join("docs", "HISTORY.txt")).read(),
       # Get more strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
@@ -25,7 +25,7 @@ setup(name='silva.core.contentlayout',
       keywords='',
       author='Andrew Altepeter',
       author_email='aaltepet@bethel.edu',
-      url='http://infrae.com/products/silva',
+      url='https://github.com/silvacms/silva.core.contentlayout',
       license='GPL',
       package_dir={'': 'src'},
       packages=find_packages('src'),
