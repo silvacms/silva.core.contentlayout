@@ -1,10 +1,10 @@
 Changelog
 =========
 
-3.0.5 (unreleased)
+3.0.5 (2013/12/18)
 ------------------
 
-- ...
+- Make possible to edit settings in SMI
 
 3.0.4 (2013/10/08)
 ------------------
